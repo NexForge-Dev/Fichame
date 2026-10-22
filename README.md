@@ -123,6 +123,8 @@ npm run migrate
 8. `migrations/0008_onboarding_steps.sql`
 9. `migrations/0009_problem_reports.sql`
 10. `migrations/0010_terms_acceptances.sql`
+11. `migrations/0011_password_help_requests.sql`
+12. `migrations/0012_review_fixes.sql`
 
 As migrations são idempotentes. `0000_reset.sql` é **destrutivo** (apaga o schema) e só corre com `npm run migrate -- --reset`.
 
@@ -157,8 +159,9 @@ O servidor verifica o Supabase no arranque e recusa-se a servir se faltar uma mi
 | `npm run setup` | Cria o admin da plataforma |
 | `npm run retention` | Retenção por negócio — **simula** por omissão; `--aplicar` suprime candidaturas vencidas, CVs (BD + Storage), CVs órfãos, sessões/tokens/logs expirados |
 | `npm run delete-account` | Fecho de conta sem órfãos (`--id`, `--slug`, `--aplicar`) |
-| `npm test` | Unitários + migrations numa BD temporária + E2E contra o Supabase |
-| `npm run test:unit` / `test:db` / `test:e2e` | Cada suite isoladamente |
+| `npm test` | Unitários + HTTP (sem BD) + migrations numa BD temporária. **Não** toca no Supabase |
+| `npm run test:unit` / `test:db` | Cada suite isoladamente |
+| `EZCV_E2E_CONFIRM=1 npm run test:e2e` | E2E — escreve na BD do `.env` (dados marcados e apagados no fim). Melhor: projeto Supabase de testes + `EZCV_E2E_PROJECT_REF` |
 | `npm run audit` | `npm audit` das dependências de produção |
 
 ---
@@ -177,12 +180,12 @@ Ver [`.env.example`](.env.example) para a lista comentada.
 | `SUPABASE_BUCKET_CVS` / `_MEDIA` | `cvs` / `media` | Buckets privados |
 | `DATABASE_URL` | — | Só para `npm run migrate`; a app não a usa |
 | `SESSION_TTL_DAYS` | `30` | Validade da sessão de negócio (sessões anónimas: 2 h) |
-| `COOKIE_SECURE` / `TRUST_PROXY` | `0` | `1` em produção com HTTPS / atrás de proxy |
-| `MAX_CV_MB` / `MAX_IMAGE_MB` | `5` / `2` | Limites de upload |
+| `COOKIE_SECURE` / `TRUST_PROXY` | `0` (na Vercel: `1`) | `1` em produção com HTTPS / atrás de proxy. Na Vercel ligam-se sozinhos; em produção um `APP_URL` sem https impede o arranque |
+| `MAX_CV_MB` / `MAX_IMAGE_MB` | `4` / `2` | Limites de upload. Na Vercel o CV nunca passa de 4 MB (limite de 4,5 MB por pedido) |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NAME` | — | Seed do admin |
-| `SMTP_*` | vazio | Sem SMTP não há avisos por email nem recuperação de senha (o conteúdo nunca vai para o log) |
+| `SMTP_*` | vazio | Sem SMTP não há avisos por email e a recuperação de senha passa pelo admin (`/admin/usuarios`). Sem `SMTP_SECURE=1`, o STARTTLS é obrigatório |
 | `OPERATOR_*` | marcadores | Identificação do titular do Fíchame nas páginas legais |
-| `CRON_SECRET` / `RETENTION_AUTO` | — / `0` | Retenção automática via `GET /internal/retention` |
+| `CRON_SECRET` / `RETENTION_AUTO` | — / `0` | Limpeza técnica diária via `GET /internal/cleanup` (Vercel Cron em `vercel.json`, só precisa de `CRON_SECRET`); supressão de candidaturas via `GET /internal/retention` (também precisa de `RETENTION_AUTO=1`) |
 | `SECURITY_LOG_DAYS` / `RIGHTS_REQUEST_DAYS` | `365` / `1095` | Conservação de logs e pedidos de direitos fechados |
 
 ---
@@ -230,12 +233,14 @@ Inventário completo em [`docs/DOCUMENTACAO.md` §8](docs/DOCUMENTACAO.md#8-segu
 ## Testes
 
 ```bash
-npm test
+npm test                              # sem Supabase (também corre no CI: .github/workflows/ci.yml)
+EZCV_E2E_CONFIRM=1 npm run test:e2e   # E2E, escreve no Supabase do .env
 ```
 
+- `test/http.test.js` — sobe a app sem BD: endpoints internos, multipart fora das rotas de upload, cabeçalhos de cache e validação da configuração.
 - `test/unit.test.js` — sem rede: validação de PDF e nomes de ficheiro, detetor de características protegidas, truncagem de IP, política de senha, textos de consentimento, cabeçalhos.
 - `test/db.js` — cria um PostgreSQL **temporário** (initdb), simula o Supabase, aplica as migrations 2× e testa isolamento entre tenants na BD, reserva/consentimento, retenção por tenant, `legal_hold`, supressão, permissões de `anon` e autodiagnóstico. Requer os binários do PostgreSQL (`PG_BIN`).
-- `test/smoke.js` — E2E contra o Supabase real: fluxo completo, informação legal, IDOR A↔B, uploads maliciosos, XSS, CSRF, cabeçalhos, enumeração, força bruta, recuperação de senha, invalidação de sessões, direitos (exportação, supressão, retirada), auditoria, admin sem acesso a candidatos.
+- `test/smoke.js` — E2E contra o Supabase (só com `EZCV_E2E_CONFIRM=1` ou `EZCV_E2E_PROJECT_REF`): fluxo completo, informação legal, IDOR A↔B, uploads maliciosos, XSS, CSRF, cabeçalhos, enumeração, força bruta, recuperação de senha, invalidação de sessões, direitos (exportação, supressão, retirada), auditoria, admin sem acesso a candidatos.
 
 Cada execução marca os seus dados com um prefixo único e apaga-os no fim com `purge_test_data`, incluindo os objetos no Storage.
 
@@ -248,9 +253,9 @@ Resolver os **BLOCKERS** de [`docs/security/production-compliance-gate.md`](docs
 - Dictamen sobre **agência de colocação** (Ley 3/2023) — [`docs/legal/01-…`](docs/legal/01-analisis-agencia-colocacion.md).
 - Dados do operador (`OPERATOR_*`), regiões UE e DPA de Supabase/Vercel, textos legais revistos.
 - HTTPS com `COOKIE_SECURE=1`, `TRUST_PROXY=1`, `APP_URL=https://…`; SMTP real.
-- Prazos de retenção validados e agendador ligado (`CRON_SECRET`, `RETENTION_AUTO=1`).
+- `CRON_SECRET` definido na Vercel (limpeza técnica diária); prazos de retenção validados antes de `RETENTION_AUTO=1`.
 - Backups (retenção, restauro testado) e 2FA em Supabase/Vercel/GitHub.
 - Pendente técnico: verificação de email no registo, 2FA para negócios, utilizadores múltiplos por negócio (RBAC).
-- Paginação real na lista de candidaturas (hoje: as 200 mais recentes).
+- Paginação real na lista de candidaturas (hoje mostra 200 e o total real dos filtros).
 
 Lista completa em [`docs/DOCUMENTACAO.md` §12](docs/DOCUMENTACAO.md#12-pendências-produção).

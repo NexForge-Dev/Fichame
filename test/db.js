@@ -6,7 +6,7 @@
  * Cria um cluster PostgreSQL descartável (initdb + pg_ctl) numa pasta
  * temporária, simula o que o Supabase tem e as migrations assumem (roles anon /
  * authenticated / service_role, schema storage, default privileges que
- * concedem tudo a anon), aplica 0001 → 0005 DUAS vezes (idempotência) e
+ * concedem tudo a anon), aplica todas as migrations DUAS vezes (idempotência) e
  * verifica ao nível da BD:
  *
  *   - isolamento entre tenants (FKs compostas, funções com restaurant_id);
@@ -236,6 +236,13 @@ function main() {
     check('prorrogação única de 2 meses',
       rpc('update_rights_request', { id: rr.id, restaurant_id: ra, status: 'en_curso', extend: true }).ok &&
       q(`select extended from rights_requests where id=${rr.id}`) === 't');
+    rpc('update_rights_request', { id: rr.id, restaurant_id: ra, status: 'resuelta' });
+    q(`update rights_requests set resolved_at = now() - interval '10 days' where id=${rr.id}`);
+    rpc('update_rights_request', { id: rr.id, restaurant_id: ra, status: 'resuelta', note: 'só a nota' });
+    check('guardar de novo um pedido resolvido mantém resolved_at (0012)',
+      q(`select resolved_at < now() - interval '9 days' from rights_requests where id=${rr.id}`) === 't');
+    check('prazo de retenção vazio → out_of_bounds, não erro (0012)',
+      rpc('set_retention_settings', { restaurant_id: ra, closed_days: null, inactive_days: 180, reserve_days: 365 }).reason === 'out_of_bounds');
     const pe = rpc('purge_expired', { dry_run: true });
     check('purge_expired em simulação', pe.ok && pe.dry_run === true);
 

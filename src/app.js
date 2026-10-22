@@ -95,7 +95,9 @@ function assetVersion() {
 
 function createApp() {
   const app = express();
-  app.set('trust proxy', config.trustProxy);
+  /* Um salto (o proxy da Vercel), não `true`: com `true` o Express confia
+   * em todo o X-Forwarded-For e o IP dos limites de pedidos falsifica-se. */
+  app.set('trust proxy', config.trustProxy ? 1 : false);
   app.set('view engine', 'ejs');
   app.set('views', path.join(__dirname, 'views'));
   app.set('x-powered-by', false);
@@ -216,6 +218,8 @@ function createApp() {
   app.locals.icon = icon;
   app.locals.initials = initials;
   app.locals.maxUploadMb = Math.round(config.maxUploadBytes / (1024 * 1024));
+  /* URLs absolutos nas tags og: (pré-visualização ao partilhar no WhatsApp). */
+  app.locals.appUrl = config.appUrl;
   app.locals.maxImgMb = Math.round(config.maxImageBytes / (1024 * 1024));
   app.locals.assetV = assetVersion();
   /* Valores por omissão para páginas renderizadas antes do middleware de

@@ -93,3 +93,47 @@ document.addEventListener('click', function (e) {
   if (p && p.catch) p.catch(function () { /* o utilizador usa os controlos */ });
   video.focus();
 });
+
+/* CV acima do limite: avisa logo ao escolher o ficheiro, antes de um upload
+   que o servidor (ou a Vercel, acima de 4,5 MB) ia recusar. O
+   setCustomValidity impede o envio até se escolher outro ficheiro. */
+document.addEventListener('change', function (e) {
+  var input = e.target;
+  if (!input || !input.matches || !input.matches('input[type=file][data-max-bytes]')) return;
+  var f = input.files && input.files[0];
+  var max = Number(input.getAttribute('data-max-bytes'));
+  var tooBig = Boolean(f && max && f.size > max);
+  var msg = tooBig ? input.getAttribute('data-too-big') : '';
+  input.setCustomValidity(msg);
+  var field = input.closest('.field');
+  var out = field && field.querySelector('[data-file-error]');
+  if (out) {
+    out.textContent = msg;
+    out.classList.toggle('is-hidden', !tooBig);
+  }
+});
+
+/* Envio: desativa o botão e mostra «Enviando…». Com um CV em 4G o envio
+   demora vários segundos; sem isto a pessoa toca outra vez (o browser
+   recomeça o upload) ou desiste. O evento submit só dispara depois de a
+   validação do browser passar. */
+document.addEventListener('submit', function (e) {
+  var form = e.target;
+  if (!form || !form.hasAttribute('data-busy')) return;
+  var btn = form.querySelector('button[type=submit]');
+  if (!btn) return;
+  if (btn.disabled) { e.preventDefault(); return; }
+  btn.setAttribute('data-label', btn.textContent);
+  btn.textContent = form.getAttribute('data-busy');
+  /* Desativar só depois de o browser ter recolhido os dados do formulário. */
+  setTimeout(function () { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }, 0);
+});
+
+/* Voltar atrás para a página (bfcache) não pode deixar o botão preso. */
+window.addEventListener('pageshow', function () {
+  document.querySelectorAll('form[data-busy] button[aria-busy]').forEach(function (btn) {
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+    if (btn.hasAttribute('data-label')) btn.textContent = btn.getAttribute('data-label');
+  });
+});

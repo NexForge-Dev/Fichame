@@ -1,4 +1,17 @@
-<%- include('../partials/head', { title: restaurant.name }) %>
+<%- include('../partials/head', {
+  title: restaurant.commercial_name || restaurant.name,
+  description: restaurant.description || tr('Envía tu candidatura en menos de 2 minutos, desde el móvil y sin crear ninguna cuenta.'),
+  ogImage: restaurant.logo_path ? '/r/' + restaurant.slug + '/imagen/logo' : (restaurant.photo_path ? '/r/' + restaurant.slug + '/imagen/foto' : ''),
+  ogPath: '/r/' + restaurant.slug
+}) %>
+<%
+  /* Atributos de acessibilidade de um campo com erro: o leitor de ecrã
+     anuncia o campo como inválido e lê a mensagem associada. */
+  function invalid(name) {
+    return (errors && errors[name]) ? ' aria-invalid="true" aria-describedby="err-' + name + '"' : '';
+  }
+  var hasErrors = Boolean(errors && Object.keys(errors).length > 0);
+%>
 
 <header class="hero <%= restaurant.photo_path ? 'has-photo' : '' %>">
   <% if (restaurant.photo_path) { %>
@@ -71,15 +84,18 @@
     </div>
   <% } %>
 
-  <div class="card">
+  <div class="card" id="enviar">
     <h2><%= tr('Envía tu candidatura') %></h2>
     <p class="help help-lift"><%= tr('Menos de 2 minutos. Solo necesitas tus datos y tu CV en PDF. No hace falta crear ninguna cuenta.') %></p>
 
     <% if (errors && errors.general) { %>
       <div class="flash err"><%= errors.general.map(function(e) { return tr(e); }).join(' ') %></div>
+    <% } else if (hasErrors) { %>
+      <div class="flash err" role="alert"><%= tr('Revisa los campos marcados en rojo.') %></div>
     <% } %>
 
-    <form action="/r/<%= restaurant.slug %>/apply" method="post" enctype="multipart/form-data" novalidate>
+    <%# #enviar: depois de um erro a página volta já posicionada no formulário. %>
+    <form action="/r/<%= restaurant.slug %>/apply#enviar" method="post" enctype="multipart/form-data" data-busy="<%= tr('Enviando tu CV…') %>">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="hp" aria-hidden="true">
         <label>Sitio web</label>
@@ -90,39 +106,39 @@
 
       <div class="field">
         <label for="nombre"><%= tr('Nombre') %> *</label>
-        <input id="nombre" type="text" name="nombre" maxlength="100" required value="<%= form.nombre || '' %>" autocomplete="given-name">
-        <% if (errors && errors.nombre) { %><div class="field-error"><%= tr(errors.nombre) %></div><% } %>
+        <input id="nombre" type="text" name="nombre" minlength="2" maxlength="100" required value="<%= form.nombre || '' %>" autocomplete="given-name"<%- invalid('nombre') %>>
+        <% if (errors && errors.nombre) { %><div class="field-error" id="err-nombre"><%= tr(errors.nombre) %></div><% } %>
       </div>
 
       <div class="field">
-        <label for="apellidos"><%= tr('Apellidos') %></label>
+        <label for="apellidos"><%= tr('Apellidos') %> <span class="dim label-hint"><%= tr('(opcional)') %></span></label>
         <input id="apellidos" type="text" name="apellidos" maxlength="100" value="<%= form.apellidos || '' %>" autocomplete="family-name">
       </div>
 
       <div class="field">
         <label for="email"><%= tr('Email') %> *</label>
-        <input id="email" type="email" name="email" maxlength="120" required value="<%= form.email || '' %>" autocomplete="email" inputmode="email">
-        <% if (errors && errors.email) { %><div class="field-error"><%= tr(errors.email) %></div><% } %>
+        <input id="email" type="email" name="email" maxlength="120" required value="<%= form.email || '' %>" autocomplete="email" inputmode="email"<%- invalid('email') %>>
+        <% if (errors && errors.email) { %><div class="field-error" id="err-email"><%= tr(errors.email) %></div><% } %>
       </div>
 
       <div class="field">
         <label for="telefono"><%= tr('Número de teléfono') %> *</label>
-        <input id="telefono" type="tel" name="telefono" maxlength="30" required value="<%= form.telefono || '' %>" autocomplete="tel" inputmode="tel">
-        <% if (errors && errors.telefono) { %><div class="field-error"><%= tr(errors.telefono) %></div><% } %>
+        <input id="telefono" type="tel" name="telefono" maxlength="25" pattern="[0-9\s\(\)\.\+\-]{6,25}" required value="<%= form.telefono || '' %>" autocomplete="tel" inputmode="tel"<%- invalid('telefono') %>>
+        <% if (errors && errors.telefono) { %><div class="field-error" id="err-telefono"><%= tr(errors.telefono) %></div><% } %>
       </div>
 
       <div class="section-title"><%= tr('El puesto') %></div>
 
       <div class="field">
-        <label for="puesto"><%= tr('Puesto al que aspiras') %></label>
-        <select id="puesto" name="puesto">
+        <label for="puesto"><%= tr('Puesto al que aspiras') %> <span class="dim label-hint"><%= tr('(opcional)') %></span></label>
+        <select id="puesto" name="puesto"<%- invalid('puesto') %>>
           <option value=""><%= tr('No especifico / cualquiera') %></option>
           <% jobs.forEach(function(job) { %>
             <option value="<%= job.id %>" <%= String(form.puesto) === String(job.id) ? 'selected' : '' %>><%= job.title %></option>
           <% }) %>
           <option value="otro" <%= form.puesto === 'otro' ? 'selected' : '' %>><%= tr('Otro') %></option>
         </select>
-        <% if (errors && errors.puesto) { %><div class="field-error"><%= tr(errors.puesto) %></div><% } %>
+        <% if (errors && errors.puesto) { %><div class="field-error" id="err-puesto"><%= tr(errors.puesto) %></div><% } %>
       </div>
 
       <div class="field <%= form.puesto === 'otro' ? '' : 'is-hidden' %>" id="otro-puesto-field">
@@ -131,7 +147,7 @@
       </div>
 
       <div class="field">
-        <label for="disponibilidad"><%= tr('Disponibilidad') %></label>
+        <label for="disponibilidad"><%= tr('Disponibilidad') %> <span class="dim label-hint"><%= tr('(opcional)') %></span></label>
         <select id="disponibilidad" name="disponibilidad">
           <% Object.keys(AVAILABILITIES).forEach(function(key) { %>
             <option value="<%= key %>" <%= form.disponibilidad === key ? 'selected' : '' %>><%= AVAILABILITIES[key] %></option>
@@ -140,7 +156,7 @@
       </div>
 
       <div class="field">
-        <label for="experiencia"><%= tr('Experiencia') %></label>
+        <label for="experiencia"><%= tr('Experiencia') %> <span class="dim label-hint"><%= tr('(opcional)') %></span></label>
         <textarea id="experiencia" name="experiencia" maxlength="2000" placeholder="<%= tr('Ej.: 2 años de atención al cliente en…') %>"><%= form.experiencia || '' %></textarea>
       </div>
 
@@ -159,7 +175,7 @@
       <div class="field">
         <label for="cv"><%= tr('CV en PDF') %> *</label>
         <div class="file-pick">
-          <input class="file-pick-input" id="cv" type="file" name="cv" accept="application/pdf,.pdf" required>
+          <input class="file-pick-input" id="cv" type="file" name="cv" accept="application/pdf,.pdf" required data-max-bytes="<%= maxUploadMb * 1024 * 1024 %>" data-too-big="<%= tr('El archivo supera el límite de {n} MB.', { n: maxUploadMb }) %>"<%- invalid('cv') %>>
           <label class="file-pick-box" for="cv">
             <span class="file-pick-icon"><%- icon('file') %></span>
             <span class="file-pick-text">
@@ -170,7 +186,13 @@
         </div>
         <div class="file-name" data-file-name></div>
         <div class="help"><%= tr('PDF · máximo {n} MB', { n: maxUploadMb }) %></div>
-        <% if (errors && errors.cv) { %><div class="field-error"><%= tr(errors.cv) %></div><% } %>
+        <% if (errors && errors.cv) { %>
+          <div class="field-error" id="err-cv"><%= tr(errors.cv, { n: maxUploadMb }) %></div>
+        <% } else if (hasErrors) { %>
+          <%# O browser nunca conserva o ficheiro escolhido quando a página volta com erros. %>
+          <div class="field-error" id="err-cv"><%= tr('Por seguridad, el navegador no guarda el archivo: vuelve a adjuntar tu CV.') %></div>
+        <% } %>
+        <div class="field-error is-hidden" data-file-error role="alert"></div>
       </div>
 
       <div class="section-title"><%= tr('Protección de datos') %></div>
@@ -182,9 +204,10 @@
 
       <label class="check">
         <input type="checkbox" name="consentimiento_futuro" value="1" <%= form.consent_futuro ? 'checked' : '' %>>
-        <span><strong><%= tr('Opcional.') %></strong> <%= consentFutureText %></span>
+        <span><strong><%= tr('Opcional.') %></strong> <span lang="es"><%= consentFutureText %></span></span>
       </label>
 
+      <p class="help"><%= tr('Los campos con * son obligatorios.') %></p>
       <button class="btn block lg spaced" type="submit"<%= restaurant.demo ? ' disabled' : '' %>><%= tr('Enviar candidatura') %></button>
     </form>
   </div>
@@ -206,7 +229,7 @@
       <div class="flash err"><%= errors.general.map(function(e) { return tr(e); }).join(' ') %></div>
     <% } %>
 
-    <form action="/r/<%= restaurant.slug %>/interes" method="post">
+    <form action="/r/<%= restaurant.slug %>/interes" method="post" data-busy="<%= tr('Enviando…') %>">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="hp" aria-hidden="true">
         <label>Sitio web</label>
@@ -223,7 +246,7 @@
       </div>
       <div class="field">
         <label for="telefono"><%= tr('Teléfono') %> *</label>
-        <input id="telefono" type="tel" name="telefono" maxlength="30" required value="<%= form.telefono || '' %>" inputmode="tel" autocomplete="tel">
+        <input id="telefono" type="tel" name="telefono" maxlength="25" pattern="[0-9\s\(\)\.\+\-]{6,25}" required value="<%= form.telefono || '' %>" inputmode="tel" autocomplete="tel">
       </div>
       <div class="field">
         <label for="experiencia"><%= tr('¿En qué te gustaría trabajar?') %></label>
@@ -238,7 +261,7 @@
 
       <label class="check">
         <input type="checkbox" name="consentimiento_futuro" value="1" <%= form.consent_futuro ? 'checked' : '' %>>
-        <span><%= consentInterestText %> *</span>
+        <span><span lang="es"><%= consentInterestText %></span> *</span>
       </label>
 
       <button class="btn block lg" type="submit"<%= restaurant.demo ? ' disabled' : '' %>><%= tr('Guardar mi candidatura') %></button>

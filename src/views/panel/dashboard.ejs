@@ -163,16 +163,26 @@
         <div class="muted small"><%= tr('Tu página muestra «No estamos contratando» y solo recoge datos para futuras oportunidades.') %></div>
       <% } %>
     </div>
-    <form action="/panel/contratacion" method="post">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <% if (restaurant.hiring === 'open') { %>
-        <input type="hidden" name="accion" value="pausar">
-        <button class="btn secondary" type="submit"><%- icon('pause') %> <%= tr('Pausar candidaturas') %></button>
-      <% } else { %>
+    <% if (restaurant.hiring === 'open') { %>
+      <%# Pausar fecha a página aos candidatos: pede confirmação, como eliminar uma vaga. %>
+      <details>
+        <summary class="btn secondary"><%- icon('pause') %> <%= tr('Pausar candidaturas') %></summary>
+        <div class="details-body">
+          <p class="help help-lift"><%= tr('Tu página mostrará «No estamos contratando». Puedes volver a activarlas cuando quieras.') %></p>
+          <form action="/panel/contratacion" method="post">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="accion" value="pausar">
+            <button class="btn secondary small" type="submit"><%= tr('Sí, pausar candidaturas') %></button>
+          </form>
+        </div>
+      </details>
+    <% } else { %>
+      <form action="/panel/contratacion" method="post">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <input type="hidden" name="accion" value="activar">
         <button class="btn" type="submit"><%= tr('Activar candidaturas') %></button>
-      <% } %>
-    </form>
+      </form>
+    <% } %>
   </div>
 
   <% if (total > 0) { %>

@@ -1,7 +1,12 @@
 'use strict';
 
 /* Teste E2E: sobe o servidor e valida o fluxo completo contra o Supabase real.
- * Executar: npm test
+ * Executar: npm run test:e2e  (NÃO faz parte de `npm test`)
+ *
+ * Proteção: escreve na BD do .env. Só arranca se
+ *   - EZCV_E2E_PROJECT_REF estiver definido e SUPABASE_URL for desse projeto
+ *     (recomendado: um projeto Supabase só para testes), ou
+ *   - EZCV_E2E_CONFIRM=1, para confirmar que se quer correr contra a BD do .env.
  *
  * Isolamento: cada execução gera um prefixo único (EZCV_TEST_PREFIX) que fica
  * gravado em restaurants.test_prefix. No fim, purge_test_data apaga tudo o que
@@ -165,11 +170,15 @@ function admin() {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
+/* Uma limpeza falhada conta como falha do teste: pode ter ficado na BD uma
+ * conta de teste (incluindo um admin). */
 async function cleanup(sb) {
   if (!sb) return;
   try {
     const { data, error } = await sb.rpc('purge_test_data', { p: { test_prefix: P } });
     if (error) {
+      failed += 1;
+      failures.push(`limpeza falhou (prefixo ${P}): ${error.message}`);
       console.log(`  ! limpeza falhou: ${error.message}`);
       return;
     }
@@ -180,11 +189,32 @@ async function cleanup(sb) {
     console.log(`\n  limpeza: ${(data && data.restaurants) || 0} estabelecimento(s), ` +
       `${paths.length} CV(s), ${media.length} imagem(ns)`);
   } catch (err) {
+    failed += 1;
+    failures.push(`limpeza falhou (prefixo ${P}): ${err.message}`);
     console.log(`  ! limpeza falhou: ${err.message}`);
   }
 }
 
+/* Recusa correr contra uma BD que não foi explicitamente escolhida. */
+function guardTarget() {
+  const url = String(process.env.SUPABASE_URL || '');
+  const ref = String(process.env.EZCV_E2E_PROJECT_REF || '').trim();
+  if (ref) {
+    if (url.includes(`//${ref}.`)) return;
+    console.error(`\n  SUPABASE_URL não é o projeto de testes (${ref}). Teste cancelado.\n`);
+    process.exit(1);
+  }
+  if (process.env.EZCV_E2E_CONFIRM === '1') return;
+  console.error('');
+  console.error('  Este teste escreve na base de dados do .env (dados marcados e apagados no fim).');
+  console.error('  Para correr: EZCV_E2E_CONFIRM=1 npm run test:e2e');
+  console.error('  Melhor: um projeto Supabase só para testes e EZCV_E2E_PROJECT_REF=<ref>.');
+  console.error('');
+  process.exit(1);
+}
+
 async function main() {
+  guardTarget();
   const sb = admin();
 
   if (!sb) {
@@ -209,6 +239,14 @@ async function main() {
 
   server.stdout.on('data', (d) => process.env.VERBOSE && process.stdout.write(d));
   server.stderr.on('data', (d) => process.stdout.write(d));
+
+  /* Ctrl+C não corre o finally: sem isto os dados do teste ficavam na BD. */
+  process.once('SIGINT', async () => {
+    console.log('\n  interrompido — a limpar os dados de teste…');
+    server.kill();
+    await cleanup(sb);
+    process.exit(130);
+  });
 
   let slugA = '';
   let slugB = '';
@@ -889,6 +927,10 @@ async function main() {
       check('endpoint de retenção sem segredo → 404', res.status === 404);
       res = await call('GET', '/internal/retention', { headers: { authorization: 'Bearer x' } });
       check('endpoint de retenção com segredo errado → 404', res.status === 404);
+      res = await call('GET', '/internal/cleanup');
+      check('endpoint de limpeza sem segredo → 404', res.status === 404);
+      res = await call('GET', '/internal/cleanup', { headers: { authorization: 'Bearer x' } });
+      check('endpoint de limpeza com segredo errado → 404', res.status === 404);
     }
 
     console.log('\n— Upload: ficheiros maliciosos ou inesperados —');
@@ -1196,9 +1238,12 @@ async function main() {
 
     console.log('\n— Área admin —');
     const adminEmail = `admin-${P}@test.local`;
+    /* Senha aleatória por execução: se a limpeza falhar, a conta que fica
+     * não tem uma senha conhecida (versionada no repositório). */
+    const adminPassword = `Adm!${crypto.randomBytes(12).toString('base64url')}`;
     const seed = spawnSync(process.execPath, ['src/db/seed.js'], {
       cwd: root,
-      env: { ...process.env, ADMIN_EMAIL: adminEmail, ADMIN_PASSWORD: 'Admin1234!Longa' },
+      env: { ...process.env, ADMIN_EMAIL: adminEmail, ADMIN_PASSWORD: adminPassword },
       encoding: 'utf8'
     });
     check('seed do admin', seed.status === 0, (seed.stderr || '').trim());
@@ -1207,7 +1252,7 @@ async function main() {
     res = await call('GET', '/login', { jar: adminJar });
     const adminCsrf = csrfOf(await text(res));
     res = await call('POST', '/login', {
-      jar: adminJar, body: form({ email: adminEmail, password: 'Admin1234!Longa', _csrf: adminCsrf })
+      jar: adminJar, body: form({ email: adminEmail, password: adminPassword, _csrf: adminCsrf })
     });
     check('login admin', res.status === 302 && res.headers.get('location') === '/admin');
     res = await call('GET', '/admin', { jar: adminJar });

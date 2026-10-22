@@ -115,40 +115,40 @@
               <form action="/panel/vagas/<%= job.id %>/editar" method="post">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <div class="field">
-                  <label><%= tr('Título') %></label>
-                  <input type="text" name="titulo" maxlength="80" value="<%= job.title %>" required>
+                  <label for="job-<%= job.id %>-titulo"><%= tr('Título') %></label>
+                  <input type="text" id="job-<%= job.id %>-titulo" name="titulo" maxlength="80" value="<%= job.title %>" required>
                 </div>
                 <div class="field">
-                  <label><%= tr('Descripción') %></label>
-                  <textarea name="descripcion" maxlength="2000"><%= job.description %></textarea>
+                  <label for="job-<%= job.id %>-descripcion"><%= tr('Descripción') %></label>
+                  <textarea id="job-<%= job.id %>-descripcion" name="descripcion" maxlength="2000"><%= job.description %></textarea>
                 </div>
                 <details class="spaced-sm">
                   <summary><%= tr('Más detalles') %></summary>
                   <div class="details-body">
                 <div class="field">
-                  <label><%= tr('Requisitos') %></label>
-                  <textarea name="requisitos" maxlength="2000"><%= job.requirements %></textarea>
+                  <label for="job-<%= job.id %>-requisitos"><%= tr('Requisitos') %></label>
+                  <textarea id="job-<%= job.id %>-requisitos" name="requisitos" maxlength="2000"><%= job.requirements %></textarea>
                 </div>
                 <div class="hint-row">
                   <div class="field">
-                    <label><%= tr('Tipo de contrato') %></label>
-                    <select name="contrato">
+                    <label for="job-<%= job.id %>-contrato"><%= tr('Tipo de contrato') %></label>
+                    <select id="job-<%= job.id %>-contrato" name="contrato">
                       <% Object.keys(CONTRACT_TYPES).forEach(function(key) { %>
                         <option value="<%= key %>" <%= job.contract_type === key ? 'selected' : '' %>><%= CONTRACT_TYPES[key] %></option>
                       <% }) %>
                     </select>
                   </div>
                   <div class="field">
-                    <label><%= tr('Jornada') %></label>
-                    <select name="jornada">
+                    <label for="job-<%= job.id %>-jornada"><%= tr('Jornada') %></label>
+                    <select id="job-<%= job.id %>-jornada" name="jornada">
                       <% Object.keys(WORK_SCHEDULES).forEach(function(key) { %>
                         <option value="<%= key %>" <%= job.work_schedule === key ? 'selected' : '' %>><%= WORK_SCHEDULES[key] %></option>
                       <% }) %>
                     </select>
                   </div>
                   <div class="field">
-                    <label><%= tr('Disponibilidad') %></label>
-                    <select name="disponibilidad">
+                    <label for="job-<%= job.id %>-disponibilidad"><%= tr('Disponibilidad') %></label>
+                    <select id="job-<%= job.id %>-disponibilidad" name="disponibilidad">
                       <% Object.keys(AVAILABILITIES).forEach(function(key) { %>
                         <option value="<%= key %>" <%= job.availability === key ? 'selected' : '' %>><%= AVAILABILITIES[key] %></option>
                       <% }) %>

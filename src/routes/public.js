@@ -14,11 +14,14 @@ const { PRIVACY_NOTICE_VERSION, CONSENT_VERSION, futureText, interestText, days2
 const { operator } = require('../lib/legal');
 const storage = require('../lib/storage');
 const { DEMO_PREFIX } = require('../lib/demo');
+const { background } = require('../lib/background');
 
 const router = express.Router();
 
 const EMAIL_RE = /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]{2,}$/;
-const PHONE_RE = /^[\d\s()+-]{6,20}$/;
+/* Aceita os separadores habituais (espaços, pontos, hífens, parênteses):
+ * «612.345.678» é um telefone válido e não deve fazer perder o CV. */
+const PHONE_RE = /^[\d\s().+-]{6,25}$/;
 
 const RIGHTS_KINDS = {
   acceso: 'Acceso — saber qué datos míos se conservan',
@@ -214,7 +217,7 @@ router.post('/r/:slug/apply', ...applyLimiters, uploadCvFile, async (req, res) =
 
   if (!req.file) {
     if (req.uploadError === 'TAMAÑO') {
-      errors.cv = `El archivo supera el límite de ${Math.round(config.maxUploadBytes / (1024 * 1024))} MB.`;
+      errors.cv = 'El archivo supera el límite de {n} MB.';
     } else if (req.uploadError === 'TIPO') {
       errors.cv = 'Solo se aceptan archivos PDF.';
     } else {
@@ -304,8 +307,7 @@ router.post('/r/:slug/apply', ...applyLimiters, uploadCvFile, async (req, res) =
 
   /* Email ao restaurante: só aviso + link para o painel (sem CV nem dados do
    * candidato). Não bloqueia a resposta ao candidato. */
-  notifyNewApplication({ restaurant, applicationId: result.application_id, jobTitle })
-    .catch((err) => console.error('[mailer]', err.message));
+  background(notifyNewApplication({ restaurant, applicationId: result.application_id, jobTitle }), 'mailer');
 
   logPublic('candidatura_enviada', `rid=${restaurant.id} app=${result.application_id}`, req, restaurant.id);
 
@@ -395,8 +397,7 @@ router.post('/r/:slug/interes', ...interestLimiters, async (req, res) => {
     });
   }
 
-  notifyNewApplication({ restaurant, applicationId: result.application_id, jobTitle: 'Oportunidades futuras' })
-    .catch(() => {});
+  background(notifyNewApplication({ restaurant, applicationId: result.application_id, jobTitle: 'Oportunidades futuras' }), 'mailer');
   logPublic('interes_registrado', `rid=${restaurant.id} app=${result.application_id}`, req, restaurant.id);
 
   res.redirect(`/r/${restaurant.slug}/enviado?tipo=futuro`);
@@ -494,7 +495,7 @@ router.post('/r/:slug/derechos',
       message: form.message
     }, 'pedido de direitos');
 
-    notifyRightsRequest({ restaurant, dueAt: result.due_at }).catch(() => {});
+    background(notifyRightsRequest({ restaurant, dueAt: result.due_at }), 'mailer');
     logPublic('derechos_solicitud', `rid=${restaurant.id} req=${result.id} tipo=${form.kind}`, req, restaurant.id);
 
     /* A resposta é a mesma exista ou não uma candidatura com esse email: o

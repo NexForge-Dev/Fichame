@@ -6,7 +6,8 @@
  * sobre o idioma dos textos legais está na página que inclui isto. */
 %>
 <div class="privacy-layer">
-  <dl>
+  <%# lang="es": um leitor de ecrã em inglês/português lê isto com a pronúncia certa. %>
+  <dl lang="es">
     <dt>Responsable</dt>
     <dd><%= restaurant.controller %><% if (restaurant.contact) { %> · <%= restaurant.contact %><% } %></dd>
 

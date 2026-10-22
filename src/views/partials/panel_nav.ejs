@@ -7,9 +7,11 @@
  */
 var navItems = [
   { href: '/panel',                 icon: 'home',   label: tr('Inicio'),        short: tr('Inicio'),   exact: true },
-  { href: '/panel/candidaturas',    icon: 'people', label: tr('Candidaturas'),  short: tr('Candidatos'), badge: true },
+  { href: '/panel/candidaturas',    icon: 'people', label: tr('Candidaturas'),  short: tr('Candidatos') },
   { href: '/panel/vagas',           icon: 'jobs',   label: tr('Vacantes'),      short: tr('Vacantes') },
-  { href: '/panel/notificaciones',  icon: 'bell',   label: tr('Avisos'),        short: tr('Avisos') },
+  /* O contador são os avisos não lidos (candidaturas novas, pedidos de
+   * direitos…), por isso fica em Avisos e não em Candidaturas. */
+  { href: '/panel/notificaciones',  icon: 'bell',   label: tr('Avisos'),        short: tr('Avisos'), badge: true },
   { href: '/panel/restaurante',     icon: 'store',  label: tr('Mi negocio'),     short: tr('Mi negocio') },
   /* Derechos e Privacidad usam-se pouco: ficam só em Ajustes (e nos avisos,
    * quando chega um pedido de direitos). */
@@ -24,14 +26,14 @@ function isActive(item) {
 
 var unread = (typeof unreadCount !== 'undefined' && unreadCount > 0) ? unreadCount : 0;
 %>
-<aside class="sidenav">
+<aside class="sidenav" aria-label="<%= tr('Navegación principal') %>">
   <a class="brand" href="/panel">
     <img class="brand-mark" src="/img/logo.svg?v=<%= assetV %>" alt="" width="28" height="28">
     <span>Fíchame</span>
   </a>
 
   <% navItems.forEach(function(item) { %>
-    <a class="navlink <%= isActive(item) ? 'active' : '' %>" href="<%= item.href %>">
+    <a class="navlink <%= isActive(item) ? 'active' : '' %>" href="<%= item.href %>"<%- isActive(item) ? ' aria-current="page"' : '' %>>
       <%- icon(item.icon) %>
       <span class="navlabel"><%= item.label %></span>
       <% if (item.badge && unread) { %><span class="nav-badge"><%= unread %></span><% } %>
@@ -65,7 +67,7 @@ var unread = (typeof unreadCount !== 'undefined' && unreadCount > 0) ? unreadCou
 <nav class="tabbar" aria-label="<%= tr('Navegación principal') %>">
   <%# 6 separadores no máximo; os sideOnly ficam só na barra lateral. %>
   <% navItems.filter(function(item) { return !item.sideOnly; }).forEach(function(item) { %>
-    <a class="<%= isActive(item) ? 'active' : '' %>" href="<%= item.href %>">
+    <a class="<%= isActive(item) ? 'active' : '' %>" href="<%= item.href %>"<%- isActive(item) ? ' aria-current="page"' : '' %>>
       <%- icon(item.icon) %>
       <span><%= item.short %></span>
       <% if (item.badge && unread) { %><span class="nav-badge"><%= unread %></span><% } %>

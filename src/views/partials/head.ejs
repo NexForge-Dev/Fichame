@@ -11,6 +11,17 @@
   <meta name="description" content="<%= description %>">
   <% } %>
   <title><%= typeof title !== 'undefined' && title ? title + ' · Fíchame' : 'Fíchame' %></title>
+  <%# Pré-visualização ao partilhar o link (WhatsApp, redes): título, texto e imagem. %>
+  <meta property="og:site_name" content="Fíchame">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="<%= typeof title !== 'undefined' && title ? title : 'Fíchame' %>">
+  <% if (typeof description !== 'undefined' && description) { %>
+  <meta property="og:description" content="<%= description %>">
+  <% } %>
+  <meta property="og:image" content="<%= appUrl %><%= typeof ogImage !== 'undefined' && ogImage ? ogImage : '/apple-touch-icon.png' %>">
+  <% if (typeof ogPath !== 'undefined' && ogPath) { %>
+  <meta property="og:url" content="<%= appUrl %><%= ogPath %>">
+  <% } %>
   <link rel="icon" href="/favicon.ico?v=<%= assetV %>" sizes="48x48">
   <link rel="icon" href="/favicon.svg?v=<%= assetV %>" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=<%= assetV %>">

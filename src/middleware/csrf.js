@@ -14,10 +14,15 @@ function verifyCsrf(req) {
   return Boolean(token) && safeEqual(token, req.session.csrfToken);
 }
 
+const MULTIPART_ROUTES = [/^\/r\/[a-z0-9-]+\/apply$/, /^\/panel\/restaurante$/];
+
 function csrfProtection(req, res, next) {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
-  // Multipart é validado depois do multer (o campo vem no corpo do formulário).
-  if (req.is('multipart/form-data')) return next();
+  /* Multipart é validado depois do multer (o campo vem no corpo do
+   * formulário), mas só nas rotas que têm multer. Nas outras o corpo nem é
+   * lido: sem esta lista, um POST multipart para /login chegava aos handlers
+   * com req.body undefined e dava 500. */
+  if (req.is('multipart/form-data') && MULTIPART_ROUTES.some((re) => re.test(req.path))) return next();
 
   if (!verifyCsrf(req)) {
     return res.status(403).render('error', {

@@ -12,16 +12,17 @@
     "retention": "node src/db/retention.js",
     "delete-account": "node src/db/delete-account.js",
     "demo:seed": "node src/db/demo-seed.js",
-    "test": "node --test test/unit.test.js && node test/db.js && node test/smoke.js",
-    "test:unit": "node --test test/unit.test.js",
+    "test": "node --test test/unit.test.js test/http.test.js && node test/db.js",
+    "test:unit": "node --test test/unit.test.js test/http.test.js",
     "test:db": "node test/db.js",
     "test:e2e": "node test/smoke.js",
     "audit": "npm audit --omit=dev"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.117.2",
+    "@supabase/supabase-js": "^2.118.0",
+    "@vercel/functions": "^2.2.13",
     "ejs": "^3.1.10",
-    "express": "^5.2.1",
+    "express": "^5.3.0",
     "multer": "^2.4.0",
     "qrcode": "^1.5.4"
   },

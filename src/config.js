@@ -24,13 +24,31 @@ const root = path.join(__dirname, '..');
 
 const port = parseInt(process.env.PORT || '3000', 10);
 
+/* Na Vercel o HTTPS e o proxy existem sempre: COOKIE_SECURE e TRUST_PROXY
+ * ficam ligados por omissão (só um 0 explícito os desliga), e sem APP_URL
+ * usa-se o domínio de produção do projeto. */
+const onVercel = process.env.VERCEL === '1';
+const flag = (name, fallback) => (process.env[name] === undefined || process.env[name] === ''
+  ? fallback
+  : process.env[name] === '1');
+const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : '';
+
+/* A Vercel recusa pedidos com mais de 4,5 MB antes de chegarem à app (uma
+ * página de erro crua, e o candidato perde o formulário). Com o overhead do
+ * multipart, 4 MB é o máximo seguro para o CV. */
+const VERCEL_MAX_UPLOAD_MB = 4;
+const maxCvMb = parseInt(process.env.MAX_CV_MB || '4', 10);
+
 /* A chave secreta aceita os dois nomes: SUPABASE_SERVICE_ROLE_KEY (nome
  * histórico, §28) e SUPABASE_SECRET_KEY (nome novo no painel do Supabase). */
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || '';
 
 const config = {
   port,
-  appUrl: (process.env.APP_URL || `http://localhost:${port}`).replace(/\/+$/, ''),
+  appUrl: (process.env.APP_URL || vercelUrl || `http://localhost:${port}`).replace(/\/+$/, ''),
+  onVercel,
 
   /* Email de contacto mostrado na página de apresentação (/conoce), para
    * receber opiniões durante a prova de mercado. Opcional. */
@@ -49,10 +67,10 @@ const config = {
   testPrefix: process.env.EZCV_TEST_PREFIX || '',
 
   sessionTtlMs: (parseInt(process.env.SESSION_TTL_DAYS || '30', 10)) * 24 * 60 * 60 * 1000,
-  maxUploadBytes: parseInt(process.env.MAX_CV_MB || '5', 10) * 1024 * 1024,
+  maxUploadBytes: (onVercel ? Math.min(maxCvMb, VERCEL_MAX_UPLOAD_MB) : maxCvMb) * 1024 * 1024,
   maxImageBytes: parseInt(process.env.MAX_IMAGE_MB || '2', 10) * 1024 * 1024,
-  cookieSecure: process.env.COOKIE_SECURE === '1',
-  trustProxy: process.env.TRUST_PROXY === '1',
+  cookieSecure: flag('COOKIE_SECURE', onVercel),
+  trustProxy: flag('TRUST_PROXY', onVercel),
 
   /* Login com Google (opcional). Sem os dois valores o botão não aparece. */
   google: {
@@ -95,6 +113,22 @@ function assertConfig() {
 
   if (config.supabase.anonKey && config.supabase.anonKey === config.supabase.serviceRoleKey) {
     throw new Error('SUPABASE_ANON_KEY e SUPABASE_SERVICE_ROLE_KEY são iguais. Confirma as chaves no painel.');
+  }
+
+  /* Inteiros: um valor como SESSION_TTL_DAYS=abc dava NaN em silêncio. */
+  const badInt = ['PORT', 'SESSION_TTL_DAYS', 'MAX_CV_MB', 'MAX_IMAGE_MB', 'SMTP_PORT']
+    .filter((name) => process.env[name] && !/^[1-9]\d*$/.test(process.env[name].trim()));
+  if (badInt.length > 0) {
+    throw new Error(`Valor inválido (esperado inteiro positivo) em: ${badInt.join(', ')}.`);
+  }
+
+  /* Em produção na Vercel, APP_URL vai parar às etiquetas NFC, aos QR e aos
+   * emails: um http:// ou localhost é um erro que não se pode deixar passar. */
+  if (process.env.VERCEL_ENV === 'production' && !/^https:\/\/(?!localhost|127\.)/.test(config.appUrl)) {
+    throw new Error(`APP_URL tem de ser https em produção (atual: ${config.appUrl}).`);
+  }
+  if (onVercel && (!config.cookieSecure || !config.trustProxy)) {
+    console.warn('[config] Na Vercel, COOKIE_SECURE e TRUST_PROXY devem ser 1.');
   }
 
   if (!config.cookieSecure && config.appUrl.startsWith('https://')) {

@@ -31,7 +31,7 @@
       </div>
       <form action="/panel/candidaturas/<%= a.id %>/favorito" method="post">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <button class="btn <%= a.favorite ? 'primary' : 'secondary' %> small" type="submit">
+        <button class="btn <%= a.favorite ? 'primary' : 'secondary' %> small" type="submit" aria-pressed="<%= a.favorite ? 'true' : 'false' %>">
           <%= (a.favorite ? '★ ' : '☆ ') + tr('Favorito') %>
         </button>
       </form>

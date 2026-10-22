@@ -3,6 +3,7 @@
 const config = require('../config');
 const { sb, one, rpc } = require('../db');
 const { randomToken, sha256 } = require('../lib/crypto');
+const { background } = require('../lib/background');
 
 /* Em produção (HTTPS) o prefixo __Host- obriga o browser a só aceitar o
  * cookie com Secure, Path=/ e sem Domain: um subdomínio não o pode definir
@@ -17,6 +18,10 @@ const ANON_TTL_MS = 2 * 60 * 60 * 1000;
 function ttlFor(userId) {
   return userId ? config.sessionTtlMs : ANON_TTL_MS;
 }
+
+/* Para apagar um cookie __Host- o Set-Cookie tem de levar Secure, tal como
+ * quando foi criado: um clearCookie só com { path } é ignorado pelo browser. */
+const COOKIE_CLEAR = { httpOnly: true, sameSite: 'lax', secure: config.cookieSecure, path: '/' };
 
 function setSessionCookie(res, token, maxAge) {
   res.cookie(COOKIE_NAME, token, {
@@ -72,7 +77,7 @@ async function destroySession(req, res) {
     }
   }
 
-  res.clearCookie(COOKIE_NAME, { path: '/' });
+  res.clearCookie(COOKIE_NAME, COOKIE_CLEAR);
   req.session = null;
 }
 
@@ -126,7 +131,7 @@ async function loadSession(req, res, next) {
         await sb().from('sessions').delete().eq('token_hash', hash);
       } catch { /* sessão expirada que não se conseguiu apagar: ignora */ }
     }
-    res.clearCookie(COOKIE_NAME, { path: '/' });
+    res.clearCookie(COOKIE_NAME, COOKIE_CLEAR);
     return next();
   }
 
@@ -134,11 +139,11 @@ async function loadSession(req, res, next) {
    * await: é manutenção, não deve atrasar a resposta. */
   const ttl = ttlFor(row.user_id);
   if (Number(row.expires_at) - now < ttl / 2) {
-    rpc('touch_session', {
+    background(rpc('touch_session', {
       token_hash: hash,
       expires_at: now + ttl,
       now
-    }).catch((err) => console.error('[session] touch falhou:', err.message));
+    }), 'session touch');
   }
 
   req.session = { csrfToken: row.csrf_token, userId: row.user_id, tokenHash: hash };

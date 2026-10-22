@@ -361,7 +361,7 @@ test/smoke.js            teste E2E (sobe servidor temporário, 80 checks)
 ## 10. Testes
 
 ```bash
-npm test    # test/smoke.js — 98 verificações, exit code 0
+EZCV_E2E_CONFIRM=1 npm run test:e2e    # test/smoke.js, exit code 0
 ```
 
 O teste sobe um servidor e valida, **contra o Supabase real**, por esta ordem. Cada execução gera um prefixo único gravado em `restaurants.test_prefix`; no fim, a função `purge_test_data` apaga apenas o que ficou marcado com esse prefixo, incluindo os objetos no Storage. Os nomes dos estabelecimentos levam o prefixo e o slug é lido do painel em vez de assumido, para que execuções consecutivas não colidam:
@@ -398,7 +398,7 @@ npm install
 npm run setup     # admin da plataforma (ADMIN_EMAIL/ADMIN_PASSWORD)
 npm start         # produção  → http://localhost:3000
 npm run dev       # watch mode
-npm test          # E2E
+npm test          # unitários + HTTP + migrations (sem Supabase)
 ```
 
 Variáveis em `.env` (ver `.env.example`): `PORT`, `APP_URL` (**base da URL gravada na tag NFC**), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_BUCKET_CVS`, `SUPABASE_BUCKET_MEDIA`, `DATABASE_URL` (só para `npm run migrate`), `SESSION_TTL_DAYS`, `COOKIE_SECURE`, `TRUST_PROXY`, `MAX_CV_MB`, `MAX_IMAGE_MB`, `ADMIN_*`, `SMTP_*`.
@@ -417,7 +417,7 @@ Estado atualizado pela auditoria de 2026-10-06 — fonte de verdade: [`security/
 | Backups | Por confirmar no plano Supabase; restauro por testar |
 | SMTP real | Por configurar |
 | Páginas legais e canal de direitos | **Feito** (borradores): `/privacidad`, `/cookies`, `/terminos`, `/encargo`, `/r/:slug/privacidad`, `/panel/derechos` — revisão jurídica pendente |
-| Retenção automática | **Feito**: prazos por negócio, `npm run retention`, `/internal/retention`; prazos por validar |
+| Retenção automática | **Feito**: prazos por negócio, `npm run retention`, `/internal/retention`; prazos por validar. Limpeza técnica diária (`/internal/cleanup`, Vercel Cron) |
 | Recuperação de senha | **Feito**; verificação de email no registo pendente |
 | Rate limit persistente | **Feito** (tabela `rate_limit_hits`) |
 | Paginação | Pendente (200 mais recentes) |

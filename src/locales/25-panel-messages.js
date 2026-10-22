@@ -46,6 +46,10 @@ module.exports = {
     en: 'Consent withdrawn. If the application was in the talent pool, its data will be deleted in the next automatic clean-up.',
     pt: 'Consentimento retirado. Se a candidatura estava em reserva, os seus dados serão apagados na próxima limpeza automática.'
   },
+  'Consentimiento retirado. Si la candidatura estaba en reserva y ya no necesitas sus datos, elimínala desde esta página.': {
+    en: 'Consent withdrawn. If the application was in the talent pool and you no longer need its data, delete it from this page.',
+    pt: 'Consentimento retirado. Se a candidatura estava em reserva e já não precisas dos dados, elimina-a nesta página.'
+  },
   'Indica el motivo del bloqueo (p. ej., reclamación en curso).': {
     en: 'Give the reason for the hold (e.g. ongoing complaint).',
     pt: 'Indica o motivo do bloqueio (p. ex., reclamação em curso).'

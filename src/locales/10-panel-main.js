@@ -164,11 +164,16 @@ module.exports = {
     pt: 'Ainda não recebeste candidaturas. Quando alguém aproximar o telemóvel da tua etiqueta ou ler o teu QR, aparecerá aqui.'
   },
   'Ver mi código QR': { en: 'View my QR code', pt: 'Ver o meu código QR' },
-  'Mostrando los 200 resultados más recientes. Usa los filtros para afinar.': {
-    en: 'Showing the 200 most recent results. Use the filters to narrow them down.',
-    pt: 'A mostrar os 200 resultados mais recentes. Usa os filtros para afinar.'
+  'Mostrando {n} de {total}. Usa los filtros para afinar.': {
+    en: 'Showing {n} of {total}. Use the filters to narrow them down.',
+    pt: 'A mostrar {n} de {total}. Usa os filtros para afinar.'
   },
   'Favorito': { en: 'Favourite', pt: 'Favorito' },
+  'Tu página mostrará «No estamos contratando». Puedes volver a activarlas cuando quieras.': {
+    en: 'Your page will show “We’re not hiring”. You can turn applications back on at any time.',
+    pt: 'A tua página vai mostrar «Não estamos a contratar». Podes voltar a ativá-las quando quiseres.'
+  },
+  'Sí, pausar candidaturas': { en: 'Yes, pause applications', pt: 'Sim, pausar candidaturas' },
   'Sin puesto': { en: 'No position', pt: 'Sem função' },
   'sin teléfono': { en: 'no phone', pt: 'sem telefone' },
 

@@ -24,7 +24,7 @@
 | IA a decidir recrutamento | PASS | Não existe |
 | Possível agência de colocação sem análise | **BLOCKER / LEGAL REVIEW REQUIRED** | [01](../legal/01-analisis-agencia-colocacion.md) — análise feita, falta dictamen |
 | HTTPS / HSTS / cookies Secure | **BLOCKER (config)** | Código pronto; exige `COOKIE_SECURE=1`, `TRUST_PROXY=1`, `APP_URL=https://` na Vercel (`npm run check` avisa) |
-| SMTP | WARNING | Sem SMTP não há recuperação de senha nem avisos por email |
+| SMTP | WARNING | Sem SMTP não há avisos por email; a recuperação de senha faz-se pelo admin (0011). Com SMTP, STARTTLS obrigatório |
 | 2FA para contas de negócio | WARNING | Não implementado |
 | RBAC multiutilizador | WARNING | Só owner/admin; sem utilizadores múltiplos por negócio. Quando existir, aplicar papéis owner/manager/staff com testes por combinação |
 | Rate limiting | PASS / WARNING | Memória + BD partilhada; sem WAF/CAPTCHA |

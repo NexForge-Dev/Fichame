@@ -26,6 +26,7 @@
   --brand-tint:   #fdeeea;
   --brand-tint-2: #fbdcd5;
   --brand-ink:    #7c2616;
+  --on-brand:     #ffffff; /* texto sobre --brand */
 
   /* Neutros quentes (stone) */
   --bg:         #f6f4f2;
@@ -37,6 +38,8 @@
   --ink-3:      #736b65; /* contraste AA mesmo em texto pequeno */
   --line:       #e7e3e0;
   --line-2:     #d6d1cc;
+  /* Contorno dos campos: ≥3:1 sobre a superfície (WCAG 1.4.11). */
+  --input-line: #8f8780;
 
   /* Semânticos */
   --ok:        #15803d;
@@ -86,6 +89,8 @@
     --brand-tint:   #331510;
     --brand-tint-2: #4a1c14;
     --brand-ink:    #ffb4a0;
+    /* Branco sobre o coral do modo escuro dava 3,4:1; texto escuro dá 5,2:1. */
+    --on-brand:     #1c1917;
 
     --bg:        #16140f;
     --surface:   #211e19;
@@ -96,6 +101,7 @@
     --ink-3:     #8e867d;
     --line:      #352f29;
     --line-2:    #46403a;
+    --input-line: #857c72;
 
     --ok:        #5fd38a;
     --ok-bg:     #10251a;
@@ -453,6 +459,13 @@ hr {
   justify-content: center;
 }
 .tabbar a:hover { text-decoration: none; }
+/* Seis separadores em 320 px: sem min-width:0 um rótulo comprido
+   («Candidatos») alargava o item e a barra transbordava. */
+.tabbar a { min-width: 0; }
+.tabbar a span:not(.nav-badge) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 360px) {
+  .tabbar a { font-size: .68rem; padding: 6px 0; }
+}
 .tabbar a.active { color: var(--brand); }
 .tabbar svg { width: 22px; height: 22px; stroke-width: 1.8; }
 
@@ -465,7 +478,7 @@ hr {
   padding: 0 5px;
   margin-left: auto;
   background: var(--brand);
-  color: #fff;
+  color: var(--on-brand);
   font-size: .7rem;
   font-weight: 700;
   border-radius: var(--r-full);
@@ -660,7 +673,7 @@ main { padding-bottom: 28px; }
 .group-tab.active { background: var(--ink); border-color: var(--ink); color: var(--surface); }
 .group-num { min-width: 26px; padding: 1px 8px; border-radius: var(--r-full); background: var(--surface-3); color: var(--ink); font-size: .9rem; text-align: center; }
 .group-tab.active .group-num { background: color-mix(in srgb, var(--surface) 22%, transparent); color: var(--surface); }
-.group-tab.has-new:not(.active) .group-num { background: var(--brand); color: #fff; }
+.group-tab.has-new:not(.active) .group-num { background: var(--brand); color: var(--on-brand); }
 .filter-chip { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 14px; }
 
 /* Estado da candidatura: botões de um toque com todas as opções à vista
@@ -938,7 +951,7 @@ input[type=text], input[type=email], input[type=tel], input[type=password],
 input[type=number], input[type=date], input[type=search], select, textarea {
   width: 100%;
   padding: 12px 13px;
-  border: 1px solid var(--line-2);
+  border: 1px solid var(--input-line);
   border-radius: var(--r-md);
   font-size: 16px; /* 16px evita o zoom automático do iOS */
   font-family: inherit;
@@ -1051,6 +1064,12 @@ input[type=file]:hover { border-color: var(--brand); background: var(--brand-tin
 }
 .field-error::before { content: "⚠"; flex-shrink: 0; }
 
+/* Campo com erro: a cor da borda também sinaliza, não só o texto. */
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"],
+.file-pick-input[aria-invalid="true"] + .file-pick-box { border-color: var(--err); }
+
 .hint-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1137,7 +1156,7 @@ input[type=file]:hover { border-color: var(--brand); background: var(--brand-tin
   display: grid;
   place-items: center;
   background: var(--brand);
-  color: #fff;
+  color: var(--on-brand);
   font-size: 1.2rem;
   line-height: 1;
   transition: transform .2s var(--ease);
@@ -1180,7 +1199,7 @@ input[type=file]:hover { border-color: var(--brand); background: var(--brand-tin
   justify-content: center;
   gap: 7px;
   background: var(--brand);
-  color: #fff;
+  color: var(--on-brand);
   border: 1px solid transparent;
   border-radius: var(--r-md);
   padding: 12px 20px;
@@ -1227,7 +1246,7 @@ input[type=file]:hover { border-color: var(--brand); background: var(--brand-tin
 }
 .btn.danger:hover { background: var(--err-bg); }
 
-.btn.primary { background: var(--brand); color: #fff; border-color: transparent; }
+.btn.primary { background: var(--brand); color: var(--on-brand); border-color: transparent; }
 .btn.primary:hover { background: var(--brand-hover); }
 
 .btn.small {
@@ -2065,7 +2084,7 @@ input[type=file]:hover { border-color: var(--brand); background: var(--brand-tin
 .lp-m-file b { margin-left: auto; }
 .lp-m-btn {
   background: var(--brand);
-  color: #fff;
+  color: var(--on-brand);
   text-align: center;
   border-radius: 10px;
   padding: 10px;
@@ -2912,7 +2931,7 @@ input[type=file]:hover { border-color: var(--brand); background: var(--brand-tin
   display: grid;
   place-items: center;
   background: var(--brand);
-  color: #fff;
+  color: var(--on-brand);
   font-weight: 850;
   font-size: 1.05rem;
   letter-spacing: -.02em;

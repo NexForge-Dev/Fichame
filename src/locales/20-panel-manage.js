@@ -137,6 +137,7 @@ module.exports = {
   'Es el email con el que inicias sesión.': { en: 'This is the email you sign in with.', pt: 'É o email com que inicias sessão.' },
   'Cambiar contraseña': { en: 'Change password', pt: 'Mudar palavra-passe' },
   'Contraseña actual': { en: 'Current password', pt: 'Palavra-passe atual' },
+  'No disponible en la demostración.': { en: 'Not available in the demo.', pt: 'Não disponível na demonstração.' },
   'Hace falta siempre, también para cambiar solo el email.': {
     en: 'Always required, even to change only the email.',
     pt: 'É sempre necessária, também para mudar só o email.'

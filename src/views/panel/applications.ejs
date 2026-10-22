@@ -125,8 +125,8 @@
       <% } %>
     </div>
   <% } else { %>
-    <% if (rows.length === 200) { %>
-      <p class="muted small"><%= tr('Mostrando los 200 resultados más recientes. Usa los filtros para afinar.') %></p>
+    <% if (rows.length < totalFiltered) { %>
+      <p class="muted small"><%= tr('Mostrando {n} de {total}. Usa los filtros para afinar.', { n: rows.length, total: totalFiltered }) %></p>
     <% } %>
     <div class="app-list">
       <% rows.forEach(function(r) { %>

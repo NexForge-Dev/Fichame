@@ -1,0 +1,31 @@
+# Testes sem segredos: unitários + HTTP (sem BD), migrations num Postgres
+# temporário (test/db.js) e traduções. O E2E (test/smoke.js) escreve no
+# Supabase e NÃO corre aqui.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    env:
+      CI: "1"
+      # PostgreSQL vem instalado na imagem ubuntu-24.04.
+      PG_BIN: /usr/lib/postgresql/16/bin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:unit
+      - run: node test/db.js
+      - run: node scripts/i18n-check.js
+      - run: npm audit --omit=dev --audit-level=high

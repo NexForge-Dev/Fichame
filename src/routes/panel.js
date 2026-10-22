@@ -4,7 +4,7 @@ const express = require('express');
 const QRCode = require('qrcode');
 
 const config = require('../config');
-const { sb, one, many, count, run, rpc, escapeLike, logSecurity } = require('../db');
+const { sb, one, many, count, run, rpc, escapeLike, logSecurity, dbError } = require('../db');
 const { requireOwner } = require('../middleware/auth');
 const { verifyCsrf } = require('../middleware/csrf');
 const { rateLimit } = require('../middleware/rateLimit');
@@ -17,6 +17,7 @@ const { passwordProblem } = require('./auth');
 const { isDemoUser } = require('../lib/demo');
 const storage = require('../lib/storage');
 const { QR_OPTIONS } = require('../lib/qr');
+const { background } = require('../lib/background');
 const { TERMS_VERSION, TERMS_CHANGES, operator, termsPending, recordAcceptance } = require('../lib/legal');
 const {
   STATUSES, STATUS_KEYS, STATUS_GROUPS, AVAILABILITIES, ESTABLISHMENT_TYPES,
@@ -65,6 +66,16 @@ router.use('/panel', (req, res, next) => {
   } catch { /* Referer inválido: volta ao início */ }
   res.redirect(back + '?err=' + encodeURIComponent('Esto es una demostración: los cambios no se guardan. Crea tu cuenta gratis para usar Fíchame con tu negocio.'));
 });
+
+/* «2026-03-15» + hora → instante com o offset de Madrid nesse dia (+01:00
+ * no inverno, +02:00 no verão), para comparar com timestamptz. */
+function madridTime(date, time) {
+  const part = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Madrid', timeZoneName: 'longOffset' })
+    .formatToParts(new Date(`${date}T12:00:00Z`))
+    .find((p) => p.type === 'timeZoneName');
+  const offset = part ? part.value.replace('GMT', '') : '';
+  return `${date}T${time}${offset || '+00:00'}`;
+}
 
 function clean(value, max = 200) {
   return String(value == null ? '' : value).trim().slice(0, max);
@@ -197,8 +208,10 @@ router.get('/panel/candidaturas', async (req, res) => {
   const favs = req.query.favs === '1';
   const ascending = req.query.orden === 'antiguas';
 
+  /* count: o total real dos filtros, não só as 200 linhas mostradas. */
   let query = sb().from('application_list')
-    .select('id, status, applied_at, job_title, availability, future_interest, favorite, experience, first_name, last_name, email, phone')
+    .select('id, status, applied_at, job_title, availability, future_interest, favorite, experience, first_name, last_name, email, phone',
+      { count: 'exact' })
     .eq('restaurant_id', rid);
 
   /* A busca livre cobre nome, email, telefone, documento, vaga, experiência e
@@ -210,8 +223,10 @@ router.get('/panel/candidaturas', async (req, res) => {
   if (grupo) query = query.in('status', STATUS_GROUPS[grupo].statuses);
   if (puesto) query = query.eq('job_id', Number(puesto));
   if (disp) query = query.eq('availability', disp);
-  if (desde) query = query.gte('applied_at', `${desde}T00:00:00`);
-  if (hasta) query = query.lte('applied_at', `${hasta}T23:59:59.999`);
+  /* As datas do ecrã estão em hora de Madrid; sem o offset, o PostgREST lia
+   * os limites em UTC e uma candidatura das 00:30 caía no dia anterior. */
+  if (desde) query = query.gte('applied_at', madridTime(desde, '00:00:00'));
+  if (hasta) query = query.lte('applied_at', madridTime(hasta, '23:59:59.999'));
   if (favs) query = query.eq('favorite', true);
 
   query = query
@@ -219,8 +234,12 @@ router.get('/panel/candidaturas', async (req, res) => {
     .order('id', { ascending })
     .limit(200);
 
-  const [rows, jobs, pipeline] = await Promise.all([
-    many(query, 'lista de candidaturas'),
+  const [{ rows, total }, jobs, pipeline] = await Promise.all([
+    (async () => {
+      const { data, count: n, error } = await query;
+      if (error) throw dbError(error, 'lista de candidaturas');
+      return { rows: data || [], total: Number(n) || 0 };
+    })(),
     many(
       sb().from('jobs').select('id, title').eq('restaurant_id', rid).order('title'),
       'vagas'
@@ -233,7 +252,7 @@ router.get('/panel/candidaturas', async (req, res) => {
     jobs,
     groups: STATUS_GROUPS,
     filters: { q, estado, grupo, puesto, disp, desde, hasta, favs, orden: ascending ? 'antiguas' : 'recientes' },
-    totalFiltered: rows.length,
+    totalFiltered: Math.max(total, rows.length),
     pipeline,
     query: req.query
   });
@@ -305,7 +324,8 @@ router.get('/panel/candidaturas/:id', async (req, res) => {
     ),
     /* Abrir a ficha conta como ver o aviso: sem isto o contador do menu
      * só baixava com «Marcar como leídas». */
-    many(
+    /* Na demo (só de leitura) não se escreve nada. */
+    res.locals.isDemo ? Promise.resolve([]) : many(
       sb().from('notifications')
         .update({ status: 'read', read_at: new Date().toISOString() })
         .eq('application_id', application.id)
@@ -605,10 +625,11 @@ router.post('/panel/vagas/crear', rateLimit({
 router.post('/panel/vagas/:id/toggle', async (req, res) => {
   if (!verifyCsrf(req)) return invalidSession(res);
 
-  await rpc('toggle_job_active', {
+  const result = await rpc('toggle_job_active', {
     job_id: Number(req.params.id),
     restaurant_id: restaurantId(req)
   }, 'ativar/desativar vaga');
+  if (!result || !result.ok) return notFound(res);
 
   res.redirect('/panel/vagas?ok=' + encodeURIComponent('Vacante actualizada.'));
 });
@@ -621,13 +642,15 @@ router.post('/panel/vagas/:id/editar', async (req, res) => {
     return res.redirect('/panel/vagas?err=' + encodeURIComponent('Indica el título de la vacante.'));
   }
 
-  await run(
+  const updated = await many(
     sb().from('jobs')
       .update(f)
       .eq('id', Number(req.params.id))
-      .eq('restaurant_id', restaurantId(req)),
+      .eq('restaurant_id', restaurantId(req))
+      .select('id'),
     'editar vaga'
   );
+  if (updated.length === 0) return notFound(res);
 
   res.redirect('/panel/vagas?ok=' + encodeURIComponent('Vacante actualizada.'));
 });
@@ -726,9 +749,8 @@ async function ownRestaurantUrl(req) {
 /* Passos 3 e 4 do guia de primeiros passos: só a primeira vez conta. Não é
  * esperado com await — é um marcador, não deve atrasar a página. */
 function markOnboarding(req, column) {
-  run(sb().from('restaurants').update({ [column]: new Date().toISOString() })
-    .eq('id', restaurantId(req)).is(column, null), 'primeiros passos')
-    .catch((err) => console.error('[onboarding]', err.message));
+  background(run(sb().from('restaurants').update({ [column]: new Date().toISOString() })
+    .eq('id', restaurantId(req)).is(column, null), 'primeiros passos'), 'onboarding');
 }
 
 /* «Abrir página» do guia: regista o passo e segue para a página pública. */
@@ -800,7 +822,7 @@ router.post('/panel/restaurante', uploadRestaurantImages, async (req, res) => {
   if (form.owner_name.length < 2) errors.owner_name = 'Indica el responsable.';
   if (!EMAIL_OK.test(form.email)) errors.email = 'Indica un email válido.';
   if (!EMAIL_OK.test(form.privacy_email)) errors.privacy_email = 'Indica un email de contacto para privacidad.';
-  if (form.phone && !/^[\d\s()+-]{6,20}$/.test(form.phone)) errors.phone = 'Indica un teléfono válido.';
+  if (form.phone && !/^[\d\s().+-]{6,25}$/.test(form.phone)) errors.phone = 'Indica un teléfono válido.';
   if (form.city.length < 2) errors.city = 'Indica la ciudad.';
   if (form.postal_code && !/^\d{5}$/.test(form.postal_code)) errors.postal_code = 'El código postal debe tener 5 dígitos.';
   if (!Object.prototype.hasOwnProperty.call(ESTABLISHMENT_TYPES, form.establishment_type)) {
@@ -963,6 +985,10 @@ router.post('/panel/configuracion', rateLimit({
     /* Credenciais mudaram: todas as OUTRAS sessões deste utilizador terminam
      * (um atacante com uma sessão roubada perde-a). A atual mantém-se. */
     await destroyUserSessions(req.user.id, req.session && req.session.tokenHash);
+    /* E os links de reposição já enviados deixam de valer: se o dono mudou de
+     * email por suspeitar da caixa antiga, um link nessa caixa não pode
+     * servir para lhe tirar a conta. */
+    await run(sb().from('password_resets').delete().eq('user_id', req.user.id), 'anular links de reposição');
   }
 
   logSecurity(doPassword ? 'password_cambiada' : (doEmail ? 'email_cambiado' : 'configuracion_actualizada'),
@@ -1033,6 +1059,9 @@ router.post('/panel/privacidad/conservacion', async (req, res) => {
   if (!verifyCsrf(req)) return invalidSession(res);
 
   const toInt = (v) => parseInt(String(v || ''), 10);
+  if (![req.body.cerrados, req.body.inactivos, req.body.reserva].every((v) => Number.isInteger(toInt(v)))) {
+    return res.redirect('/panel/privacidad?err=' + encodeURIComponent('Plazos fuera de los límites permitidos.'));
+  }
   const result = await rpc('set_retention_settings', {
     restaurant_id: restaurantId(req),
     closed_days: toInt(req.body.cerrados),
@@ -1109,7 +1138,10 @@ router.get('/panel/derechos', async (req, res) => {
     sb().from('rights_requests')
       .select('id, public_ref, kind, requester_name, requester_email, message, status, due_at, extended, resolution_note, resolved_at, created_at')
       .eq('restaurant_id', rid)
-      .order('status', { ascending: true })
+      /* Abertos primeiro (resolved_at vazio), pelo prazo mais próximo; depois
+       * os fechados, do mais recente para o mais antigo. Ordenar por status
+       * punha «denegada» à frente de «recibida», que é a urgente. */
+      .order('resolved_at', { ascending: false, nullsFirst: true })
       .order('due_at', { ascending: true })
       .limit(200),
     'pedidos de direitos'
@@ -1171,17 +1203,19 @@ router.get('/panel/candidaturas/:id/exportar', async (req, res) => {
   if (!application) return notFound(res);
   const rid = restaurantId(req);
 
-  const candidate = await one(
-    sb().from('candidates').select('first_name, last_name, email, phone, doc_type, doc_number, created_at, updated_at')
-      .eq('id', application.candidate_id).eq('restaurant_id', rid),
-    'candidato (exportação)'
-  );
-  const apps = await many(
-    sb().from('applications')
-      .select('id, job_title, status, availability, experience, observations, future_interest, applied_at, updated_at, closed_at, retention_until')
-      .eq('candidate_id', application.candidate_id).eq('restaurant_id', rid).order('applied_at'),
-    'candidaturas (exportação)'
-  );
+  const [candidate, apps] = await Promise.all([
+    one(
+      sb().from('candidates').select('first_name, last_name, email, phone, doc_type, doc_number, created_at, updated_at')
+        .eq('id', application.candidate_id).eq('restaurant_id', rid),
+      'candidato (exportação)'
+    ),
+    many(
+      sb().from('applications')
+        .select('id, job_title, status, availability, experience, observations, future_interest, applied_at, updated_at, closed_at, retention_until')
+        .eq('candidate_id', application.candidate_id).eq('restaurant_id', rid).order('applied_at'),
+      'candidaturas (exportação)'
+    )
+  ]);
   const ids = apps.map((a) => a.id);
   const [notes, history, consents, cvs] = ids.length === 0 ? [[], [], [], []] : await Promise.all([
     many(sb().from('application_notes').select('application_id, body, created_at').eq('restaurant_id', rid).in('application_id', ids), 'notas (exportação)'),
@@ -1262,8 +1296,11 @@ router.post('/panel/candidaturas/:id/retirar-consentimiento', async (req, res) =
   if (!result || !result.ok) return notFound(res);
 
   logSecurity('consentimiento_retirado', `app=${id}`, req.ip, { userId: req.user.id, restaurantId: restaurantId(req) });
-  res.redirect(`/panel/candidaturas/${id}?ok=` + encodeURIComponent(
-    'Consentimiento retirado. Si la candidatura estaba en reserva, sus datos se borrarán en la próxima limpieza automática.'));
+  /* Só se promete a limpeza automática quando ela está mesmo ligada
+   * (RETENTION_AUTO=1, ver src/routes/internal.js). */
+  res.redirect(`/panel/candidaturas/${id}?ok=` + encodeURIComponent(process.env.RETENTION_AUTO === '1'
+    ? 'Consentimiento retirado. Si la candidatura estaba en reserva, sus datos se borrarán en la próxima limpieza automática.'
+    : 'Consentimiento retirado. Si la candidatura estaba en reserva y ya no necesitas sus datos, elimínala desde esta página.'));
 });
 
 /* ================================================================== *
@@ -1371,8 +1408,8 @@ router.post('/panel/reportar', rateLimit({
   });
 
   /* O aviso ao admin não atrasa a resposta. */
-  require('../lib/mailer').notifyProblemReport({ kind, restaurantName: req.user.restaurant_name })
-    .catch((err) => console.error('[reporte] aviso falhou:', err.message));
+  background(require('../lib/mailer').notifyProblemReport({ kind, restaurantName: req.user.restaurant_name }),
+    'reporte aviso');
 
   res.redirect('/panel/reportar?ok=' + encodeURIComponent('Gracias. Hemos recibido tu reporte y lo revisaremos.'));
 });

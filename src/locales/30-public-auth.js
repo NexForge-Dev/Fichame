@@ -284,7 +284,19 @@ module.exports = {
   'Indica tu nombre.': { en: 'Enter your name.', pt: 'Indica o teu nome.' },
   'Indica el puesto al que aspiras.': { en: 'Enter the position you are applying for.', pt: 'Indica o posto a que te candidatas.' },
   'Puesto no disponible.': { en: 'Position not available.', pt: 'Posto não disponível.' },
-  'El archivo supera el límite de 5 MB.': { en: 'The file exceeds the 5 MB limit.', pt: 'O ficheiro ultrapassa o limite de 5 MB.' },
+  'El archivo supera el límite de {n} MB.': { en: 'The file exceeds the {n} MB limit.', pt: 'O ficheiro ultrapassa o limite de {n} MB.' },
+  'Revisa los campos marcados en rojo.': { en: 'Check the fields marked in red.', pt: 'Revê os campos assinalados a vermelho.' },
+  'Por seguridad, el navegador no guarda el archivo: vuelve a adjuntar tu CV.': {
+    en: 'For security, the browser does not keep the file: attach your CV again.',
+    pt: 'Por segurança, o browser não guarda o ficheiro: volta a anexar o teu CV.'
+  },
+  'Los campos con * son obligatorios.': { en: 'Fields marked * are required.', pt: 'Os campos com * são obrigatórios.' },
+  'Enviando tu CV…': { en: 'Sending your CV…', pt: 'A enviar o teu CV…' },
+  'Enviando…': { en: 'Sending…', pt: 'A enviar…' },
+  'Envía tu candidatura en menos de 2 minutos, desde el móvil y sin crear ninguna cuenta.': {
+    en: 'Apply in under 2 minutes from your phone, no account needed.',
+    pt: 'Envia a tua candidatura em menos de 2 minutos, pelo telemóvel e sem criar conta.'
+  },
   'Solo se aceptan archivos PDF.': { en: 'Only PDF files are accepted.', pt: 'Só são aceites ficheiros PDF.' },
   'Adjunta tu currículum en PDF.': { en: 'Attach your CV as a PDF.', pt: 'Anexa o teu currículo em PDF.' },
   'El PDF contiene elementos activos (scripts, adjuntos o formularios) que no se aceptan. Expórtalo de nuevo como PDF simple.': {

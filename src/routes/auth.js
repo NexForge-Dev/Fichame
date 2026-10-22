@@ -6,8 +6,9 @@ const config = require('../config');
 const { sb, one, run, rpc, logSecurity } = require('../db');
 const { createSession, destroySession, destroyUserSessions, ensureSession } = require('../middleware/session');
 const { verifyCsrf } = require('../middleware/csrf');
-const { rateLimit, dbRateLimit } = require('../middleware/rateLimit');
+const { rateLimit, dbRateLimit, dbFailureLimit } = require('../middleware/rateLimit');
 const { hashPassword, verifyPassword, randomToken, sha256, safeEqual } = require('../lib/crypto');
+const { background } = require('../lib/background');
 const google = require('../lib/google');
 const { slugify } = require('../lib/slug');
 const { emailTag } = require('../lib/privacy');
@@ -114,7 +115,7 @@ async function handleRegister(req, res, googleAccount = null) {
   if (form.legal_name.length < 2) errors.legal_name = 'Indica la razón social o el nombre del titular del negocio.';
   if (form.owner_name.length < 2) errors.owner_name = 'Indica el responsable.';
   if (!EMAIL_RE.test(form.email)) errors.email = 'Indica un email válido.';
-  if (form.phone && !/^[\d\s()+-]{6,20}$/.test(form.phone)) errors.phone = 'Indica un teléfono válido.';
+  if (form.phone && !/^[\d\s().+-]{6,25}$/.test(form.phone)) errors.phone = 'Indica un teléfono válido.';
   if (form.city.length < 2) errors.city = 'Indica la ciudad.';
   if (form.postal_code && !/^\d{5}$/.test(form.postal_code)) errors.postal_code = 'El código postal debe tener 5 dígitos (ej.: 28013).';
   if (!Object.prototype.hasOwnProperty.call(ESTABLISHMENT_TYPES, form.establishment_type)) {
@@ -185,7 +186,7 @@ async function handleRegister(req, res, googleAccount = null) {
     userAgent: req.headers['user-agent']
   });
 
-  if (googleAccount) res.clearCookie(GOOGLE_PENDING_COOKIE, { path: '/' });
+  if (googleAccount) clearShortCookie(res, GOOGLE_PENDING_COOKIE);
 
   /* Sessão nova depois de autenticar: o id anterior (anónimo) é descartado
    * (proteção contra session fixation). */
@@ -220,6 +221,12 @@ function shortCookie(res, name, value, maxAge) {
   res.cookie(name, value, { httpOnly: true, sameSite: 'lax', secure: config.cookieSecure, path: '/', maxAge });
 }
 
+/* Mesmas opções da criação: sem Secure o browser ignora o apagar de um
+ * cookie __Host- e os dados do registo Google ficavam no dispositivo. */
+function clearShortCookie(res, name) {
+  res.clearCookie(name, { httpOnly: true, sameSite: 'lax', secure: config.cookieSecure, path: '/' });
+}
+
 function googleFail(res, message, status = 400) {
   return res.status(status).render('auth/login', { error: message, email: '', info: '' });
 }
@@ -232,13 +239,36 @@ router.get('/login/google',
   rateLimit({ windowMs: 15 * 60 * 1000, max: 30, name: 'google-start' }),
   (req, res) => {
     if (!google.enabled()) return notFound(res);
-    const intent = req.query.modo === 'vincular' ? 'link' : 'login';
-    if (intent === 'link' && !req.user) return res.redirect('/login');
-    if (intent === 'login' && req.user) return res.redirect(req.user.role === 'admin' ? '/admin' : '/panel');
+    /* Vincular faz-se por POST com a senha (ver abaixo); links antigos para
+     * ?modo=vincular voltam à Configuración. */
+    if (req.query.modo === 'vincular') return res.redirect(req.user ? '/panel/configuracion' : '/login');
+    if (req.user) return res.redirect(req.user.role === 'admin' ? '/admin' : '/panel');
+    startGoogleFlow(res, 'login');
+  });
 
-    const flow = google.newFlow(intent);
-    shortCookie(res, GOOGLE_FLOW_COOKIE, Buffer.from(JSON.stringify(flow)).toString('base64url'), 10 * 60 * 1000);
-    res.redirect(google.authUrl(flow));
+function startGoogleFlow(res, intent) {
+  const flow = google.newFlow(intent);
+  shortCookie(res, GOOGLE_FLOW_COOKIE, Buffer.from(JSON.stringify(flow)).toString('base64url'), 10 * 60 * 1000);
+  res.redirect(google.authUrl(flow));
+}
+
+/* Vincular Google exige a senha atual, como desvincular: uma sessão esquecida
+ * aberta não pode servir para ligar outra conta Google e ficar com acesso
+ * mesmo depois de o dono mudar a senha. Fora da demo (só de leitura). */
+router.post('/login/google/vincular',
+  rateLimit({ windowMs: 15 * 60 * 1000, max: 10, name: 'google-link', key: (req) => String(req.user && req.user.id) }),
+  (req, res) => {
+    if (!google.enabled()) return notFound(res);
+    if (!req.user) return res.redirect('/login');
+    if (!verifyCsrf(req)) return badCsrf(res);
+    const back = (msg) => res.redirect('/panel/configuracion?err=' + encodeURIComponent(msg));
+    if (req.user.role === 'admin') return back('Las cuentas de administración no pueden usar Google.');
+    if (isDemoUser(req.user)) return back('Esto es una demostración: los cambios no se guardan. Crea tu cuenta gratis para usar Fíchame con tu negocio.');
+    if (!req.user.password_hash || !verifyPassword(String(req.body.password_actual || ''), req.user.password_hash)) {
+      logSecurity('configuracion_password_incorrecta', `user=${req.user.id}`, req.ip, { userId: req.user.id });
+      return back('La contraseña actual es incorrecta.');
+    }
+    startGoogleFlow(res, 'link');
   });
 
 router.get('/login/google/callback',
@@ -251,7 +281,7 @@ router.get('/login/google/callback',
     try {
       flow = JSON.parse(Buffer.from(String(req.cookies[GOOGLE_FLOW_COOKIE] || ''), 'base64url').toString('utf8'));
     } catch { flow = null; }
-    res.clearCookie(GOOGLE_FLOW_COOKIE, { path: '/' });
+    clearShortCookie(res, GOOGLE_FLOW_COOKIE);
 
     // a pessoa cancelou no ecrã da Google
     if (req.query.error) return res.redirect(flow && flow.intent === 'link' ? '/panel/configuracion' : '/login');
@@ -279,6 +309,7 @@ router.get('/login/google/callback',
       if (!req.user) return res.redirect('/login');
       const back = (key, msg) => res.redirect(`/panel/configuracion?${key}=` + encodeURIComponent(msg));
       if (req.user.role === 'admin') return back('err', 'Las cuentas de administración no pueden usar Google.');
+      if (isDemoUser(req.user)) return back('err', 'Esto es una demostración: los cambios no se guardan. Crea tu cuenta gratis para usar Fíchame con tu negocio.');
       if (bySub && bySub.id !== req.user.id) return back('err', 'Esa cuenta de Google ya está vinculada a otra cuenta de Fíchame.');
       await run(sb().from('users').update({ google_sub: account.sub }).eq('id', req.user.id), 'vincular google');
       logSecurity('google_vinculado', `user=${req.user.id}`, req.ip, { userId: req.user.id, userAgent: req.headers['user-agent'] });
@@ -354,7 +385,7 @@ const loginLimiters = [
   // por IP + email (erros de digitação de um utilizador real)
   rateLimit({
     windowMs: 15 * 60 * 1000, max: 10, name: 'login',
-    key: (req) => `${req.ip}|${clean(req.body.email, 120).toLowerCase()}`,
+    key: (req) => `${req.ip}|${clean((req.body || {}).email, 120).toLowerCase()}`,
     message: 'Demasiados intentos. Espera unos minutos.'
   }),
   // por IP, todas as contas (credential stuffing a partir de um IP)
@@ -363,16 +394,20 @@ const loginLimiters = [
     key: (req) => String(req.ip),
     message: 'Demasiados intentos desde esta conexión. Espera unos minutos.'
   }),
-  // por conta, todos os IPs (força bruta distribuída contra uma conta)
-  dbRateLimit({
-    windowMs: 60 * 60 * 1000, max: 20, name: 'login-account',
-    key: (req) => clean(req.body.email, 120).toLowerCase(),
-    message: 'Demasiados intentos para esta cuenta. Espera una hora o recupera tu contraseña.'
-  })
 ];
+
+/* Por conta, todos os IPs (força bruta distribuída contra uma conta). Só as
+ * tentativas FALHADAS contam: contar todos os pedidos deixava qualquer pessoa
+ * bloquear o login de um dono enviando 20 pedidos com o email dele. */
+const loginAccountLimit = dbFailureLimit({
+  windowMs: 60 * 60 * 1000, max: 50, name: 'login-account-fail',
+  key: (req) => clean((req.body || {}).email, 120).toLowerCase(),
+  message: 'Demasiados intentos para esta cuenta. Espera una hora o recupera tu contraseña.'
+});
 
 router.post('/login', ...loginLimiters, async (req, res) => {
   if (!verifyCsrf(req)) return badCsrf(res);
+  if (await loginAccountLimit.blocked(req, res)) return;
 
   const email = clean(req.body.email, 120);
   const password = String(req.body.password || '').slice(0, 200);
@@ -389,6 +424,9 @@ router.post('/login', ...loginLimiters, async (req, res) => {
   const passwordOk = verifyPassword(password, user ? user.password_hash : DUMMY_HASH) && Boolean(user);
 
   if (!passwordOk) {
+    /* Conta também emails sem conta: só assim o tempo de resposta não
+     * distingue contas existentes. */
+    await loginAccountLimit.hit(req);
     logSecurity('login_fallido', user ? `user=${user.id}` : emailTag(email), req.ip, {
       userId: user ? user.id : null, userAgent: req.headers['user-agent']
     });
@@ -481,7 +519,7 @@ router.get('/recuperar', ensureSession, (req, res) => {
 router.post('/recuperar',
   rateLimit({ windowMs: 15 * 60 * 1000, max: 5, name: 'forgot' }),
   dbRateLimit({ windowMs: 60 * 60 * 1000, max: 10, name: 'forgot-ip', key: (req) => String(req.ip) }),
-  dbRateLimit({ windowMs: 60 * 60 * 1000, max: 3, name: 'forgot-account', key: (req) => clean(req.body.email, 120).toLowerCase() }),
+  dbRateLimit({ windowMs: 60 * 60 * 1000, max: 3, name: 'forgot-account', key: (req) => clean((req.body || {}).email, 120).toLowerCase() }),
   async (req, res) => {
     if (!verifyCsrf(req)) return badCsrf(res);
     const email = clean(req.body.email, 120);
@@ -501,7 +539,7 @@ router.post('/recuperar',
           user_id: user.id,
           expires_at: new Date(Date.now() + RESET_TTL_MS).toISOString()
         }), 'criar token de senha');
-        sendPasswordReset({ to: user.email, token }).catch(() => {});
+        background(sendPasswordReset({ to: user.email, token }), 'mailer');
         logSecurity('password_reset_pedido', `user=${user.id}`, req.ip, { userId: user.id, userAgent: req.headers['user-agent'] });
       } else {
         logSecurity('password_reset_pedido', emailTag(email), req.ip, { userAgent: req.headers['user-agent'] });
@@ -540,7 +578,7 @@ router.post('/recuperar/nueva',
       return fail('El enlace no es válido o ha caducado. Solicita uno nuevo.', 400);
     }
 
-    const user = await one(sb().from('users').select('id, email, blocked').eq('id', row.user_id), 'utilizador do token');
+    const user = await one(sb().from('users').select('id, email, blocked, password_hash').eq('id', row.user_id), 'utilizador do token');
     if (!user || user.blocked) return fail('El enlace no es válido o ha caducado. Solicita uno nuevo.', 400);
 
     const problem = passwordProblem(pw, user.email);
@@ -556,7 +594,13 @@ router.post('/recuperar/nueva',
     );
     if (!claimed || claimed.length === 0) return fail('El enlace no es válido o ha caducado. Solicita uno nuevo.', 400);
 
-    await run(sb().from('users').update({ password_hash: hashPassword(pw) }).eq('id', user.id), 'repor senha');
+    /* Numa conta que já tinha senha, repor também retira o vínculo Google:
+     * quem repõe a senha pode estar a recuperar a conta de alguém que lhe
+     * ligou o seu Google. Numa conta criada com Google (sem senha) a reposição
+     * é a forma de criar a primeira senha e o vínculo fica. */
+    const resetUpdates = { password_hash: hashPassword(pw) };
+    if (user.password_hash) resetUpdates.google_sub = null;
+    await run(sb().from('users').update(resetUpdates).eq('id', user.id), 'repor senha');
     await run(sb().from('password_resets').delete().eq('user_id', user.id), 'anular tokens');
     await run(sb().from('password_help_requests').delete().eq('user_id', user.id), 'fechar pedido de senha');
     await destroyUserSessions(user.id);

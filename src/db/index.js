@@ -127,11 +127,15 @@ function logSecurity(event, detail = '', ip = '', extra = {}) {
     metadata: extra.metadata || {}
   };
 
-  return Promise.resolve(sb().from('security_logs').insert(row))
-    .then(({ error }) => {
-      if (error) console.error('[security-log] falha:', error.message);
-    })
-    .catch((err) => console.error('[security-log] falha:', err.message));
+  /* background(): na Vercel o log termina mesmo que a resposta já tenha
+   * saído (quase todas as chamadas não fazem await). */
+  return require('../lib/background').background(
+    Promise.resolve(sb().from('security_logs').insert(row))
+      .then(({ error }) => {
+        if (error) console.error('[security-log] falha:', error.message);
+      }),
+    'security-log'
+  );
 }
 
 module.exports = { sb, one, many, count, run, rpc, escapeLike, logSecurity, dbError };

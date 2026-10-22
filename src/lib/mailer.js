@@ -88,6 +88,13 @@ async function smtpSend({ to, subject, text, html }) {
     let reply = await expect(socket, [250]);
     let caps = reply.lines.join(' ').toLowerCase();
 
+    /* Sem TLS implícito, o STARTTLS é obrigatório: se alguém na rede o
+     * retirar do EHLO, não se seguem credenciais nem links em claro.
+     * SMTP_INSECURE=1 (só para testes locais) aceita a ligação sem TLS. */
+    if (!secure && !caps.includes('starttls') && process.env.SMTP_INSECURE !== '1') {
+      throw new Error('O servidor SMTP não oferece STARTTLS; envio cancelado.');
+    }
+
     if (!secure && caps.includes('starttls')) {
       socket.write('STARTTLS\r\n');
       await expect(socket, [220]);
