@@ -34,8 +34,10 @@ const RIGHTS_KINDS = {
   otro: 'Otra consulta sobre mis datos'
 };
 
+/* Só texto: um campo repetido chega como array e um corpo JSON pode trazer
+ * objetos, que em String() davam lixo ou rebentavam (500). */
 function clean(value, max = 200) {
-  return String(value == null ? '' : value).trim().slice(0, max);
+  return typeof value === 'string' ? value.trim().slice(0, max) : '';
 }
 
 /* Só as colunas que a página pública usa. A view nunca recebe o email de

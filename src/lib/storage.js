@@ -109,11 +109,15 @@ async function removeQuietly(bucket, paths) {
   const list = (Array.isArray(paths) ? paths : [paths]).filter(Boolean);
   if (list.length === 0) return;
 
-  try {
-    const { error } = await sb().storage.from(bucket).remove(list);
-    if (error) console.error(`[storage] falha a remover de ${bucket}:`, error.message);
-  } catch (err) {
-    console.error(`[storage] falha a remover de ${bucket}:`, err.message);
+  /* A API do Storage aceita no máximo 1000 caminhos por pedido; acima disso
+   * o pedido inteiro falhava e nada era apagado. */
+  for (let i = 0; i < list.length; i += 1000) {
+    try {
+      const { error } = await sb().storage.from(bucket).remove(list.slice(i, i + 1000));
+      if (error) console.error(`[storage] falha a remover de ${bucket}:`, error.message);
+    } catch (err) {
+      console.error(`[storage] falha a remover de ${bucket}:`, err.message);
+    }
   }
 }
 

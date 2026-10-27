@@ -81,3 +81,17 @@ test('config: na Vercel o CV nunca passa de 4 MB e cookies/proxy ficam seguros p
   });
   assert.deepEqual(JSON.parse(out), [4, true, true]);
 });
+
+test('logout sem sessão: volta ao /login em vez de 403', async () => {
+  const res = await fetch(base + '/logout', { method: 'POST', redirect: 'manual' });
+  assert.equal(res.status, 302);
+  assert.equal(res.headers.get('location'), '/login');
+});
+
+test('erro do cliente (JSON inválido) responde 400, não 500', async () => {
+  const res = await fetch(base + '/login', {
+    method: 'POST', redirect: 'manual',
+    headers: { 'content-type': 'application/json' }, body: '{nao é json'
+  });
+  assert.equal(res.status, 400);
+});

@@ -78,7 +78,9 @@ const WORK_SCHEDULES = {
 const HISTORY_EVENTS = {
   recibida:    'Candidatura recibida',
   estado:      'Estado cambiado',
-  favorito:    'Favorito actualizado'
+  favorito:    'Favorito actualizado',
+  bloqueo:     'Bloqueo legal actualizado',
+  consentimiento_retirado: 'Consentimiento retirado'
 };
 
 function statusLabel(key) {

@@ -25,7 +25,11 @@ const router = express.Router();
 
 function cronAuthorized(req) {
   const secret = process.env.CRON_SECRET || '';
-  if (!secret || secret.length < 32) return false;
+  if (!secret || secret.length < 32) {
+    /* Sem isto a limpeza diária deixava de correr e só se via um 404. */
+    if (secret) console.error('[cleanup] CRON_SECRET tem menos de 32 caracteres: limpeza recusada.');
+    return false;
+  }
   return safeEqual(String(req.get('authorization') || ''), `Bearer ${secret}`);
 }
 

@@ -57,6 +57,10 @@ module.exports = {
   'Candidatura recibida': { en: 'Application received', pt: 'Candidatura recebida' },
   'Estado cambiado': { en: 'Status changed', pt: 'Estado alterado' },
   'Favorito actualizado': { en: 'Favourite updated', pt: 'Favorito atualizado' },
+  'Bloqueo legal actualizado': { en: 'Legal hold updated', pt: 'Bloqueio legal atualizado' },
+  'Consentimiento retirado': { en: 'Consent withdrawn', pt: 'Consentimento retirado' },
+  'Solicitud no válida': { en: 'Invalid request', pt: 'Pedido inválido' },
+  'No hemos podido procesar la solicitud. Revisa los datos e inténtalo de nuevo.': { en: 'We could not process the request. Check the details and try again.', pt: 'Não foi possível processar o pedido. Revê os dados e tenta de novo.' },
 
   // Datas e plurais comuns
   'Hoy': { en: 'Today', pt: 'Hoje' },

@@ -30,12 +30,24 @@ const config = require('../config');
 const { sb, rpc, logSecurity } = require('../db');
 const storage = require('./storage');
 
-const SECURITY_LOG_DAYS = parseInt(process.env.SECURITY_LOG_DAYS || '365', 10);
-const RIGHTS_REQUEST_DAYS = parseInt(process.env.RIGHTS_REQUEST_DAYS || '1095', 10);
+/* Prazo em dias vindo do ambiente. Um valor inválido ou < 1 voltaria a
+ * NaN (a limpeza rebentava em toISOString) ou a 0 (apagava a tabela toda
+ * em cada execução): nesses casos fica o valor por omissão. */
+function envDays(name, fallback) {
+  const n = parseInt(process.env[name] || '', 10);
+  return Number.isInteger(n) && n >= 1 ? n : fallback;
+}
+
+const SECURITY_LOG_DAYS = envDays('SECURITY_LOG_DAYS', 365);
+const RIGHTS_REQUEST_DAYS = envDays('RIGHTS_REQUEST_DAYS', 1095);
 /* Erros do servidor e reportes resolvidos (0009): dados técnicos e de
  * suporte, sem razão para ficarem mais tempo. */
-const ERROR_EVENT_DAYS = parseInt(process.env.ERROR_EVENT_DAYS || '90', 10);
-const REPORT_DAYS = parseInt(process.env.REPORT_DAYS || '365', 10);
+const ERROR_EVENT_DAYS = envDays('ERROR_EVENT_DAYS', 90);
+const REPORT_DAYS = envDays('REPORT_DAYS', 365);
+
+/* O .in() do PostgREST vai na query string do GET: com 1000 caminhos o URL
+ * passava os ~66 KB e o gateway recusava-o. Em blocos de 100 fica < 8 KB. */
+const IN_CHUNK = 100;
 
 /* Conta (e, com apply, apaga) as linhas anteriores ao prazo. `column` é a
  * data a partir da qual o prazo conta (um reporte resolvido conta desde a
@@ -77,9 +89,12 @@ async function findOrphanCvs({ minAgeMs = 24 * 60 * 60 * 1000 } = {}) {
       if (!files || files.length === 0) break;
 
       const paths = files.map((f) => `r/${folder.name}/${f.name}`);
-      const { data: known, error: e3 } = await sb().from('cvs').select('storage_path').in('storage_path', paths);
-      if (e3) throw new Error(`Supabase: cvs conhecidos — ${e3.message}`);
-      const set = new Set((known || []).map((k) => k.storage_path));
+      const set = new Set();
+      for (let i = 0; i < paths.length; i += IN_CHUNK) {
+        const { data: known, error: e3 } = await sb().from('cvs').select('storage_path').in('storage_path', paths.slice(i, i + IN_CHUNK));
+        if (e3) throw new Error(`Supabase: cvs conhecidos — ${e3.message}`);
+        for (const k of known || []) set.add(k.storage_path);
+      }
 
       for (const f of files) {
         const p = `r/${folder.name}/${f.name}`;

@@ -68,7 +68,7 @@ async function smtpSend({ to, subject, text, html }) {
     if (!/^[^\s@<>,;]+@[^\s@<>,;]+$/.test(String(addr))) throw new Error('Endereço de email inválido');
   }
 
-  const socket = secure
+  let socket = secure
     ? tls.connect({ host, port, servername: host })
     : net.connect({ host, port });
 
@@ -98,16 +98,16 @@ async function smtpSend({ to, subject, text, html }) {
     if (!secure && caps.includes('starttls')) {
       socket.write('STARTTLS\r\n');
       await expect(socket, [220]);
-      await new Promise((resolve, reject) => {
+      /* Depois do STARTTLS tudo passa pelo socket TLS: continuar a escrever
+       * no socket TCP original mandava o EHLO em claro e o servidor fechava. */
+      socket = await new Promise((resolve, reject) => {
         const upgraded = tls.connect({
           socket, servername: host,
           rejectUnauthorized: process.env.SMTP_INSECURE !== '1'
-        }, resolve);
+        }, () => resolve(upgraded));
         upgraded.once('error', reject);
       });
-      socket.removeAllListeners('data');
-      socket.removeAllListeners('error');
-      socket.removeAllListeners('close');
+      socket.setTimeout(15000, () => socket.destroy(new Error('Tempo esgotado a falar com o servidor SMTP')));
       socket.write(`EHLO fichame.local\r\n`);
       reply = await expect(socket, [250]);
       caps = reply.lines.join(' ').toLowerCase();

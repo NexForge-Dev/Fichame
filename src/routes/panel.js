@@ -77,6 +77,15 @@ function madridTime(date, time) {
   return `${date}T${time}${offset || '+00:00'}`;
 }
 
+/* «AAAA-MM-DD» que existe no calendário. Só a forma não chega: 2026-13-01
+ * rebentava em madridTime e 2026-02-30 era recusado pelo Postgres (500). */
+function validDate(value) {
+  const s = String(value || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return '';
+  const d = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().startsWith(s) ? s : '';
+}
+
 function clean(value, max = 200) {
   return String(value == null ? '' : value).trim().slice(0, max);
 }
@@ -201,10 +210,10 @@ router.get('/panel/candidaturas', async (req, res) => {
   const q = clean(req.query.q, 80);
   const estado = STATUS_KEYS.includes(req.query.estado) ? req.query.estado : '';
   const grupo = !estado && Object.prototype.hasOwnProperty.call(STATUS_GROUPS, req.query.grupo) ? req.query.grupo : '';
-  const puesto = /^\d+$/.test(String(req.query.puesto || '')) ? String(req.query.puesto) : '';
+  const puesto = /^\d{1,15}$/.test(String(req.query.puesto || '')) ? String(req.query.puesto) : '';
   const disp = Object.prototype.hasOwnProperty.call(AVAILABILITIES, req.query.disp) ? String(req.query.disp) : '';
-  const desde = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.desde || '')) ? req.query.desde : '';
-  const hasta = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.hasta || '')) ? req.query.hasta : '';
+  const desde = validDate(req.query.desde);
+  const hasta = validDate(req.query.hasta);
   const favs = req.query.favs === '1';
   const ascending = req.query.orden === 'antiguas';
 
@@ -870,11 +879,12 @@ router.post('/panel/restaurante', uploadRestaurantImages, async (req, res) => {
   const clearLogo = req.body.borrar_logo === '1';
   const clearPhoto = req.body.borrar_foto === '1';
 
-  const updates = {
-    ...form,
-    logo_path: newLogo || (clearLogo ? '' : current.logo_path),
-    photo_path: newPhoto || (clearPhoto ? '' : current.photo_path)
-  };
+  /* As colunas das imagens só entram no update quando mudam: reescrever o
+   * valor lido acima podia repor um ficheiro que outro pedido em paralelo
+   * (outra aba) já tinha substituído e apagado. */
+  const updates = { ...form };
+  if (newLogo || clearLogo) updates.logo_path = newLogo || '';
+  if (newPhoto || clearPhoto) updates.photo_path = newPhoto || '';
 
   try {
     await run(sb().from('restaurants').update(updates).eq('id', rid), 'guardar restaurante');
@@ -887,8 +897,8 @@ router.post('/panel/restaurante', uploadRestaurantImages, async (req, res) => {
 
   /* Só agora se apagam as imagens que deixaram de ser referenciadas. */
   const orphans = [
-    current.logo_path && current.logo_path !== updates.logo_path ? current.logo_path : '',
-    current.photo_path && current.photo_path !== updates.photo_path ? current.photo_path : ''
+    current.logo_path && 'logo_path' in updates && current.logo_path !== updates.logo_path ? current.logo_path : '',
+    current.photo_path && 'photo_path' in updates && current.photo_path !== updates.photo_path ? current.photo_path : ''
   ];
   await storage.removeImage(orphans);
 
@@ -1059,7 +1069,10 @@ router.post('/panel/privacidad/conservacion', async (req, res) => {
   if (!verifyCsrf(req)) return invalidSession(res);
 
   const toInt = (v) => parseInt(String(v || ''), 10);
-  if (![req.body.cerrados, req.body.inactivos, req.body.reserva].every((v) => Number.isInteger(toInt(v)))) {
+  /* O teto evita que um número enorme rebente o ::int na função SQL (500);
+   * os limites exatos de cada prazo continuam a ser os da BD. */
+  const inRange = (v) => Number.isInteger(toInt(v)) && toInt(v) >= 1 && toInt(v) <= 3650;
+  if (![req.body.cerrados, req.body.inactivos, req.body.reserva].every(inRange)) {
     return res.redirect('/panel/privacidad?err=' + encodeURIComponent('Plazos fuera de los límites permitidos.'));
   }
   const result = await rpc('set_retention_settings', {

@@ -73,8 +73,12 @@ function inspectPdf(buffer) {
   const tail = buffer.toString('latin1', Math.max(0, buffer.length - 2048));
   if (!tail.includes('%%EOF')) return { ok: false, reason: 'CORRUPTO' };
 
-  /* Nomes PDF podem vir com escapes hexadecimais (/J#61vaScript). */
-  const text = buffer.toString('latin1').replace(/#([0-9A-Fa-f]{2})/g, (m, h) => String.fromCharCode(parseInt(h, 16)));
+  /* Só o texto fora de stream…endstream: os bytes comprimidos de imagens e
+   * fontes formavam «/JS» por acaso e recusavam CVs legítimos (~10 % dos
+   * PDFs de 3 MB). Os dicionários de ações ficam fora dos streams; os object
+   * streams comprimidos já não eram analisados (ver LIMITAÇÃO acima).
+   * Nomes PDF podem vir com escapes hexadecimais (/J#61vaScript). */
+  const text = buffer.toString('latin1').replace(/stream\r?\n[\s\S]*?endstream/g, ' ').replace(/#([0-9A-Fa-f]{2})/g, (m, h) => String.fromCharCode(parseInt(h, 16)));
   for (const key of PDF_ACTIVE_KEYS) {
     const re = new RegExp(key.replace('/', '\\/') + '(?![A-Za-z])');
     if (re.test(text)) return { ok: false, reason: 'ACTIVO' };
@@ -102,7 +106,10 @@ function safeFilename(name) {
 
 /* Limites de multipart além do ficheiro: um pedido com milhares de campos ou
  * campos de vários MB é rejeitado antes de chegar à rota. */
-const FORM_LIMITS = { fields: 30, fieldSize: 16 * 1024, parts: 32, headerPairs: 200 };
+/* fieldNestingDepth/fieldArrayIndexLimit: sem eles, «nome[a]» virava um
+ * objeto (String() rebentava → 500) e «nome[900000000]» um array esparso que
+ * bloqueava o processo durante segundos. Nenhum formulário usa [] nos nomes. */
+const FORM_LIMITS = { fields: 30, fieldSize: 16 * 1024, parts: 32, headerPairs: 200, fieldNestingDepth: 0, fieldArrayIndexLimit: 0 };
 
 const cvUpload = multer({
   storage: multer.memoryStorage(),

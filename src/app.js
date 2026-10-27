@@ -12,6 +12,7 @@ const { rateLimit } = require('./middleware/rateLimit');
 const { STATUSES, AVAILABILITIES, DOC_TYPES, ESTABLISHMENT_TYPES, CONTRACT_TYPES, WORK_SCHEDULES, statusLabel, availabilityLabel, docTypeLabel, historyLabel } = require('./lib/statuses');
 const { icon, initials } = require('./lib/icons');
 const { newRef, recordError } = require('./lib/errors');
+const { background } = require('./lib/background');
 const { i18n, setLanguageRoute, translate, LANGS, LANG_NAMES } = require('./lib/i18n');
 
 /* O PostgREST devolve timestamptz como ISO 8601 com fuso ("…+00:00"), que o
@@ -193,6 +194,9 @@ function createApp() {
   app.use(i18n);
   app.use(express.urlencoded({ extended: false, limit: '100kb' }));
   app.use(express.json({ limit: '50kb' }));
+  /* No Express 5 um POST sem corpo deixa req.body undefined, e as rotas leem
+   * req.body.x diretamente (o token CSRF também pode vir num cabeçalho). */
+  app.use((req, res, next) => { if (req.body === undefined) req.body = {}; next(); });
   app.use(csrfProtection);
   app.use(rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -260,10 +264,15 @@ function createApp() {
     const serverFault = !(err && err.status >= 400 && err.status < 500);
     const ref = serverFault ? newRef() : '';
     console.error(ref ? `[erro ${ref}]` : '[erro]', err);
-    if (serverFault) recordError(err, req, ref);
+    /* Na Vercel a função pode congelar logo após a resposta: sem waitUntil o
+     * registo perdia-se e a referência mostrada não existia em /admin. */
+    if (serverFault) background(recordError(err, req, ref), 'error-events');
     if (res.headersSent) return;
-    res.status(500).render('error', {
-      status: 500, title: 'Error interno', message: 'Algo salió mal. Inténtalo de nuevo.',
+    const status = serverFault ? 500 : err.status;
+    res.status(status).render('error', {
+      status,
+      title: serverFault ? 'Error interno' : 'Solicitud no válida',
+      message: serverFault ? 'Algo salió mal. Inténtalo de nuevo.' : 'No hemos podido procesar la solicitud. Revisa los datos e inténtalo de nuevo.',
       errorRef: ref,
       canReport: Boolean(req.user && req.user.role === 'owner'),
       fromPath: req.path || ''

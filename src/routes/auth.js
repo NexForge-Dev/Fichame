@@ -43,8 +43,10 @@ router.get('/', (req, res) => {
   res.render('public/landing');
 });
 
+/* Só texto: um campo repetido chega como array e um corpo JSON pode trazer
+ * objetos, que em String() davam lixo ou rebentavam (500). */
 function clean(value, max = 200) {
-  return String(value == null ? '' : value).trim().slice(0, max);
+  return typeof value === 'string' ? value.trim().slice(0, max) : '';
 }
 
 function badCsrf(res) {

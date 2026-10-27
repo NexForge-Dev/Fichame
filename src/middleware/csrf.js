@@ -23,6 +23,9 @@ function csrfProtection(req, res, next) {
    * lido: sem esta lista, um POST multipart para /login chegava aos handlers
    * com req.body undefined e dava 500. */
   if (req.is('multipart/form-data') && MULTIPART_ROUTES.some((re) => re.test(req.path))) return next();
+  /* Sair com a sessão já expirada não tem nada a proteger: a rota só limpa
+   * o cookie e manda para /login (com sessão, verifica o token ela mesma). */
+  if (req.path === '/logout' && !req.session) return next();
 
   if (!verifyCsrf(req)) {
     return res.status(403).render('error', {
