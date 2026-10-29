@@ -107,3 +107,10 @@ begin
   end if;
 end $$;
 
+
+-- Regista a versão: sem isto, `npm start` e `npm run check` recusavam arrancar
+-- ("Migrations em falta: 0007_google_login") mesmo com a migration aplicada.
+insert into schema_migrations (version) values ('0007_google_login')
+on conflict (version) do nothing;
+
+notify pgrst, 'reload schema';

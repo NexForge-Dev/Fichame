@@ -127,6 +127,18 @@ function assertConfig() {
   if (process.env.VERCEL_ENV === 'production' && !/^https:\/\/(?!localhost|127\.)/.test(config.appUrl)) {
     throw new Error(`APP_URL tem de ser https em produção (atual: ${config.appUrl}).`);
   }
+  /* Em produção, avisos (não bloqueiam o arranque) para o que falta e só se
+   * notaria mais tarde: páginas legais com marcadores e limpeza diária parada. */
+  if (process.env.VERCEL_ENV === 'production') {
+    const missingProd = ['OPERATOR_LEGAL_NAME', 'OPERATOR_NIF', 'OPERATOR_ADDRESS', 'OPERATOR_PRIVACY_EMAIL']
+      .filter((name) => !String(process.env[name] || '').trim());
+    if (missingProd.length > 0) {
+      console.warn(`[config] Páginas legais com marcadores: falta definir ${missingProd.join(', ')}.`);
+    }
+    if (String(process.env.CRON_SECRET || '').length < 32) {
+      console.warn('[config] CRON_SECRET em falta ou com menos de 32 caracteres: a limpeza diária (/internal/cleanup) não corre.');
+    }
+  }
   if (onVercel && (!config.cookieSecure || !config.trustProxy)) {
     console.warn('[config] Na Vercel, COOKIE_SECURE e TRUST_PROXY devem ser 1.');
   }

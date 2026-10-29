@@ -1147,6 +1147,7 @@ textarea[aria-invalid="true"],
   font-weight: 750;
   color: var(--ink);
   padding: 0;
+  min-height: 44px; /* alvo de toque no telemóvel */
 }
 .create-job > summary::-webkit-details-marker { display: none; }
 .create-job-plus {
@@ -1805,6 +1806,13 @@ textarea[aria-invalid="true"],
   .actions-row .btn { flex: 1 1 auto; }
   .status-strip { flex-wrap: wrap; }
   .status-strip form, .status-strip form .btn { width: 100%; }
+  /* Com candidaturas abertas o botão está num <details> (confirmação): sem
+   * isto ficava ao lado do texto e apertava-o numa coluna estreita. */
+  .status-strip > details { flex-basis: 100%; }
+  .status-strip > details > summary { width: 100%; justify-content: center; }
+  /* Alvos de toque de ~44 px nos links do rodapé e na escolha de idioma. */
+  .footer a { display: inline-block; padding: 12px 2px; }
+  .lang-switch a { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
   .today .btn.lg { width: 100%; }
   .hint-row { grid-template-columns: 1fr; }
 }

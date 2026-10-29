@@ -120,6 +120,11 @@ function main() {
     }
     check('schema_migrations tem 0005 e 0006',
       q("select count(*) from schema_migrations where version in ('0005_privacy_hardening','0006_tenant_fk_cleanup')") === '2');
+    /* O arranque (src/db/check.js) exige cada versão: uma migration que não se
+     * regista impede `npm start` mesmo depois de aplicada. */
+    const registered = q('select version from schema_migrations').split(/\r?\n/).map((v) => v.trim());
+    const unregistered = files.map((f) => f.replace(/\.sql$/, '')).filter((v) => !registered.includes(v));
+    check('schema_migrations regista todas as migrations', unregistered.length === 0, unregistered.join(', '));
     /* PostgREST recusa embeds quando há duas FKs entre as mesmas tabelas
      * (PGRST201). Cada par usado em embeds tem de ter exatamente uma. */
     for (const [child, parent] of [['notifications', 'applications'], ['applications', 'candidates'], ['applications', 'jobs'],
