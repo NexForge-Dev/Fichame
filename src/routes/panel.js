@@ -18,6 +18,7 @@ const { isDemoUser } = require('../lib/demo');
 const storage = require('../lib/storage');
 const { QR_OPTIONS } = require('../lib/qr');
 const { background } = require('../lib/background');
+const analytics = require('../lib/analytics');
 const { TERMS_VERSION, TERMS_CHANGES, operator, termsPending, recordAcceptance } = require('../lib/legal');
 const {
   STATUSES, STATUS_KEYS, STATUS_GROUPS, AVAILABILITIES, ESTABLISHMENT_TYPES,
@@ -92,6 +93,11 @@ function clean(value, max = 200) {
 
 function restaurantId(req) {
   return req.user.restaurant_id;
+}
+
+/* Negócio a contar nas métricas do Painel NexForge; a demonstração não conta. */
+function metricsId(req, res) {
+  return res.locals.isDemo ? null : restaurantId(req);
 }
 
 function notFound(res) {
@@ -179,6 +185,10 @@ router.get('/panel', async (req, res) => {
 
   const firstName = String(req.user.full_name || '').trim().split(/\s+/)[0] || '';
 
+  if (profile && profile.logo_path && profile.page_viewed_at && profile.qr_viewed_at && Number(metrics && metrics.open_jobs) > 0) {
+    analytics.onboardingCompleted(metricsId(req, res));
+  }
+
   res.render('panel/dashboard', {
     firstName,
     hasLogo: Boolean(profile && profile.logo_path),
@@ -255,6 +265,8 @@ router.get('/panel/candidaturas', async (req, res) => {
     ),
     statusCounts(rid)
   ]);
+
+  if (q || estado || grupo || puesto || disp || desde || hasta || favs) analytics.feature(metricsId(req, res), 'busca_filtro');
 
   res.render('panel/applications', {
     rows,
@@ -348,6 +360,7 @@ router.get('/panel/candidaturas/:id', async (req, res) => {
     one(nextQuery().lt('applied_at', application.applied_at), 'seguinte candidatura')
   ]);
 
+  analytics.feature(metricsId(req, res), 'candidatura_aberta');
   logSecurity('candidatura_vista', `app=${application.id}`, req.ip, { userId: req.user.id, restaurantId: rid });
 
   if (markedRead.length > 0 && res.locals.unreadCount > 0) {
@@ -404,6 +417,7 @@ router.post('/panel/candidaturas/:id/estado', async (req, res) => {
   if (!result || !result.ok) return notFound(res);
 
   if (result.old_status !== result.new_status) {
+    analytics.feature(metricsId(req, res), 'status_alterado');
     logSecurity('estado_cambiado', `app=${id} ${result.old_status} → ${status}`, req.ip, {
       userId: req.user.id, restaurantId: restaurantId(req)
     });
@@ -428,6 +442,7 @@ router.post('/panel/candidaturas/:id/favorito', async (req, res) => {
   }, 'favorito');
 
   if (!result || !result.ok) return notFound(res);
+  if (result.favorite) analytics.feature(metricsId(req, res), 'favorito_marcado');
 
   res.redirect(`/panel/candidaturas/${id}?ok=` + encodeURIComponent(
     result.favorite ? 'Candidato marcado como favorito.' : 'Favorito retirado.'
@@ -474,6 +489,7 @@ router.post('/panel/candidaturas/:id/notas', rateLimit({
     'guardar nota'
   );
 
+  analytics.feature(metricsId(req, res), 'nota_interna');
   logSecurity(terms.length > 0 ? 'nota_sensible_confirmada' : 'nota_creada', `app=${application.id}`, req.ip, {
     userId: req.user.id, restaurantId: restaurantId(req), metadata: terms.length > 0 ? { terms } : {}
   });
@@ -557,6 +573,7 @@ router.get('/panel/cv/:id', async (req, res) => {
 
   /* Auditoria: quem abriu que CV e quando (sem dados do candidato). Esperado
    * com await: um acesso a um CV sem registo não é auditável. */
+  analytics.feature(metricsId(req, res), 'cv_aberto');
   await logSecurity(download ? 'cv_descargado' : 'cv_visto', `cv=${cv.id} app=${cv.application_id}`, req.ip, {
     userId: req.user.id, restaurantId: restaurantId(req), userAgent: req.headers['user-agent']
   });
@@ -627,6 +644,8 @@ router.post('/panel/vagas/crear', rateLimit({
     sb().from('jobs').insert({ restaurant_id: restaurantId(req), ...f }),
     'criar vaga'
   );
+  analytics.feature(metricsId(req, res), 'vaga_criada');
+  analytics.step(metricsId(req, res), 'primeira_vaga');
 
   res.redirect('/panel/vagas?ok=' + encodeURIComponent('Vacante creada.'));
 });
@@ -707,6 +726,7 @@ router.post('/panel/contratacion', async (req, res) => {
     'pausar/ativar contratação'
   );
 
+  analytics.feature(metricsId(req, res), 'candidaturas_pausadas');
   logSecurity(action === 'pausar' ? 'candidaturas_pausadas' : 'candidaturas_activadas',
     `rid=${restaurantId(req)}`, req.ip, {
       userId: req.user.id, restaurantId: restaurantId(req)
@@ -765,6 +785,7 @@ function markOnboarding(req, column) {
 /* «Abrir página» do guia: regista o passo e segue para a página pública. */
 router.get('/panel/ver-pagina', (req, res) => {
   markOnboarding(req, 'page_viewed_at');
+  analytics.step(metricsId(req, res), 'pagina_vista');
   res.redirect(`${config.appUrl}/r/${req.user.restaurant_slug}`);
 });
 
@@ -772,6 +793,7 @@ router.get('/panel/qr', async (req, res) => {
   const found = await ownRestaurantUrl(req);
   if (!found) return notFound(res);
   markOnboarding(req, 'qr_viewed_at');
+  analytics.step(metricsId(req, res), 'qr_visto');
 
   const qrSvg = await QRCode.toString(found.url, { ...QR_OPTIONS, type: 'svg' });
 
@@ -792,6 +814,7 @@ router.get('/panel/qr.png', async (req, res) => {
   res.setHeader('Content-Type', 'image/png');
   res.setHeader('Content-Disposition', `attachment; filename="qr-${found.restaurant.slug}.png"`);
   res.setHeader('Cache-Control', 'no-store');
+  analytics.feature(metricsId(req, res), 'qr_baixado');
   res.send(png);
 });
 
@@ -893,6 +916,7 @@ router.post('/panel/restaurante', uploadRestaurantImages, async (req, res) => {
     throw err;
   }
 
+  if (newLogo) analytics.step(metricsId(req, res), 'logo_adicionado');
   logSecurity('restaurante_actualizado', `rid=${rid}`, req.ip, { userId: req.user.id, restaurantId: rid });
 
   /* Só agora se apagam as imagens que deixaram de ser referenciadas. */
@@ -1416,6 +1440,7 @@ router.post('/panel/reportar', rateLimit({
     user_agent: String(req.headers['user-agent'] || '').slice(0, 200)
   }), 'gravar reporte');
 
+  analytics.feature(metricsId(req, res), 'problema_reportado');
   logSecurity('reporte_enviado', `kind=${kind}${ref ? ` ref=${ref}` : ''}`, req.ip, {
     userId: req.user.id, restaurantId: restaurantId(req)
   });

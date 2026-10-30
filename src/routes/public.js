@@ -10,6 +10,7 @@ const { verifyCsrf } = require('../middleware/csrf');
 const { rateLimit, dbRateLimit } = require('../middleware/rateLimit');
 const { uploadCvFile, inspectPdf, safeFilename } = require('../middleware/uploads');
 const { notifyNewApplication, notifyRightsRequest } = require('../lib/mailer');
+const analytics = require('../lib/analytics');
 const { PRIVACY_NOTICE_VERSION, CONSENT_VERSION, futureText, interestText, days2months } = require('../lib/consent');
 const { operator } = require('../lib/legal');
 const storage = require('../lib/storage');
@@ -311,6 +312,8 @@ router.post('/r/:slug/apply', ...applyLimiters, uploadCvFile, async (req, res) =
    * candidato). Não bloqueia a resposta ao candidato. */
   background(notifyNewApplication({ restaurant, applicationId: result.application_id, jobTitle }), 'mailer');
 
+  /* Métrica do negócio (Painel NexForge): só «chegou uma candidatura», nada do candidato. */
+  analytics.feature(restaurant.id, 'candidatura_recebida');
   logPublic('candidatura_enviada', `rid=${restaurant.id} app=${result.application_id}`, req, restaurant.id);
 
   /* POST-Redirect-GET: evita reenvio ao recarregar (§7). */
@@ -400,6 +403,7 @@ router.post('/r/:slug/interes', ...interestLimiters, async (req, res) => {
   }
 
   background(notifyNewApplication({ restaurant, applicationId: result.application_id, jobTitle: 'Oportunidades futuras' }), 'mailer');
+  analytics.feature(restaurant.id, 'candidatura_recebida');
   logPublic('interes_registrado', `rid=${restaurant.id} app=${result.application_id}`, req, restaurant.id);
 
   res.redirect(`/r/${restaurant.slug}/enviado?tipo=futuro`);

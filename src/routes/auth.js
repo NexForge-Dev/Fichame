@@ -16,6 +16,7 @@ const { sendPasswordReset } = require('../lib/mailer');
 const { TERMS_VERSION, DPA_VERSION, recordAcceptance } = require('../lib/legal');
 const { ESTABLISHMENT_TYPES } = require('../lib/statuses');
 const { DEMO_EMAIL, isDemoUser } = require('../lib/demo');
+const analytics = require('../lib/analytics');
 
 const router = express.Router();
 
@@ -112,6 +113,8 @@ async function handleRegister(req, res, googleAccount = null) {
     password2: String(req.body.password2 || '').slice(0, 200)
   };
 
+  if (EMAIL_RE.test(form.email)) analytics.signupStarted(form.email, googleAccount ? 'google' : 'email');
+
   const errors = {};
   if (form.restaurant_name.length < 2) errors.restaurant_name = 'Indica el nombre del establecimiento.';
   if (form.legal_name.length < 2) errors.legal_name = 'Indica la razón social o el nombre del titular del negocio.';
@@ -182,6 +185,7 @@ async function handleRegister(req, res, googleAccount = null) {
     ip: req.ip
   });
 
+  analytics.signupCompleted(result.restaurant_id, form.email, googleAccount ? 'google' : 'email');
   logSecurity('registro_restaurante', `rid=${result.restaurant_id} terms=${TERMS_VERSION} dpa=${DPA_VERSION}${googleAccount ? ' via=google' : ''}`, req.ip, {
     userId: result.user_id,
     restaurantId: result.restaurant_id,
@@ -302,7 +306,7 @@ router.get('/login/google/callback',
     }
 
     const bySub = await one(
-      sb().from('users').select('id, email, role, blocked, google_sub').eq('google_sub', account.sub),
+      sb().from('users').select('id, email, role, blocked, google_sub, restaurant_id').eq('google_sub', account.sub),
       'login google (sub)'
     );
 
@@ -321,7 +325,7 @@ router.get('/login/google/callback',
     let user = bySub;
     if (!user) {
       const byEmail = await one(
-        sb().from('users').select('id, email, role, blocked, google_sub').eq('email', account.email),
+        sb().from('users').select('id, email, role, blocked, google_sub, restaurant_id').eq('email', account.email),
         'login google (email)'
       );
       if (byEmail) {
@@ -349,6 +353,7 @@ router.get('/login/google/callback',
 
     await destroySession(req, res);
     await createSession(req, res, user.id);
+    if (user.role === 'owner') analytics.sessionStarted(user.restaurant_id);
     logSecurity('login_ok', `user=${user.id} role=${user.role} via=google`, req.ip, {
       userId: user.id, userAgent: req.headers['user-agent']
     });
@@ -416,7 +421,7 @@ router.post('/login', ...loginLimiters, async (req, res) => {
 
   /* `email` é citext: a comparação é insensível a maiúsculas no Postgres. */
   const user = EMAIL_RE.test(email) ? await one(
-    sb().from('users').select('id, email, password_hash, role, blocked').eq('email', email),
+    sb().from('users').select('id, email, password_hash, role, blocked, restaurant_id').eq('email', email),
     'login'
   ) : null;
 
@@ -445,6 +450,7 @@ router.post('/login', ...loginLimiters, async (req, res) => {
   await destroySession(req, res);
   await createSession(req, res, user.id);
 
+  if (user.role === 'owner') analytics.sessionStarted(user.restaurant_id);
   logSecurity('login_ok', `user=${user.id} role=${user.role}`, req.ip, {
     userId: user.id, userAgent: req.headers['user-agent']
   });

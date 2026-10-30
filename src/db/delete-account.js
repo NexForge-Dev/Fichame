@@ -21,6 +21,7 @@
 const config = require('../config');
 const { rpc, logSecurity } = require('./index');
 const storage = require('../lib/storage');
+const analytics = require('../lib/analytics');
 
 const args = process.argv.slice(2);
 const val = (flag) => { const i = args.indexOf(flag); return i === -1 ? '' : String(args[i + 1] || ''); };
@@ -49,6 +50,7 @@ async function main() {
 
   await storage.removeCv(res.paths);
   await storage.removeImage(res.media);
+  await analytics.accountDeleted(id);
   await logSecurity('cuenta_eliminada', `rid=${id} apps=${res.applications} cvs=${res.paths.length}`, '', {});
   console.log(`\n  Conta ${id} eliminada: ${res.applications} candidatura(s), ${res.paths.length} CV(s).\n`);
 }

@@ -78,6 +78,13 @@ const config = {
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || ''
   },
 
+  /* Painel NexForge (métricas internas, opcional). Sem as três variáveis não envia nada. */
+  analytics: {
+    endpoint: (process.env.NEXFORGE_ENDPOINT || '').trim(),
+    ingestKey: (process.env.NEXFORGE_INGEST_KEY || '').trim(),
+    pseudonymSecret: process.env.NEXFORGE_PSEUDONYM_SECRET || ''
+  },
+
   smtp: {
     host: process.env.SMTP_HOST || '',
     port: parseInt(process.env.SMTP_PORT || '587', 10),
