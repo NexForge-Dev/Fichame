@@ -41,10 +41,7 @@ module.exports = {
     pt: 'Ex.: Experiência anterior (valorizada), disponibilidade aos fins de semana…'
   },
   'Vacantes actuales': { en: 'Current openings', pt: 'Vagas atuais' },
-  'No tienes vacantes. Crea la primera arriba. Mientras no haya vacantes activas, la página NFC ofrecerá el formulario de futuras oportunidades.': {
-    en: 'You have no openings. Create the first one above. While there are no active openings, the NFC page will offer the future opportunities form.',
-    pt: 'Não tens vagas. Cria a primeira acima. Enquanto não houver vagas ativas, a página NFC mostra o formulário de oportunidades futuras.'
-  },
+  'No tienes vacantes. Crea la primera arriba. Mientras no haya vacantes activas, tu página pública ofrecerá el formulario de futuras oportunidades.': { en: 'You have no openings. Create the first one above. While there are no active openings, your public page will offer the future opportunities form.', pt: 'Não tens vagas. Cria a primeira acima. Enquanto não houver vagas ativas, a tua página pública mostra o formulário de oportunidades futuras.' },
   'Activa': { en: 'Active', pt: 'Ativa' },
   'Desactivada': { en: 'Inactive', pt: 'Desativada' },
   'candidatura recibida': { en: 'application received', pt: 'candidatura recebida' },
@@ -60,18 +57,12 @@ module.exports = {
   'Sí, eliminar esta vacante': { en: 'Yes, delete this opening', pt: 'Sim, eliminar esta vaga' },
 
   // O meu negócio
-  'URL de tu etiqueta NFC': { en: 'Your NFC tag URL', pt: 'URL da tua etiqueta NFC' },
+  'URL de tu página pública': { en: 'Your public page URL', pt: 'URL da tua página pública' },
   'Copiar URL': { en: 'Copy URL', pt: 'Copiar URL' },
   'Generar código QR': { en: 'Generate QR code', pt: 'Gerar código QR' },
-  'Graba esta URL en la etiqueta NFC. Nunca cambiará, aunque pauses o reactives las candidaturas. Si quieres, imprime también el código QR para quien no tenga NFC en el móvil.': {
-    en: 'Write this URL to the NFC tag. It will never change, even if you pause or reopen applications. If you like, also print the QR code for people without NFC on their phone.',
-    pt: 'Grava este URL na etiqueta NFC. Nunca vai mudar, mesmo que pauses ou reatives as candidaturas. Se quiseres, imprime também o código QR para quem não tem NFC no telemóvel.'
-  },
+  'Comparte esta URL o imprime su código QR. Nunca cambiará, aunque pauses o reactives las candidaturas.': { en: 'Share this URL or print its QR code. It will never change, even if you pause or reopen applications.', pt: 'Partilha este URL ou imprime o seu código QR. Nunca vai mudar, mesmo que pauses ou reatives as candidaturas.' },
   'Estado de contratación': { en: 'Hiring status', pt: 'Estado do recrutamento' },
-  'Al pausar, la página NFC mostrará «No estamos contratando» y solo recibirá datos para futuras oportunidades. No hace falta tocar la etiqueta.': {
-    en: 'When paused, the NFC page will show “We are not hiring” and will only collect details for future opportunities. No need to touch the tag.',
-    pt: 'Ao pausar, a página NFC mostra «Não estamos a contratar» e só recebe dados para oportunidades futuras. Não é preciso mexer na etiqueta.'
-  },
+  'Al pausar, tu página pública mostrará «No estamos contratando» y solo recibirá datos para futuras oportunidades. El enlace y el QR siguen siendo los mismos.': { en: 'When paused, your public page will show “We are not hiring” and will only collect details for future opportunities. The link and the QR code stay the same.', pt: 'Ao pausar, a tua página pública mostra «Não estamos a contratar» e só recebe dados para oportunidades futuras. O link e o QR continuam os mesmos.' },
   'Pausado': { en: 'Paused', pt: 'Pausado' },
   'Al activar, el formulario de candidaturas vuelve a estar disponible al instante.': {
     en: 'When reopened, the application form is available again straight away.',
@@ -93,7 +84,7 @@ module.exports = {
     en: 'Notifications contain no candidate data: just a link to your dashboard.',
     pt: 'Os avisos não incluem dados do candidato: só uma ligação para o teu painel.'
   },
-  'Imágenes de la etiqueta NFC': { en: 'NFC tag images', pt: 'Imagens da etiqueta NFC' },
+  'Imágenes de tu página pública': { en: 'Public page images', pt: 'Imagens da tua página pública' },
   'PNG, JPG o WEBP · máximo {mb} MB. Se muestran en la página pública que ven los candidatos.': {
     en: 'PNG, JPG or WEBP · max {mb} MB. Shown on the public page candidates see.',
     pt: 'PNG, JPG ou WEBP · máximo {mb} MB. Aparecem na página pública que os candidatos veem.'
@@ -111,10 +102,7 @@ module.exports = {
     en: 'your business’s unique identifier on the platform.',
     pt: 'identificador único do teu estabelecimento na plataforma.'
   },
-  'Contacta con soporte si necesitas cambiarlo: cambiarlo invalidaría la URL grabada en tu etiqueta NFC.': {
-    en: 'Contact support if you need to change it: changing it would invalidate the URL written to your NFC tag.',
-    pt: 'Contacta o suporte se precisares de o mudar: mudá-lo invalidaria o URL gravado na tua etiqueta NFC.'
-  },
+  'Contacta con soporte si necesitas cambiarlo: cambiarlo invalidaría tu enlace y los códigos QR que ya hayas impreso.': { en: 'Contact support if you need to change it: changing it would break your link and any QR codes you have already printed.', pt: 'Contacta o suporte se precisares de o mudar: mudá-lo invalidaria o teu link e os códigos QR que já tenhas impresso.' },
 
   // Configuração
   'Solicitudes de derechos': { en: 'Rights requests', pt: 'Pedidos de direitos' },
@@ -165,10 +153,7 @@ module.exports = {
 
   // Privacidade
   'Privacidad y candidatos': { en: 'Privacy and candidates', pt: 'Privacidade e candidatos' },
-  'Cuenta creada. Antes de grabar la etiqueta NFC, lee esta página: son 2 minutos.': {
-    en: 'Account created. Before writing your NFC tag, read this page: it takes 2 minutes.',
-    pt: 'Conta criada. Antes de gravar a etiqueta NFC, lê esta página: são 2 minutos.'
-  },
+  'Cuenta creada. Antes de compartir tu enlace, lee esta página: son 2 minutos.': { en: 'Account created. Before sharing your link, read this page: it takes 2 minutes.', pt: 'Conta criada. Antes de partilhar o teu link, lê esta página: são 2 minutos.' },
   'Falta información obligatoria': { en: 'Required information missing', pt: 'Falta informação obrigatória' },
   'Los candidatos deben saber quién es el responsable de sus datos y cómo contactarlo. Completa la': {
     en: 'Candidates must know who controls their data and how to contact them. Fill in the',

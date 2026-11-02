@@ -11,14 +11,14 @@
 
   <!-- A URL da etiqueta é o centro do produto: destaque próprio. -->
   <div class="nfc-box">
-    <div class="label"><%- icon('nfc') %> <%= tr('URL de tu etiqueta NFC') %></div>
+    <div class="label"><%- icon('qr') %> <%= tr('URL de tu página pública') %></div>
     <div class="url"><%= nfcUrl %></div>
     <div class="actions-row flat">
       <button class="btn small" type="button" data-copy="<%= nfcUrl %>"><%= tr('Copiar URL') %></button>
       <a class="btn secondary small" href="<%= nfcUrl %>" target="_blank" rel="noopener"><%= tr('Abrir página') %></a>
       <a class="btn secondary small" href="/panel/qr"><%= tr('Generar código QR') %></a>
     </div>
-    <p class="small nfc-note"><%= tr('Graba esta URL en la etiqueta NFC. Nunca cambiará, aunque pauses o reactives las candidaturas. Si quieres, imprime también el código QR para quien no tenga NFC en el móvil.') %></p>
+    <p class="small nfc-note"><%= tr('Comparte esta URL o imprime su código QR. Nunca cambiará, aunque pauses o reactives las candidaturas.') %></p>
   </div>
 
   <div class="card">
@@ -33,7 +33,7 @@
         <input type="hidden" name="accion" value="pausar">
         <button class="btn secondary" type="submit"><%= tr('Pausar candidaturas') %></button>
       </form>
-      <p class="help"><%= tr('Al pausar, la página NFC mostrará «No estamos contratando» y solo recibirá datos para futuras oportunidades. No hace falta tocar la etiqueta.') %></p>
+      <p class="help"><%= tr('Al pausar, tu página pública mostrará «No estamos contratando» y solo recibirá datos para futuras oportunidades. El enlace y el QR siguen siendo los mismos.') %></p>
     <% } else { %>
       <div class="status-strip is-paused">
         <span class="dot dot-lg red"></span>
@@ -60,7 +60,7 @@
       <div class="field">
         <label for="commercial_name"><%= tr('Nombre comercial') %> <span class="dim label-hint">(<%= tr('opcional') %>)</span></label>
         <input id="commercial_name" type="text" name="commercial_name" maxlength="100" value="<%= restaurant.commercial_name %>">
-        <div class="help"><%= tr('Es el nombre que verán los candidatos en la página de la etiqueta NFC.') %></div>
+        <div class="help"><%= tr('Es el nombre que verán los candidatos en tu página pública.') %></div>
       </div>
       <div class="field">
         <label for="establecimiento"><%= tr('Tipo de establecimiento') %> *</label>
@@ -113,7 +113,7 @@
         </div>
       </div>
 
-      <div class="section-title"><%= tr('Imágenes de la etiqueta NFC') %></div>
+      <div class="section-title"><%= tr('Imágenes de tu página pública') %></div>
       <p class="help help-lift"><%= tr('PNG, JPG o WEBP · máximo {mb} MB. Se muestran en la página pública que ven los candidatos.', { mb: maxImgMb }) %></p>
       <div class="hint-row">
         <div class="field">
@@ -171,7 +171,7 @@
   <div class="card">
     <h2><%= tr('Tu slug') %></h2>
     <p class="muted small flat"><strong>/<%= restaurant.slug %></strong> — <%= tr('identificador único de tu establecimiento en la plataforma.') %></p>
-    <p class="help"><%= tr('Contacta con soporte si necesitas cambiarlo: cambiarlo invalidaría la URL grabada en tu etiqueta NFC.') %></p>
+    <p class="help"><%= tr('Contacta con soporte si necesitas cambiarlo: cambiarlo invalidaría tu enlace y los códigos QR que ya hayas impreso.') %></p>
   </div>
 </main>
 

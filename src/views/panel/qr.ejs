@@ -12,7 +12,7 @@
     <a class="btn secondary" href="/panel/qr.png" download><%= tr('Descargar PNG') %></a>
   </div>
   <p class="help no-print">
-    <%= tr('Lleva a la misma página que la etiqueta NFC. Imprímelo y colócalo junto a la etiqueta para quien no tenga NFC en el móvil.') %>
+    <%= tr('Lleva a la página pública de tu negocio. Imprímelo y colócalo a la vista, en la puerta, el escaparate o el mostrador.') %>
   </p>
 
   <!-- Só esta folha sai na impressão (ver @media print no CSS). -->
@@ -22,7 +22,7 @@
     <!-- SVG gerado no servidor pela lib qrcode a partir da URL do próprio
          estabelecimento; não contém dados do utilizador além do slug. -->
     <div class="qr-code"><%- qrSvg %></div>
-    <p class="qr-cta"><%= tr('Escanea el código o acerca tu móvil a la etiqueta NFC para enviar tu candidatura') %></p>
+    <p class="qr-cta"><%= tr('Escanea el código con la cámara del móvil para enviar tu candidatura') %></p>
     <p class="qr-url"><%= nfcUrl %></p>
   </section>
 </main>

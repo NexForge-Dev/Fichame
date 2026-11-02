@@ -71,7 +71,7 @@ module.exports = {
   'vacantes': { en: 'openings', pt: 'vagas' },
 
   // Rodapé e idioma
-  'Fíchame · Candidaturas por NFC para cualquier negocio': { en: 'Fíchame · NFC job applications for any business', pt: 'Fíchame · Candidaturas por NFC para qualquer negócio' },
+  'Fíchame · Candidaturas con QR para cualquier negocio': { en: 'Fíchame · QR job applications for any business', pt: 'Fíchame · Candidaturas por QR para qualquer negócio' },
   'Privacidad': { en: 'Privacy', pt: 'Privacidade' },
   'Cookies': { en: 'Cookies', pt: 'Cookies' },
   'Términos': { en: 'Terms', pt: 'Termos' },

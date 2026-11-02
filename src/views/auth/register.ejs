@@ -15,7 +15,7 @@
       <% if (locals.google) { %>
         <div class="flash ok"><%= tr('Cuenta de Google verificada:') %> <strong><%= google.email %></strong>. <%= tr('Completa los datos de tu negocio para terminar.') %></div>
       <% } else { %>
-        <p class="muted small"><%= tr('Después podrás usar tu URL exclusiva en la etiqueta NFC.') %></p>
+        <p class="muted small"><%= tr('Después podrás compartir tu URL exclusiva o imprimir su código QR.') %></p>
         <% if (locals.googleEnabled) { %>
           <a class="btn secondary block lg btn-google" href="/login/google"><%- include('../partials/google_icon') %> <%= tr('Registrarse con Google') %></a>
           <div class="auth-sep"><span><%= tr('o con tu email') %></span></div>
@@ -34,7 +34,7 @@
         <div class="field">
           <label for="commercial_name"><%= tr('Nombre comercial') %> <span class="dim label-hint"><%= tr('(si es diferente)') %></span></label>
           <input id="commercial_name" type="text" name="commercial_name" maxlength="100" value="<%= form.commercial_name || '' %>">
-          <div class="help"><%= tr('Es el nombre que verán los candidatos en la página de la etiqueta NFC.') %></div>
+          <div class="help"><%= tr('Es el nombre que verán los candidatos en tu página pública.') %></div>
         </div>
 
         <div class="field">
@@ -96,7 +96,7 @@
         <div class="field">
           <label for="descripcion"><%= tr('Descripción breve') %></label>
           <textarea id="descripcion" name="descripcion" maxlength="1500" rows="3" placeholder="<%= tr('Ej.: Cocina mediterránea en el centro de Madrid. Buscamos equipo con ganas de aprender.') %>"><%= form.description || '' %></textarea>
-          <div class="help"><%= tr('Se muestra en la página pública de tu etiqueta NFC.') %></div>
+          <div class="help"><%= tr('Se muestra en tu página pública.') %></div>
         </div>
 
         <% if (!locals.google) { %>

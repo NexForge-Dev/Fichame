@@ -23,7 +23,7 @@ async function main() {
 
   app.listen(config.port, () => {
     console.log('');
-    console.log('  Fíchame — Reclutamiento por NFC');
+    console.log('  Fíchame — Reclutamiento con QR');
     console.log('  ----------------------------');
     console.log(`  Painel (dono):   ${config.appUrl}/login`);
     console.log(`  Registro:        ${config.appUrl}/registro`);

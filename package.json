@@ -1,7 +1,7 @@
 {
   "name": "fichame",
   "version": "2.0.0",
-  "description": "Sistema de reclutamiento por NFC para restaurantes, tiendas y cualquier negocio",
+  "description": "Sistema de reclutamiento por QR para restaurantes, tiendas y cualquier negocio",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

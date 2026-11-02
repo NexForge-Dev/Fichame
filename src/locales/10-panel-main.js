@@ -53,16 +53,10 @@ module.exports = {
   },
   'Subir logo': { en: 'Upload logo', pt: 'Carregar logótipo' },
   'Mira tu página como un candidato': { en: 'See your page as a candidate', pt: 'Vê a tua página como um candidato' },
-  'Es lo que se abre al acercar el móvil a la etiqueta.': {
-    en: 'It is what opens when someone holds their phone to the tag.',
-    pt: 'É o que se abre ao aproximar o telemóvel da etiqueta.'
-  },
+  'Es lo que se abre al escanear tu QR o abrir tu enlace.': { en: 'It is what opens when someone scans your QR code or opens your link.', pt: 'É o que se abre ao ler o teu QR ou abrir o teu link.' },
   'Abrir página': { en: 'Open page', pt: 'Abrir página' },
-  'Coloca la etiqueta o imprime el QR': { en: 'Place the tag or print the QR code', pt: 'Coloca a etiqueta ou imprime o QR' },
-  'Graba tu enlace en la etiqueta NFC y ponla a la vista, en la puerta o el mostrador.': {
-    en: 'Write your link to the NFC tag and put it where people can see it, on the door or the counter.',
-    pt: 'Grava a tua ligação na etiqueta NFC e coloca-a à vista, na porta ou no balcão.'
-  },
+  'Imprime tu código QR': { en: 'Print your QR code', pt: 'Imprime o teu código QR' },
+  'Imprime el código QR de tu enlace y ponlo a la vista, en la puerta o el mostrador.': { en: 'Print the QR code for your link and put it where people can see it, on the door or the counter.', pt: 'Imprime o código QR da tua ligação e coloca-o à vista, na porta ou no balcão.' },
   'Código QR': { en: 'QR code', pt: 'Código QR' },
   'Primeros pasos': { en: 'Getting started', pt: 'Primeiros passos' },
   'En unos minutos tu negocio estará listo para recibir candidaturas.': {
@@ -92,11 +86,8 @@ module.exports = {
   'Y {n} más.': { en: 'And {n} more.', pt: 'E mais {n}.' },
   'Cómo conseguir las primeras candidaturas': { en: 'How to get your first applications', pt: 'Como conseguir as primeiras candidaturas' },
   'Comparte el enlace': { en: 'Share the link', pt: 'Partilha a ligação' },
-  'En el Instagram del negocio, en tu estado de WhatsApp y en tu ficha de Google. Funciona igual que la etiqueta.': {
-    en: 'On your business Instagram, your WhatsApp status and your Google Business profile. It works just like the tag.',
-    pt: 'No Instagram do negócio, no teu estado do WhatsApp e na tua ficha do Google. Funciona tal como a etiqueta.'
-  },
-  'Pon la etiqueta y el QR a la vista': { en: 'Put the tag and the QR code where people can see them', pt: 'Põe a etiqueta e o QR à vista' },
+  'En el Instagram del negocio, en tu estado de WhatsApp y en tu ficha de Google. Funciona igual que el QR.': { en: 'On the business’s Instagram, in your WhatsApp status and on your Google profile. It works just like the QR code.', pt: 'No Instagram do negócio, no teu estado do WhatsApp e na tua ficha do Google. Funciona tal como o QR.' },
+  'Pon el QR a la vista': { en: 'Put the QR code where people can see it', pt: 'Põe o QR à vista' },
   'En la puerta, el escaparate o la caja, con un cartel de «Estamos contratando».': {
     en: 'On the door, the shop window or the till, with a “We’re hiring” sign.',
     pt: 'Na porta, na montra ou na caixa, com um cartaz de «Estamos a contratar».'
@@ -159,10 +150,7 @@ module.exports = {
   'Aplicar filtros': { en: 'Apply filters', pt: 'Aplicar filtros' },
   'Quitar filtros': { en: 'Clear filters', pt: 'Limpar filtros' },
   'No hay candidaturas con estos filtros.': { en: 'No applications match these filters.', pt: 'Não há candidaturas com estes filtros.' },
-  'Aún no has recibido candidaturas. Cuando alguien acerque el móvil a tu etiqueta o escanee tu QR, aparecerá aquí.': {
-    en: 'You have not received any applications yet. When someone holds their phone to your tag or scans your QR code, it will show up here.',
-    pt: 'Ainda não recebeste candidaturas. Quando alguém aproximar o telemóvel da tua etiqueta ou ler o teu QR, aparecerá aqui.'
-  },
+  'Aún no has recibido candidaturas. Cuando alguien escanee tu QR o abra tu enlace, aparecerá aquí.': { en: 'You haven\'t received any applications yet. When someone scans your QR code or opens your link, it will show up here.', pt: 'Ainda não recebeste candidaturas. Quando alguém ler o teu QR ou abrir o teu link, aparecerá aqui.' },
   'Ver mi código QR': { en: 'View my QR code', pt: 'Ver o meu código QR' },
   'Mostrando {n} de {total}. Usa los filtros para afinar.': {
     en: 'Showing {n} of {total}. Use the filters to narrow them down.',
@@ -410,13 +398,7 @@ module.exports = {
   // Código QR
   'Imprimir': { en: 'Print', pt: 'Imprimir' },
   'Descargar PNG': { en: 'Download PNG', pt: 'Descarregar PNG' },
-  'Lleva a la misma página que la etiqueta NFC. Imprímelo y colócalo junto a la etiqueta para quien no tenga NFC en el móvil.': {
-    en: 'It leads to the same page as the NFC tag. Print it and place it next to the tag for people whose phones do not have NFC.',
-    pt: 'Leva à mesma página que a etiqueta NFC. Imprime-o e coloca-o junto à etiqueta para quem não tiver NFC no telemóvel.'
-  },
+  'Lleva a la página pública de tu negocio. Imprímelo y colócalo a la vista, en la puerta, el escaparate o el mostrador.': { en: 'It leads to your business’s public page. Print it and put it where people can see it, on the door, shop window or counter.', pt: 'Leva à página pública do teu negócio. Imprime-o e coloca-o à vista, na porta, na montra ou no balcão.' },
   '¿Quieres trabajar con nosotros?': { en: 'Want to work with us?', pt: 'Queres trabalhar connosco?' },
-  'Escanea el código o acerca tu móvil a la etiqueta NFC para enviar tu candidatura': {
-    en: 'Scan the code or hold your phone to the NFC tag to send your application',
-    pt: 'Lê o código ou aproxima o telemóvel da etiqueta NFC para enviar a tua candidatura'
-  }
+  'Escanea el código con la cámara del móvil para enviar tu candidatura': { en: 'Scan the code with your phone camera to send your application', pt: 'Lê o código com a câmara do telemóvel para enviar a tua candidatura' }
 };

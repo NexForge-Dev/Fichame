@@ -733,7 +733,7 @@ router.post('/panel/contratacion', async (req, res) => {
     });
 
   const msg = status === 'paused'
-    ? 'Candidaturas pausadas. La página NFC seguirá funcionando.'
+    ? 'Candidaturas pausadas. Tu enlace y tu QR seguirán funcionando.'
     : 'Candidaturas activadas.';
 
   res.redirect(`/panel?ok=${encodeURIComponent(msg)}&estado=${status}`);

@@ -109,7 +109,7 @@ const es = {
     ],
     share: {
       title: '¿Cómo llegan los candidatos?',
-      text: 'A través del enlace de tu negocio. Puedes ponerlo en tu local con una etiqueta NFC o con el código QR que Fíchame te prepara para imprimir, o compartirlo por WhatsApp y redes sociales.',
+      text: 'A través del enlace de tu negocio. Puedes ponerlo en tu local con el código QR que Fíchame te prepara para imprimir, o compartirlo por WhatsApp y redes sociales.',
       note: 'Fíchame no publica tus vacantes en portales de empleo: tú decides dónde compartes tu enlace.'
     }
   },
@@ -152,7 +152,7 @@ const es = {
     soonText: 'Muy pronto podrás ver aquí una grabación de la aplicación paso a paso.',
     chapters: [
       'Crear una vacante',
-      'Poner tu QR o etiqueta NFC',
+      'Poner tu QR a la vista',
       'Recibir candidaturas',
       'Ver a los candidatos',
       'Organizar el proceso'
@@ -206,7 +206,6 @@ const es = {
     items: [
       { q: '¿Es difícil de usar?', a: 'No. Está pensado para usarse desde el móvil, entre cliente y cliente. Crear la cuenta y la primera vacante lleva pocos minutos, y el panel te guía con unos primeros pasos.' },
       { q: '¿Tengo que instalar algo?', a: 'No. Ni tú ni los candidatos tenéis que instalar ninguna aplicación: todo funciona en el navegador del móvil o del ordenador.' },
-      { q: '¿Necesito una etiqueta NFC?', a: 'No es obligatorio. Puedes imprimir el código QR que te prepara el panel o simplemente compartir el enlace de tu negocio.' },
       { q: '¿Y si ya no necesito contratar?', a: 'Pausas las candidaturas con un botón. Tu página mostrará que no estás contratando y podrás reactivarla cuando quieras.' },
       { q: '¿Quién ve los CV de mis candidatos?', a: 'Solo tú, desde tu panel. Los CV no tienen enlaces públicos y ningún otro negocio puede ver tus candidaturas.' }
     ]
@@ -307,7 +306,7 @@ const en = {
     ],
     share: {
       title: 'How do candidates reach you?',
-      text: 'Through your business link. You can put it in your venue with an NFC tag or with the printable QR code Fíchame prepares for you, or share it on WhatsApp and social media.',
+      text: 'Through your business link. You can put it in your venue with the printable QR code Fíchame prepares for you, or share it on WhatsApp and social media.',
       note: 'Fíchame does not post your openings on job boards: you decide where to share your link.'
     }
   },
@@ -350,7 +349,7 @@ const en = {
     soonText: 'You’ll soon be able to watch a step-by-step recording of the app here.',
     chapters: [
       'Creating an opening',
-      'Putting up your QR or NFC tag',
+      'Putting up your QR code',
       'Receiving applications',
       'Viewing candidates',
       'Organising the process'
@@ -404,7 +403,6 @@ const en = {
     items: [
       { q: 'Is it hard to use?', a: 'No. It’s designed to be used on your phone, between customers. Creating your account and first opening takes a few minutes, and the dashboard guides you through the first steps.' },
       { q: 'Do I have to install anything?', a: 'No. Neither you nor your candidates need to install an app: everything works in the browser, on a phone or a computer.' },
-      { q: 'Do I need an NFC tag?', a: 'No. You can print the QR code the dashboard prepares for you, or simply share your business link.' },
       { q: 'What if I stop hiring?', a: 'Pause applications with one button. Your page will show you’re not hiring, and you can switch it back on whenever you like.' },
       { q: 'Who can see my candidates’ CVs?', a: 'Only you, from your dashboard. CVs have no public links and no other business can see your applications.' }
     ]
@@ -505,7 +503,7 @@ const pt = {
     ],
     share: {
       title: 'Como chegam os candidatos?',
-      text: 'Através do link do teu negócio. Podes pô-lo no teu espaço com uma etiqueta NFC ou com o código QR que o Fíchame te prepara para imprimir, ou partilhá-lo por WhatsApp e nas redes sociais.',
+      text: 'Através do link do teu negócio. Podes pô-lo no teu espaço com o código QR que o Fíchame te prepara para imprimir, ou partilhá-lo por WhatsApp e nas redes sociais.',
       note: 'O Fíchame não publica as tuas vagas em portais de emprego: és tu que decides onde partilhas o teu link.'
     }
   },
@@ -548,7 +546,7 @@ const pt = {
     soonText: 'Muito em breve vais poder ver aqui uma gravação da aplicação passo a passo.',
     chapters: [
       'Criar uma vaga',
-      'Colocar o teu QR ou etiqueta NFC',
+      'Colocar o teu QR à vista',
       'Receber candidaturas',
       'Ver os candidatos',
       'Organizar o processo'
@@ -602,7 +600,6 @@ const pt = {
     items: [
       { q: 'É difícil de usar?', a: 'Não. Foi pensado para ser usado no telemóvel, entre cliente e cliente. Criar a conta e a primeira vaga leva poucos minutos, e o painel guia-te com uns primeiros passos.' },
       { q: 'Tenho de instalar alguma coisa?', a: 'Não. Nem tu nem os candidatos têm de instalar nenhuma aplicação: tudo funciona no browser do telemóvel ou do computador.' },
-      { q: 'Preciso de uma etiqueta NFC?', a: 'Não é obrigatório. Podes imprimir o código QR que o painel te prepara ou simplesmente partilhar o link do teu negócio.' },
       { q: 'E se já não precisar de contratar?', a: 'Pausas as candidaturas com um botão. A tua página vai mostrar que não estás a contratar e podes reativá-la quando quiseres.' },
       { q: 'Quem vê os CV dos meus candidatos?', a: 'Só tu, a partir do teu painel. Os CV não têm links públicos e nenhum outro negócio pode ver as tuas candidaturas.' }
     ]

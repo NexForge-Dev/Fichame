@@ -69,10 +69,7 @@ module.exports = {
 
   // Contratação
   'Acción no válida.': { en: 'Invalid action.', pt: 'Ação inválida.' },
-  'Candidaturas pausadas. La página NFC seguirá funcionando.': {
-    en: 'Applications paused. The NFC page will keep working.',
-    pt: 'Candidaturas pausadas. A página NFC continua a funcionar.'
-  },
+  'Candidaturas pausadas. Tu enlace y tu QR seguirán funcionando.': { en: 'Applications paused. Your link and QR code will keep working.', pt: 'Candidaturas pausadas. O teu link e o teu QR continuam a funcionar.' },
   'Candidaturas activadas.': { en: 'Applications open.', pt: 'Candidaturas ativadas.' },
 
   // O meu negócio

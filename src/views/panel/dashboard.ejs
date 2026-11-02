@@ -16,8 +16,8 @@
       var steps = [
         { done: openJobs > 0, title: tr('Publica tu primera vacante'), text: tr('Camarero, dependiente, cocina… Los candidatos eligen a cuál se apuntan.'), href: '/panel/vagas', cta: tr('Crear vacante') },
         { done: hasLogo, title: tr('Añade tu logo'), text: tr('Tu página se ve más profesional y los candidatos reconocen tu negocio.'), href: '/panel/restaurante', cta: tr('Subir logo') },
-        { done: pageViewed, title: tr('Mira tu página como un candidato'), text: tr('Es lo que se abre al acercar el móvil a la etiqueta.'), href: '/panel/ver-pagina', cta: tr('Abrir página'), external: true },
-        { done: qrViewed, title: tr('Coloca la etiqueta o imprime el QR'), text: tr('Graba tu enlace en la etiqueta NFC y ponla a la vista, en la puerta o el mostrador.'), href: '/panel/qr', cta: tr('Código QR') }
+        { done: pageViewed, title: tr('Mira tu página como un candidato'), text: tr('Es lo que se abre al escanear tu QR o abrir tu enlace.'), href: '/panel/ver-pagina', cta: tr('Abrir página'), external: true },
+        { done: qrViewed, title: tr('Imprime tu código QR'), text: tr('Imprime el código QR de tu enlace y ponlo a la vista, en la puerta o el mostrador.'), href: '/panel/qr', cta: tr('Código QR') }
       ];
       var doneCount = steps.filter(function (s) { return s.done; }).length;
     %>
@@ -94,13 +94,13 @@
           <span class="step-mark">1</span>
           <div class="grow">
             <strong><%= tr('Comparte el enlace') %></strong>
-            <span><%= tr('En el Instagram del negocio, en tu estado de WhatsApp y en tu ficha de Google. Funciona igual que la etiqueta.') %></span>
+            <span><%= tr('En el Instagram del negocio, en tu estado de WhatsApp y en tu ficha de Google. Funciona igual que el QR.') %></span>
           </div>
         </li>
         <li class="step-item">
           <span class="step-mark">2</span>
           <div class="grow">
-            <strong><%= tr('Pon la etiqueta y el QR a la vista') %></strong>
+            <strong><%= tr('Pon el QR a la vista') %></strong>
             <span><%= tr('En la puerta, el escaparate o la caja, con un cartel de «Estamos contratando».') %></span>
           </div>
         </li>

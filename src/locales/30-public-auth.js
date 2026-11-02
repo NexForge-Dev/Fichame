@@ -22,7 +22,7 @@ module.exports = {
   'o con tu email': { en: 'or with your email', pt: 'ou com o teu email' },
 
   // Login
-  'Candidaturas por NFC para cualquier negocio': { en: 'NFC job applications for any business', pt: 'Candidaturas por NFC para qualquer negócio' },
+  'Candidaturas con QR para cualquier negocio': { en: 'QR job applications for any business', pt: 'Candidaturas por QR para qualquer negócio' },
   'Contraseña restablecida. Por seguridad, se han cerrado todas tus sesiones: inicia sesión de nuevo.': {
     en: 'Password reset. For security, all your sessions have been closed: please log in again.',
     pt: 'Palavra-passe redefinida. Por segurança, todas as tuas sessões foram terminadas: inicia sessão novamente.'
@@ -38,15 +38,12 @@ module.exports = {
   'Crea la página de candidaturas de tu establecimiento': { en: "Create your business's job application page", pt: 'Cria a página de candidaturas do teu estabelecimento' },
   'Cuenta de Google verificada:': { en: 'Google account verified:', pt: 'Conta Google verificada:' },
   'Completa los datos de tu negocio para terminar.': { en: "Fill in your business details to finish.", pt: 'Preenche os dados do teu negócio para terminar.' },
-  'Después podrás usar tu URL exclusiva en la etiqueta NFC.': { en: 'You can then use your unique URL on the NFC tag.', pt: 'Depois poderás usar o teu URL exclusivo na etiqueta NFC.' },
+  'Después podrás compartir tu URL exclusiva o imprimir su código QR.': { en: 'You can then share your unique URL or print its QR code.', pt: 'Depois poderás partilhar o teu URL exclusivo ou imprimir o seu código QR.' },
   'Registrarse con Google': { en: 'Sign up with Google', pt: 'Registar com o Google' },
   'Nombre del establecimiento': { en: 'Business name', pt: 'Nome do estabelecimento' },
   'Nombre comercial': { en: 'Trading name', pt: 'Nome comercial' },
   '(si es diferente)': { en: '(if different)', pt: '(se for diferente)' },
-  'Es el nombre que verán los candidatos en la página de la etiqueta NFC.': {
-    en: 'This is the name candidates will see on the NFC tag page.',
-    pt: 'É o nome que os candidatos vão ver na página da etiqueta NFC.'
-  },
+  'Es el nombre que verán los candidatos en tu página pública.': { en: 'This is the name candidates will see on your public page.', pt: 'É o nome que os candidatos vão ver na tua página pública.' },
   'Tipo de establecimiento': { en: 'Type of business', pt: 'Tipo de estabelecimento' },
   'Razón social o nombre del titular': { en: 'Legal name or owner name', pt: 'Denominação social ou nome do titular' },
   'La empresa o persona autónoma titular del negocio. Se muestra a los candidatos como': {
@@ -64,7 +61,7 @@ module.exports = {
     en: 'E.g.: Mediterranean cuisine in central Madrid. We are looking for people keen to learn.',
     pt: 'Ex.: Cozinha mediterrânica no centro de Madrid. Procuramos equipa com vontade de aprender.'
   },
-  'Se muestra en la página pública de tu etiqueta NFC.': { en: 'Shown on the public page of your NFC tag.', pt: 'Aparece na página pública da tua etiqueta NFC.' },
+  'Se muestra en tu página pública.': { en: 'Shown on your public page.', pt: 'Aparece na tua página pública.' },
   'Antes de crear la cuenta': { en: 'Before creating your account', pt: 'Antes de criares a conta' },
   'Tu negocio será el': { en: 'Your business will be the', pt: 'O teu negócio será o' },
   'de los datos de las personas que se candidaten. Fíchame trata esos datos solo por tu cuenta y siguiendo tus instrucciones': {
@@ -264,10 +261,7 @@ module.exports = {
 
   // Mensagens de src/routes/public.js
   'Establecimiento no encontrado': { en: 'Business not found', pt: 'Estabelecimento não encontrado' },
-  'No encontramos este establecimiento. Comprueba el enlace de la etiqueta NFC.': {
-    en: "We couldn't find this business. Check the NFC tag link.",
-    pt: 'Não encontrámos este estabelecimento. Verifica o link da etiqueta NFC.'
-  },
+  'No encontramos este establecimiento. Comprueba el enlace o el código QR.': { en: 'We couldn\'t find this business. Check the link or the QR code.', pt: 'Não encontrámos este estabelecimento. Verifica o link ou o código QR.' },
   'Enlace no válido.': { en: 'Invalid link.', pt: 'Link inválido.' },
   'Has enviado demasiadas candidaturas desde este dispositivo. Inténtalo más tarde.': {
     en: "You've sent too many applications from this device. Try again later.",

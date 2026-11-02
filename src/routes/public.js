@@ -107,7 +107,7 @@ function notFoundRestaurant(res, message) {
   return res.status(404).render('error', {
     status: 404,
     title: 'Establecimiento no encontrado',
-    message: message || 'No encontramos este establecimiento. Comprueba el enlace de la etiqueta NFC.'
+    message: message || 'No encontramos este establecimiento. Comprueba el enlace o el código QR.'
   });
 }
 
