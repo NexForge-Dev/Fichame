@@ -97,6 +97,8 @@ const config = {
 
 /* Falha cedo e com uma mensagem útil se o Supabase não estiver configurado.
  * Nunca imprime o valor das chaves (§28). */
+let warned = false;
+
 function assertConfig() {
   const missing = [];
   if (!config.supabase.url) missing.push('SUPABASE_URL');
@@ -134,6 +136,11 @@ function assertConfig() {
   if (process.env.VERCEL_ENV === 'production' && !/^https:\/\/(?!localhost|127\.)/.test(config.appUrl)) {
     throw new Error(`APP_URL tem de ser https em produção (atual: ${config.appUrl}).`);
   }
+  /* Os avisos só saem uma vez: assertConfig() corre no arranque e outra vez
+   * ao criar o cliente do Supabase (db/index.js). */
+  if (warned) return;
+  warned = true;
+
   /* Em produção, avisos (não bloqueiam o arranque) para o que falta e só se
    * notaria mais tarde: páginas legais com marcadores e limpeza diária parada. */
   if (process.env.VERCEL_ENV === 'production') {
