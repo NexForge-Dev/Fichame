@@ -18,7 +18,13 @@ const config = require('../config');
 const router = express.Router();
 
 function common() {
-  return { operator, operatorComplete: operatorComplete(), noticeVersion: PRIVACY_NOTICE_VERSION };
+  return {
+    operator,
+    operatorComplete: operatorComplete(),
+    noticeVersion: PRIVACY_NOTICE_VERSION,
+    /* Só depois da revisão por advogado: LEGAL_REVIEWED=1 esconde a faixa de borrador. */
+    legalReviewed: process.env.LEGAL_REVIEWED === '1'
+  };
 }
 
 router.get('/privacidad', (req, res) => {

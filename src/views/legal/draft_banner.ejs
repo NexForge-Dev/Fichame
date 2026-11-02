@@ -3,6 +3,8 @@
   <p class="flat small"><%= tr('Los textos legales (privacidad, términos y consentimientos) se muestran en español, que es su versión oficial.') %></p>
 </div>
 <% } %>
+<%# La faja de borrador solo desaparece con LEGAL_REVIEWED=1, después de la revisión jurídica real. %>
+<% if (!locals.legalReviewed) { %>
 <div class="card attention">
   <p class="flat small">
     <strong>BORRADOR — REQUIERE REVISIÓN JURÍDICA ANTES DE USO COMERCIAL.</strong>
@@ -10,3 +12,8 @@
     <% if (!operatorComplete) { %>Los datos entre corchetes ([RAZÓN SOCIAL], [NIF]…) están pendientes de completar por el titular de Fíchame.<% } %>
   </p>
 </div>
+<% } else if (!operatorComplete) { %>
+<div class="card attention">
+  <p class="flat small">Los datos entre corchetes ([RAZÓN SOCIAL], [NIF]…) están pendientes de completar por el titular de Fíchame.</p>
+</div>
+<% } %>

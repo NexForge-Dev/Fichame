@@ -131,3 +131,16 @@ test('index.js: configuração insegura em produção → 503 em tudo e health c
   assert.deepEqual(body, { ok: false, config: false, db: false, migrations: false });
   assert.equal(pageStatus, 503);
 });
+
+test('páginas legais: faixa de borrador até LEGAL_REVIEWED=1', async () => {
+  const before = await (await get('/privacidad')).text();
+  assert.match(before, /BORRADOR — REQUIERE REVISIÓN JURÍDICA/);
+  assert.doesNotMatch(before, /PENDIENTE DE CONFIRMAR/);
+  process.env.LEGAL_REVIEWED = '1';
+  try {
+    const after = await (await get('/privacidad')).text();
+    assert.doesNotMatch(after, /BORRADOR — REQUIERE REVISIÓN JURÍDICA/);
+  } finally {
+    delete process.env.LEGAL_REVIEWED;
+  }
+});

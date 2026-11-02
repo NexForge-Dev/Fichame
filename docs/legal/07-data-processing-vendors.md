@@ -15,7 +15,7 @@
 ## Fichas por proveedor
 
 ### Supabase, Inc. (EE. UU.)
-- **Región del proyecto**: `TODO: REQUIRES COMPANY INPUT` (Project Settings → General → Region). Recomendación: región UE (p. ej., Fráncfort `eu-central-1` o Irlanda `eu-west-1`).
+- **Región del proyecto**: Irlanda `eu-west-1` (UE), indicada por el titular; comprobable en Project Settings → General → Region.
 - **DPA**: `TODO` — Supabase ofrece un DPA; confirmar aceptación/firma y versión.
 - **Transferencia**: aunque los datos estén en la UE, el acceso de soporte/ingeniería desde EE. UU. u otros países puede constituir transferencia. Verificar: certificación en el **EU-U.S. Data Privacy Framework** (lista oficial dataprivacyframework.gov) y/o **SCC** (Decisión 2021/914) en el DPA; evaluación de impacto de transferencia si se usan SCC.
 - **Subencargados**: `TODO` — lista publicada por Supabase (incluye proveedor cloud subyacente).
@@ -23,7 +23,7 @@
 - **Medidas complementarias implementadas**: bucket privado, sin URLs públicas ni firmadas, RLS deny-all para anon/authenticated, `service_role` solo en el servidor.
 
 ### Vercel Inc. (EE. UU.)
-- **Región de funciones**: `TODO`. Sin `vercel.json`, Vercel ejecuta por defecto en una región de EE. UU. (*verificar en Settings → Functions*). **PROBLEMA ENCONTRADO (potencial)**: si las funciones se ejecutan en EE. UU., cada candidatura y cada descarga de CV **transita y se procesa en EE. UU.** Recomendación: fijar región UE (p. ej., `fra1`/`cdg1`) igual a la de Supabase.
+- **Región de funciones**: Dublín `dub1` (UE), fijada en `vercel.json` (`"regions": ["dub1"]`), junto a Supabase `eu-west-1`. Los estáticos públicos se sirven desde la CDN global de Vercel (no contienen datos personales).
 - **DPA / DPF / SCC / subencargados / retención de logs de peticiones**: `TODO`.
 - Los **logs de peticiones** de Vercel incluyen rutas e IP; las rutas de Fíchame no contienen datos personales salvo ids internos (el token de recuperación de contraseña va en el fragmento `#`, que no llega al servidor).
 
