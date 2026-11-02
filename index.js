@@ -10,8 +10,10 @@
  * verifica o schema do Supabase no arranque. Aqui essa verificação fica de
  * fora para não pesar em cada arranque a frio; usar `npm run check`.
  *
- * Se faltar configuração, assertConfig() lança o erro com a lista do que
- * falta — aparece nos Runtime Logs da Vercel.
+ * Se faltar configuração ou for insegura, assertConfig() lança o erro com a
+ * lista do que falta — aparece nos Runtime Logs da Vercel. A app continua a
+ * NÃO servir páginas nesse caso: sobe só configErrorApp() (503 em tudo e
+ * /api/health com config:false), para a monitorização ver a causa.
  */
 
 /* Não remover: a Vercel só aceita como entrada um ficheiro cujo código
@@ -21,7 +23,15 @@ require('express');
 
 const config = require('./src/config');
 const { createApp } = require('./src/app');
+const { configErrorApp } = require('./src/routes/health');
 
-config.assertConfig();
+let app;
+try {
+  config.assertConfig();
+  app = createApp();
+} catch (err) {
+  console.error(`[config] Arranque recusado: ${err.message}`);
+  app = configErrorApp();
+}
 
-module.exports = createApp();
+module.exports = app;

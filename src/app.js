@@ -182,6 +182,8 @@ function createApp() {
   /* Retenção automática (Vercel Cron ou outro agendador). Antes da sessão: não
    * usa cookies. Desativada sem CRON_SECRET. */
   app.use('/', require('./routes/internal'));
+  /* /api/health para monitorização: só booleanos, sem sessão. */
+  app.use('/', require('./routes/health').router);
 
   app.use(loadSession);
   app.use((req, res, next) => {

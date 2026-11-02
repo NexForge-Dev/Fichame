@@ -145,6 +145,6 @@ async function main() {
   console.log('');
 }
 
-module.exports = { assertSchema, appliedMigrations, securityProblems };
+module.exports = { assertSchema, appliedMigrations, securityProblems, REQUIRED_MIGRATIONS };
 
 if (require.main === module) main();
