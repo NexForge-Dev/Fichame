@@ -1,5 +1,12 @@
 # Deploy today — Fíchame on Vercel
 
+
+> **Order matters (migration 0013):** run `npm run migrate` against the cloud
+> database **before** the new code takes production traffic. The code relies on
+> `register_restaurant` v3, the `email_changes` table and
+> `session_context.restaurant_created_at`. Then `npm run check` must end with
+> "Tudo pronto." and only then deploy/promote.
+
 Owner checklist to bring production back up (it currently answers **HTTP 500**
 on every route). Nothing here has been applied: run each step yourself.
 Never paste secret values into chats, issues or commits.
@@ -13,7 +20,7 @@ Never paste secret values into chats, issues or commits.
 ## Why production is down
 
 `APP_URL` is `http://localhost:3000` in Vercel. In production `assertConfig()`
-refuses a non-https `APP_URL` (it ends up in NFC tags, QR codes and emails),
+refuses a non-https `APP_URL` (it ends up in QR codes, shared links and emails),
 and `index.js` used to throw at import → generic 500.
 
 After the `fix/launch` branch is deployed the app still refuses that config,
@@ -39,7 +46,7 @@ secret values from stdin so they are never echoed.
 
 | Variable | Action | Why |
 |---|---|---|
-| `APP_URL` | Production: set to `https://fichame-roan.vercel.app` (later: the custom domain, **before** writing NFC tags). Preview: delete | Must be https in production; the fallback for Preview is `VERCEL_PROJECT_PRODUCTION_URL` (https) |
+| `APP_URL` | Production: set to `https://fichame-roan.vercel.app` (later: the custom domain, **before** printing QR codes). Preview: delete | Must be https in production; the fallback for Preview is `VERCEL_PROJECT_PRODUCTION_URL` (https) |
 | `COOKIE_SECURE` | Delete (or set `1`) | On Vercel it defaults to `1`; a copied `0` breaks `__Host-` cookies and HSTS |
 | `TRUST_PROXY` | Delete (or set `1`) | Defaults to `1` on Vercel; `0` breaks HTTPS detection and rate-limit IPs |
 | `MAX_CV_MB` | `4` or delete | Vercel rejects bodies > 4.5 MB; values above 4 are clamped with a warning |

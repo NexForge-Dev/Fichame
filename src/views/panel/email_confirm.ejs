@@ -1,0 +1,30 @@
+<%- include('../partials/head', { title: tr('Confirmar nuevo email') }) %>
+<%- include('../partials/panel_nav') %>
+
+<main class="container">
+  <div class="page-title">
+    <h1><%= tr('Confirmar nuevo email') %></h1>
+    <a class="btn ghost small" href="/panel/configuracion">← <%= tr('Configuración') %></a>
+  </div>
+
+  <div class="card narrow-card">
+    <% if (error) { %>
+      <div class="flash err" role="alert"><%= tr(error) %></div>
+      <div class="actions-row flat">
+        <a class="btn secondary small" href="/panel/configuracion"><%= tr('Volver a Configuración') %></a>
+      </div>
+    <% } else { %>
+      <p class="muted small"><%= tr('Email actual:') %> <strong><%= userEmail %></strong></p>
+      <p><%= tr('Nuevo email de acceso') %>: <strong><%= newEmail %></strong></p>
+      <p class="muted small"><%= tr('A partir de ahora entrarás con el nuevo email. Se cerrarán tus demás sesiones.') %></p>
+      <%# O email só muda neste POST (com CSRF): abrir o link não basta. %>
+      <form action="/panel/configuracion/email" method="post">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="token" value="<%= token %>">
+        <button class="btn" type="submit"><%= tr('Confirmar el cambio de email') %></button>
+      </form>
+    <% } %>
+  </div>
+</main>
+
+<%- include('../partials/foot') %>

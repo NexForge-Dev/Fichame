@@ -97,10 +97,42 @@ function parseCookies(header) {
   return out;
 }
 
+/* Cada GET sem cookie criava uma linha em `sessions`: um bot podia encher a
+ * tabela só a pedir páginas públicas. Limite em memória, por instância e por
+ * IP, à criação de sessões ANÓNIMAS. É generoso (um Wi-Fi de loja tem muitos
+ * candidatos atrás do mesmo IP, e um browser normal guarda o cookie e não
+ * volta a pedir). Acima do limite a página mostra-se na mesma, mas sem
+ * sessão: o formulário falha o CSRF ao enviar. */
+const ANON_WINDOW_MS = 10 * 60 * 1000;
+const ANON_MAX_PER_IP = Math.max(1, parseInt(process.env.ANON_SESSIONS_PER_IP || '600', 10) || 600);
+const anonCounts = new Map();
+const anonSweeper = setInterval(() => {
+  const now = Date.now();
+  for (const [k, e] of anonCounts) if (e.resetAt <= now) anonCounts.delete(k);
+}, 60 * 1000);
+if (anonSweeper.unref) anonSweeper.unref();
+
+function allowAnonSession(ip, now = Date.now()) {
+  const k = String(ip || 'unknown');
+  let entry = anonCounts.get(k);
+  if (!entry || entry.resetAt <= now) {
+    entry = { count: 0, resetAt: now + ANON_WINDOW_MS };
+    anonCounts.set(k, entry);
+  }
+  entry.count += 1;
+  return entry.count <= ANON_MAX_PER_IP;
+}
+
 /* O candidato não faz login, mas precisa de uma sessão para ter um token
  * CSRF no formulário (§26). */
 async function ensureSession(req, res, next) {
-  if (!req.session) await createSession(req, res, null);
+  if (!req.session) {
+    if (allowAnonSession(req.ip)) {
+      await createSession(req, res, null);
+    } else {
+      console.warn('[session] limite de sessões anónimas por IP atingido.');
+    }
+  }
   next();
 }
 
@@ -167,7 +199,9 @@ async function loadSession(req, res, next) {
       restaurant_slug: row.restaurant_slug,
       restaurant_name: row.restaurant_name,
       restaurant_active: row.restaurant_active,
-      restaurant_hiring: row.restaurant_hiring
+      restaurant_hiring: row.restaurant_hiring,
+      /* Data de registo do negócio (0013): prova grátis no painel. */
+      restaurant_created_at: row.restaurant_created_at || null
     };
   }
 
@@ -175,5 +209,5 @@ async function loadSession(req, res, next) {
 }
 
 module.exports = {
-  COOKIE_NAME, ANON_TTL_MS, createSession, destroySession, destroyUserSessions, loadSession, ensureSession
+  COOKIE_NAME, ANON_TTL_MS, ANON_MAX_PER_IP, allowAnonSession, createSession, destroySession, destroyUserSessions, loadSession, ensureSession
 };

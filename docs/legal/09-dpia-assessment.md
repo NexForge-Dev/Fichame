@@ -17,7 +17,7 @@ Referencias: art. 35.1 y 35.3 RGPD; Directrices WP248 rev.01 del GT29 (ratificad
 | Gran escala | **Incierto** | Por negocio es pequeño; a nivel de plataforma (encargado) depende del crecimiento |
 | Combinación de conjuntos de datos | **No** | Datos aislados por negocio |
 | **Interesados vulnerables** | **Probable** | WP248 menciona a los empleados por el desequilibrio de poder; los candidatos a un empleo están en una posición similar |
-| Tecnología innovadora | **No** significativa | NFC/QR como acceso a un formulario |
+| Tecnología innovadora | **No** significativa | Código QR como acceso a un formulario |
 | Impide ejercer un derecho o acceder a un servicio/contrato | **Posible** | La selección determina el acceso a un empleo |
 
 ### Conclusión técnica

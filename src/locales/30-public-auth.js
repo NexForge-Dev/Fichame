@@ -1,7 +1,7 @@
 'use strict';
 
 /* Traduções das páginas de entrada (login, registo, recuperação de senha),
- * da página pública do negócio (NFC), da confirmação de envio e do
+ * da página pública do negócio (QR ou link), da confirmação de envio e do
  * formulário de direitos. Inclui as mensagens que src/routes/auth.js e
  * src/routes/public.js passam às views. Os textos legais (camadas de
  * privacidade, consentimentos, aceitação dos termos) ficam em espanhol. */
@@ -31,20 +31,20 @@ module.exports = {
   'Entrar': { en: 'Log in', pt: 'Entrar' },
   '¿Has olvidado tu contraseña?': { en: 'Forgot your password?', pt: 'Esqueceste-te da palavra-passe?' },
   '¿Todavía no tienes cuenta?': { en: "Don't have an account yet?", pt: 'Ainda não tens conta?' },
-  'Registra tu establecimiento': { en: 'Register your business', pt: 'Regista o teu estabelecimento' },
+  'Registra tu negocio': { en: 'Register your business', pt: 'Regista o teu negócio' },
 
   // Registo
   'Registro': { en: 'Sign up', pt: 'Registo' },
-  'Crea la página de candidaturas de tu establecimiento': { en: "Create your business's job application page", pt: 'Cria a página de candidaturas do teu estabelecimento' },
+  'Crea la página de candidaturas de tu negocio': { en: "Create your business's job application page", pt: 'Cria a página de candidaturas do teu negócio' },
   'Cuenta de Google verificada:': { en: 'Google account verified:', pt: 'Conta Google verificada:' },
   'Completa los datos de tu negocio para terminar.': { en: "Fill in your business details to finish.", pt: 'Preenche os dados do teu negócio para terminar.' },
   'Después podrás compartir tu URL exclusiva o imprimir su código QR.': { en: 'You can then share your unique URL or print its QR code.', pt: 'Depois poderás partilhar o teu URL exclusivo ou imprimir o seu código QR.' },
   'Registrarse con Google': { en: 'Sign up with Google', pt: 'Registar com o Google' },
-  'Nombre del establecimiento': { en: 'Business name', pt: 'Nome do estabelecimento' },
+  'Nombre del negocio': { en: 'Business name', pt: 'Nome do negócio' },
   'Nombre comercial': { en: 'Trading name', pt: 'Nome comercial' },
   '(si es diferente)': { en: '(if different)', pt: '(se for diferente)' },
   'Es el nombre que verán los candidatos en tu página pública.': { en: 'This is the name candidates will see on your public page.', pt: 'É o nome que os candidatos vão ver na tua página pública.' },
-  'Tipo de establecimiento': { en: 'Type of business', pt: 'Tipo de estabelecimento' },
+  'Tipo de negocio': { en: 'Type of business', pt: 'Tipo de negócio' },
   'Razón social o nombre del titular': { en: 'Legal name or owner name', pt: 'Denominação social ou nome do titular' },
   'La empresa o persona autónoma titular del negocio. Se muestra a los candidatos como': {
     en: 'The company or self-employed person who owns the business. It is shown to candidates as the',
@@ -211,9 +211,9 @@ module.exports = {
     pt: 'Vamos guardar a tua candidatura para futuras oportunidades de emprego e contactar-te se surgir uma vaga.'
   },
   '¡Candidatura enviada correctamente!': { en: 'Application sent successfully!', pt: 'Candidatura enviada com sucesso!' },
-  'El establecimiento ha recibido tus datos y tu CV. Si tu perfil encaja, te contactarán por teléfono o email.': {
+  'El negocio ha recibido tus datos y tu CV. Si tu perfil encaja, te contactarán por teléfono o email.': {
     en: "The business has received your details and your CV. If your profile is a good fit, they'll contact you by phone or email.",
-    pt: 'O estabelecimento recebeu os teus dados e o teu CV. Se o teu perfil encaixar, vão contactar-te por telefone ou email.'
+    pt: 'O negócio recebeu os teus dados e o teu CV. Se o teu perfil encaixar, vão contactar-te por telefone ou email.'
   },
   'Puedes pedir el acceso, la rectificación o la supresión de tus datos, o retirar el consentimiento de futuras oportunidades, en cualquier momento.': {
     en: 'You can request access to, correction or deletion of your data, or withdraw your consent for future opportunities, at any time.',
@@ -224,9 +224,9 @@ module.exports = {
   'Protección de datos de las candidaturas': { en: 'Data protection for applications', pt: 'Proteção de dados das candidaturas' },
   'Solicitud registrada': { en: 'Request registered', pt: 'Pedido registado' },
   'Referencia:': { en: 'Reference:', pt: 'Referência:' },
-  'La solicitud se ha enviado al establecimiento, que es quien decide sobre tus datos. Debe responderte en el plazo de': {
+  'La solicitud se ha enviado al negocio, que es quien decide sobre tus datos. Debe responderte en el plazo de': {
     en: 'The request has been sent to the business, which is the one that decides about your data. It must reply within',
-    pt: 'O pedido foi enviado ao estabelecimento, que é quem decide sobre os teus dados. Deve responder-te no prazo de'
+    pt: 'O pedido foi enviado ao negócio, que é quem decide sobre os teus dados. Deve responder-te no prazo de'
   },
   'un mes': { en: 'one month', pt: 'um mês' },
   '(ampliable dos meses más en casos complejos, avisándote). Te contestará al email que has indicado; para proteger tus datos, puede pedirte que confirmes tu identidad.': {
@@ -239,9 +239,9 @@ module.exports = {
   },
   'Información sobre el tratamiento de tus datos': { en: 'Information about how your data is processed', pt: 'Informação sobre o tratamento dos teus dados' },
   'Versión del texto:': { en: 'Text version:', pt: 'Versão do texto:' },
-  'La solicitud llega al establecimiento, que debe responderte en un mes. Usa el mismo email con el que enviaste la candidatura: así pueden encontrar tus datos.': {
+  'La solicitud llega al negocio, que debe responderte en un mes. Usa el mismo email con el que enviaste la candidatura: así pueden encontrar tus datos.': {
     en: 'The request goes to the business, which must reply within one month. Use the same email you applied with, so they can find your data.',
-    pt: 'O pedido chega ao estabelecimento, que deve responder-te no prazo de um mês. Usa o mesmo email com que enviaste a candidatura: assim podem encontrar os teus dados.'
+    pt: 'O pedido chega ao negócio, que deve responder-te no prazo de um mês. Usa o mesmo email com que enviaste a candidatura: assim podem encontrar os teus dados.'
   },
   '¿Qué quieres solicitar?': { en: 'What would you like to request?', pt: 'O que queres pedir?' },
   'Email con el que te candidataste': { en: 'Email you applied with', pt: 'Email com que te candidataste' },

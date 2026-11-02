@@ -170,6 +170,62 @@ function main() {
     check('consentimento futuro com data e texto',
       q(`select (future_granted_at is not null) || '|' || future_text from consents where application_id=${b1.application_id}`) === 'true|texto');
 
+    console.log('\n— Duplicado por vaga e dados do candidato (0013) —');
+    const jobA1 = q(`insert into jobs (restaurant_id, title) values (${ra}, 'Camarero') returning id`);
+    const jobA2 = q(`insert into jobs (restaurant_id, title) values (${ra}, 'Cocinero') returning id`);
+    const dj1 = apply(ra, 'vaga@x.es', { job_id: jobA1, first_name: 'Luis', last_name: 'Pérez', phone: '611111111' });
+    check('candidatura à vaga 1', dj1.ok);
+    check('mesmo email na mesma vaga em < 48 h → duplicado', apply(ra, 'vaga@x.es', { job_id: jobA1 }).reason === 'duplicate');
+    const dj2 = apply(ra, 'vaga@x.es', { job_id: jobA2, first_name: 'Otro', last_name: 'Nombre', phone: '622222222' });
+    check('mesmo email noutra vaga é aceite', dj2.ok && dj2.candidate_id === dj1.candidate_id);
+    const dj3 = apply(ra, 'vaga@x.es', { job_id: '' });
+    check('candidatura geral (sem vaga) é uma chave própria', dj3.ok);
+    check('segunda candidatura geral em < 48 h → duplicado', apply(ra, 'vaga@x.es', { job_id: '' }).reason === 'duplicate');
+    check('email conhecido não reescreve nome, apelidos nem telefone',
+      q(`select first_name || '|' || last_name || '|' || phone from candidates where id=${dj1.candidate_id}`) === 'Luis|Pérez|611111111');
+    q(`update candidates set last_name = '' where id=${dj1.candidate_id}`);
+    apply(ra, 'vaga@x.es', { job_id: '', first_name: 'X', last_name: 'Gómez' }); // duplicado: nada muda
+    q(`update applications set applied_at = now() - interval '3 days' where candidate_id=${dj1.candidate_id}`);
+    check('depois de 48 h volta a aceitar', apply(ra, 'vaga@x.es', { job_id: jobA1, first_name: 'X', last_name: 'Gómez' }).ok);
+    check('email conhecido só preenche campos vazios',
+      q(`select first_name || '|' || last_name from candidates where id=${dj1.candidate_id}`) === 'Luis|Gómez');
+    rpc('submit_interest', { restaurant_id: ra, first_name: 'Cambiado', email: 'vaga2@x.es', phone: '' });
+    q(`update applications set applied_at = now() - interval '3 days' where restaurant_id=${ra} and candidate_id=(select id from candidates where restaurant_id=${ra} and email='vaga2@x.es')`);
+    rpc('submit_interest', { restaurant_id: ra, first_name: 'Otro', email: 'vaga2@x.es', phone: '633333333' });
+    check('submit_interest também só preenche o que falta',
+      q(`select first_name || '|' || phone from candidates where restaurant_id=${ra} and email='vaga2@x.es'`) === 'Cambiado|633333333');
+
+    console.log('\n— Estado repetido não adia a supressão (0013) —');
+    q(`update applications set last_activity_at = now() - interval '30 days' where id=${dj1.application_id}`);
+    rpc('set_application_status', { application_id: dj1.application_id, restaurant_id: ra, status: 'nuevo' });
+    check('guardar o mesmo estado mantém last_activity_at',
+      q(`select last_activity_at < now() - interval '29 days' from applications where id=${dj1.application_id}`) === 't');
+    rpc('set_application_status', { application_id: dj1.application_id, restaurant_id: ra, status: 'revisado' });
+    check('mudar de estado atualiza last_activity_at',
+      q(`select last_activity_at > now() - interval '1 minute' from applications where id=${dj1.application_id}`) === 't');
+
+    console.log('\n— Registo atómico (0013) —');
+    const R = rpc('register_restaurant', {
+      slug_base: 'rest-r', name: 'R', owner_name: 'Rita', email: 'r@r.es', password_hash: 'x',
+      legal_name: 'Rita SL', privacy_email: 'r@r.es', terms_version: 't1', dpa_version: 'd1', ip: '1.2.3.4'
+    });
+    check('registo grava dados legais e termos no mesmo pedido', R.ok &&
+      q(`select legal_name || '|' || privacy_email || '|' || terms_version || '|' || dpa_version || '|' || (terms_accepted_at is not null) from restaurants where id=${R.restaurant_id}`) === 'Rita SL|r@r.es|t1|d1|true');
+    check('registo grava a aceitação no histórico',
+      q(`select count(*) from terms_acceptances where restaurant_id=${R.restaurant_id} and user_id=${R.user_id} and via='registro' and ip='1.2.3.4'`) === '1');
+    const nRest = q('select count(*) from restaurants');
+    const bad = psql(`select register_restaurant('${JSON.stringify({
+      slug_base: 'rest-x', name: 'X', owner_name: 'Xavi', email: 'x@x.es', password_hash: 'x',
+      legal_name: 'X SL', terms_version: 'v'.repeat(60), dpa_version: 'd1'
+    })}'::jsonb)`);
+    check('falha a meio do registo não deixa nada criado', !bad.ok &&
+      q('select count(*) from restaurants') === nRest &&
+      q("select count(*) from users where email='x@x.es'") === '0');
+    check('email repetido continua a dar email_taken',
+      rpc('register_restaurant', { slug_base: 'rest-r', name: 'R2', owner_name: 'Rita', email: 'r@r.es', password_hash: 'x' }).reason === 'email_taken');
+    check('session_context expõe restaurant_created_at',
+      q("select count(*) from information_schema.columns where table_name='session_context' and column_name='restaurant_created_at'") === '1');
+
     console.log('\n— Isolamento entre tenants na BD —');
     check('B não muda estado de candidatura de A',
       rpc('set_application_status', { application_id: a1.application_id, restaurant_id: rb, status: 'revisado' }).reason === 'not_found');
@@ -266,6 +322,11 @@ function main() {
     console.log('\n— Permissões —');
     check('anon não lê candidates',
       !psql('set role anon; select * from candidates').ok);
+    check('email_changes com RLS ativo (0013)',
+      q("select relrowsecurity from pg_class where relname='email_changes' and relnamespace='public'::regnamespace") === 't');
+    check('anon não lê email_changes (0013)', !psql('set role anon; select * from email_changes').ok);
+    check('authenticated não escreve em email_changes (0013)',
+      !psql(`set role authenticated; insert into email_changes (token_hash, user_id, new_email, expires_at) values ('h', ${ra}, 'n@n.es', now())`).ok);
     check('anon não executa funções',
       !psql(`set role anon; select rate_limit_hit('{}'::jsonb)`).ok);
     q('create table _nova_tabela_teste (x int)');

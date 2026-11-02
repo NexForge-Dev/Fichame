@@ -48,14 +48,14 @@
         /* Mensagem já escrita: o dono só tem de carregar em enviar. */
         var waText = tr('Hola {name}, te escribo de {business}. Hemos visto tu candidatura para {job}. ¿Cuándo te viene bien hablar?', {
           name: a.first_name,
-          business: restaurantName || tr('nuestro establecimiento'),
+          business: restaurantName || tr('nuestro negocio'),
           job: a.job_title || tr('trabajar con nosotros')
         });
       %>
       <% if (wa) { %>
         <a class="btn secondary btn-wa" href="https://wa.me/<%= wa %>?text=<%= encodeURIComponent(waText) %>" target="_blank" rel="noopener" title="<%= tr('Abre WhatsApp con este número') %>"><%- icon('chat') %> WhatsApp</a>
       <% } %>
-      <a class="btn secondary" href="mailto:<%= a.email %>?subject=<%= encodeURIComponent(tr('Candidatura para {job}', { job: a.job_title || tr('tu establecimiento') })) %>"><%- icon('mail') %> Email</a>
+      <a class="btn secondary" href="mailto:<%= a.email %>?subject=<%= encodeURIComponent(tr('Candidatura para {job}', { job: a.job_title || tr('tu negocio') })) %>"><%- icon('mail') %> Email</a>
     </div>
   </div>
 
@@ -127,7 +127,7 @@
               <%= tr('salud, embarazo, discapacidad, religión, origen, nacionalidad, edad, situación familiar, orientación sexual, ideas políticas ni afiliación sindical: son datos especialmente protegidos o pueden constituir discriminación en el acceso al empleo.') %>
             </div>
             <p class="help">
-              <%= tr('Solo visibles para tu establecimiento. Pero son datos personales del candidato: si ejerce su') %>
+              <%= tr('Solo visibles para tu negocio. Pero son datos personales del candidato: si ejerce su') %>
               <strong><%= tr('derecho de acceso') %></strong><%= tr(', tendrás que entregárselas.') %>
             </p>
           </div>
@@ -272,7 +272,7 @@
 
       <div class="sub-block o-derechos">
         <h2><%= tr('Derechos del candidato') %></h2>
-        <p class="help help-lift"><%= tr('Para atender una solicitud de acceso o portabilidad, descarga todos sus datos en este establecimiento (el CV se descarga aparte).') %></p>
+        <p class="help help-lift"><%= tr('Para atender una solicitud de acceso o portabilidad, descarga todos sus datos en este negocio (el CV se descarga aparte).') %></p>
         <a class="btn secondary small" href="/panel/candidaturas/<%= a.id %>/exportar"><%= tr('Exportar datos (JSON)') %></a>
       </div>
 
@@ -331,7 +331,7 @@
         <details class="spaced-sm">
           <summary class="summary-danger"><%= tr('Suprimir todos los datos de esta persona (derecho de supresión)…') %></summary>
           <div class="details-body">
-            <p class="help"><%= tr('Borra todas sus candidaturas en tu establecimiento, con CV, notas, historial y consentimientos. No afecta a otros establecimientos.') %></p>
+            <p class="help"><%= tr('Borra todas sus candidaturas en tu negocio, con CV, notas, historial y consentimientos. No afecta a otros negocios.') %></p>
             <form action="/panel/candidaturas/<%= a.id %>/eliminar-candidato" method="post">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <label class="check check-plain">

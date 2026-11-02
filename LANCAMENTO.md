@@ -3,9 +3,10 @@
 Lista curta do que **o dono** tem de fazer antes de abrir ao público. O código não
 precisa de mais alterações para isto; falta configuração, contas e decisões.
 
-> O Fíchame **não tem cobrança/pagamentos** implementados: o produto diz-se
-> «gratuito durante a prova de mercado». Para cobrar é preciso decidir o modelo
-> (preço, faturação) e integrar um fornecedor (ex.: Stripe) — trabalho novo.
+> O Fíchame **não tem cobrança/pagamentos** implementados. Os preços de
+> lançamento (prova grátis de 30 dias, plano Fundadores, plano Profissional,
+> todos + IVA) vivem em `src/lib/pricing.js` e aparecem na landing, na /conoce
+> e nos termos. Para cobrar falta integrar o fornecedor (Stripe) — trabalho novo.
 
 ## 1. Base de dados (Supabase cloud)
 
@@ -31,7 +32,7 @@ precisa de mais alterações para isto; falta configuração, contas e decisões
 | O quê | Onde criar | Variáveis |
 |---|---|---|
 | Supabase (já existe) | Project Settings → API | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` |
-| Domínio próprio | registador + Vercel → Domains | `APP_URL=https://o-teu-dominio` (**antes** de gravar etiquetas NFC/QR) |
+| Domínio próprio | registador + Vercel → Domains | `APP_URL=https://o-teu-dominio` (**antes** de imprimir códigos QR) |
 | Email transacional (SMTP) | Brevo, Mailgun, Amazon SES, Postmark… (servidor na UE de preferência). Configurar SPF/DKIM do domínio | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` |
 | Login com Google (opcional) | Google Cloud Console → Credentials → OAuth client (Web). Redirect: `<APP_URL>/login/google/callback` | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` |
 | Segredo do cron | `openssl rand -hex 32` | `CRON_SECRET` (≥ 32 caracteres) |
@@ -83,4 +84,4 @@ recuperação de senha passa pelo admin em `/admin/usuarios`).
 7. Entrar como admin em `/admin` → vê o negócio; `/admin/reportes` sem erros novos.
 8. Apagar o negócio de teste: `npm run delete-account -- --slug <slug>` (dry run)
    e depois com `--aplicar`.
-9. Gravar a etiqueta NFC com `https://<domínio>/r/<slug>` (NFC Tools) e testar.
+9. Imprimir o código QR do negócio (`/panel/qr`), lê-lo com o telemóvel e confirmar que abre `https://<domínio>/r/<slug>`.

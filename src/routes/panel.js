@@ -8,13 +8,17 @@ const { sb, one, many, count, run, rpc, escapeLike, logSecurity, dbError } = req
 const { requireOwner } = require('../middleware/auth');
 const { verifyCsrf } = require('../middleware/csrf');
 const { rateLimit } = require('../middleware/rateLimit');
-const { hashPassword, verifyPassword } = require('../lib/crypto');
+const { hashPasswordAsync, verifyPasswordAsync, randomToken, sha256 } = require('../lib/crypto');
 const google = require('../lib/google');
 const { uploadRestaurantImages } = require('../middleware/uploads');
 const { destroyUserSessions } = require('../middleware/session');
 const { findProtectedTerms } = require('../lib/sensitive');
 const { passwordProblem } = require('./auth');
 const { isDemoUser } = require('../lib/demo');
+const { isValidEmail } = require('../lib/privacy');
+const { autoRetentionEnabled } = require('../lib/retention');
+const { sendEmailChangeConfirmation } = require('../lib/mailer');
+const pricing = require('../lib/pricing');
 const storage = require('../lib/storage');
 const { QR_OPTIONS } = require('../lib/qr');
 const { background } = require('../lib/background');
@@ -58,6 +62,12 @@ router.use('/panel', async (req, res, next) => {
  * redirecionamento para fora do site. */
 router.use('/panel', (req, res, next) => {
   res.locals.isDemo = isDemoUser(req.user);
+  /* Prova grátis (src/lib/pricing.js): só informativa, nunca bloqueia nada.
+   * Só para donos reais — requireOwner já deixou de fora o admin, e a demo
+   * não tem prova. */
+  res.locals.trial = res.locals.isDemo || req.user.role !== 'owner'
+    ? null
+    : pricing.trialStatus(req.user.restaurant_created_at);
   if (!res.locals.isDemo || ['GET', 'HEAD'].includes(req.method)) return next();
 
   let back = '/panel';
@@ -65,7 +75,7 @@ router.use('/panel', (req, res, next) => {
     const ref = new URL(req.get('referer') || '', 'http://x');
     if (ref.pathname.startsWith('/panel')) back = ref.pathname;
   } catch { /* Referer inválido: volta ao início */ }
-  res.redirect(back + '?err=' + encodeURIComponent('Esto es una demostración: los cambios no se guardan. Crea tu cuenta gratis para usar Fíchame con tu negocio.'));
+  res.redirect(back + '?err=' + encodeURIComponent('Esto es una demostración: los cambios no se guardan. Empieza tus 30 días gratis para usar Fíchame con tu negocio.'));
 });
 
 /* «2026-03-15» + hora → instante com o offset de Madrid nesse dia (+01:00
@@ -194,7 +204,7 @@ router.get('/panel', async (req, res) => {
     hasLogo: Boolean(profile && profile.logo_path),
     pageViewed: Boolean(profile && profile.page_viewed_at),
     qrViewed: Boolean(profile && profile.qr_viewed_at),
-    nfcUrl: `${config.appUrl}/r/${req.user.restaurant_slug}`,
+    publicUrl: `${config.appUrl}/r/${req.user.restaurant_slug}`,
     counts,
     total: Number(metrics && metrics.total) || 0,
     weekCount: Number(metrics && metrics.week) || 0,
@@ -709,7 +719,7 @@ router.post('/panel/vagas/:id/eliminar', async (req, res) => {
 /* ================================================================== *
  * Pausar / ativar candidaturas (§20)
  * ================================================================== */
-/* A etiqueta NFC não muda: a URL continua a funcionar e é o backend que
+/* O QR e o link não mudam: a URL continua a funcionar e é o backend que
  * decide o que mostrar. */
 router.post('/panel/contratacion', async (req, res) => {
   if (!verifyCsrf(req)) return invalidSession(res);
@@ -740,7 +750,7 @@ router.post('/panel/contratacion', async (req, res) => {
 });
 
 /* ================================================================== *
- * Dados do restaurante + URL NFC (§33)
+ * Dados do restaurante + URL pública (§33)
  * ================================================================== */
 router.get('/panel/restaurante', async (req, res) => {
   const restaurant = await one(
@@ -752,13 +762,13 @@ router.get('/panel/restaurante', async (req, res) => {
 
   res.render('panel/restaurant', {
     restaurant,
-    nfcUrl: `${config.appUrl}/r/${restaurant.slug}`,
+    publicUrl: `${config.appUrl}/r/${restaurant.slug}`,
     query: req.query
   });
 });
 
 /* ================================================================== *
- * QR code da URL NFC — alternativa impressa à etiqueta
+ * QR code da URL pública — o acesso do candidato é por QR ou link
  * ------------------------------------------------------------------
  * Gerado no servidor: o CSP (`script-src 'self'`) não permite libs de
  * CDN, e o QR fica igual ao que é impresso ou descarregado.
@@ -799,7 +809,7 @@ router.get('/panel/qr', async (req, res) => {
 
   res.render('panel/qr', {
     restaurant: found.restaurant,
-    nfcUrl: found.url,
+    publicUrl: found.url,
     qrSvg
   });
 });
@@ -847,18 +857,17 @@ router.post('/panel/restaurante', uploadRestaurantImages, async (req, res) => {
     description: clean(req.body.descripcion, 1500)
   };
 
-  const EMAIL_OK = /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]{2,}$/;
   const errors = {};
-  if (form.name.length < 2) errors.name = 'Indica el nombre del establecimiento.';
+  if (form.name.length < 2) errors.name = 'Indica el nombre del negocio.';
   if (form.legal_name.length < 2) errors.legal_name = 'Indica la razón social o el nombre del titular.';
   if (form.owner_name.length < 2) errors.owner_name = 'Indica el responsable.';
-  if (!EMAIL_OK.test(form.email)) errors.email = 'Indica un email válido.';
-  if (!EMAIL_OK.test(form.privacy_email)) errors.privacy_email = 'Indica un email de contacto para privacidad.';
+  if (!isValidEmail(form.email)) errors.email = 'Indica un email válido.';
+  if (!isValidEmail(form.privacy_email)) errors.privacy_email = 'Indica un email de contacto para privacidad.';
   if (form.phone && !/^[\d\s().+-]{6,25}$/.test(form.phone)) errors.phone = 'Indica un teléfono válido.';
   if (form.city.length < 2) errors.city = 'Indica la ciudad.';
   if (form.postal_code && !/^\d{5}$/.test(form.postal_code)) errors.postal_code = 'El código postal debe tener 5 dígitos.';
   if (!Object.prototype.hasOwnProperty.call(ESTABLISHMENT_TYPES, form.establishment_type)) {
-    errors.establishment_type = 'Selecciona el tipo de establecimiento.';
+    errors.establishment_type = 'Selecciona el tipo de negocio.';
   }
 
   if (Object.keys(errors).length > 0) {
@@ -872,7 +881,7 @@ router.post('/panel/restaurante', uploadRestaurantImages, async (req, res) => {
     if (!saved) return notFound(res);
     return res.status(422).render('panel/restaurant', {
       restaurant: { ...saved, ...form },
-      nfcUrl: `${config.appUrl}/r/${saved.slug}`,
+      publicUrl: `${config.appUrl}/r/${saved.slug}`,
       query: { err: Object.values(errors).map((e) => req.tr(e)).join(' ') }
     });
   }
@@ -932,14 +941,38 @@ router.post('/panel/restaurante', uploadRestaurantImages, async (req, res) => {
 /* ================================================================== *
  * Configurações: email de acesso e senha
  * ================================================================== */
+/* Mudança do email de acesso (0013, tabela email_changes):
+ *  - com SMTP: link de confirmação para o email NOVO (token de 256 bits,
+ *    guardado só como sha256, 24 h, uso único). O email só muda quando o
+ *    dono, com a sessão iniciada, abre o link e confirma;
+ *  - sem SMTP: o link nunca chegaria, por isso pede-se o email novo duas
+ *    vezes (têm de coincidir) e muda logo.
+ * Nos dois casos é precisa a senha atual. Contas só com Google (sem senha)
+ * criam primeiro uma senha por «¿Has olvidado tu contraseña?». */
+const EMAIL_CHANGE_TTL_MS = 24 * 60 * 60 * 1000;
+
+function emailByLink() {
+  return Boolean(config.smtp.host);
+}
+
 router.get('/panel/configuracion', async (req, res) => {
-  const row = await one(sb().from('users').select('google_sub').eq('id', req.user.id), 'conta google');
+  const [row, pending] = await Promise.all([
+    one(sb().from('users').select('google_sub').eq('id', req.user.id), 'conta google'),
+    emailByLink() ? one(
+      sb().from('email_changes').select('new_email')
+        .eq('user_id', req.user.id).is('used_at', null).gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false }).limit(1),
+      'mudança de email pendente'
+    ) : Promise.resolve(null)
+  ]);
   res.render('panel/settings', {
     userEmail: req.user.email,
     query: req.query,
     hasPassword: Boolean(req.user.password_hash),
     hasGoogle: Boolean(row && row.google_sub),
-    googleEnabled: google.enabled()
+    googleEnabled: google.enabled(),
+    emailByLink: emailByLink(),
+    pendingEmail: pending ? pending.new_email : ''
   });
 });
 
@@ -952,7 +985,7 @@ router.post('/panel/configuracion/google', rateLimit({
   const back = (key, msg) => res.redirect(`/panel/configuracion?${key}=` + encodeURIComponent(msg));
 
   if (!req.user.password_hash) return back('err', 'Antes de desvincular Google, crea una contraseña con «¿Has olvidado tu contraseña?».');
-  if (!verifyPassword(String(req.body.password_actual || ''), req.user.password_hash)) {
+  if (!(await verifyPasswordAsync(String(req.body.password_actual || ''), req.user.password_hash))) {
     logSecurity('configuracion_password_incorrecta', `user=${req.user.id}`, req.ip, {
       userId: req.user.id, restaurantId: restaurantId(req)
     });
@@ -964,6 +997,16 @@ router.post('/panel/configuracion/google', rateLimit({
   back('ok', 'Cuenta de Google desvinculada.');
 });
 
+/* Credenciais mudaram: todas as OUTRAS sessões deste utilizador terminam (um
+ * atacante com uma sessão roubada perde-a; a atual mantém-se) e os links de
+ * reposição já enviados deixam de valer — se o dono mudou de email por
+ * suspeitar da caixa antiga, um link nessa caixa não pode servir para lhe
+ * tirar a conta. */
+async function afterCredentialChange(req) {
+  await destroyUserSessions(req.user.id, req.session && req.session.tokenHash);
+  await run(sb().from('password_resets').delete().eq('user_id', req.user.id), 'anular links de reposição');
+}
+
 router.post('/panel/configuracion', rateLimit({
   windowMs: 15 * 60 * 1000, max: 10, name: 'settings', key: (req) => String(req.user && req.user.id)
 }), async (req, res) => {
@@ -972,6 +1015,7 @@ router.post('/panel/configuracion', rateLimit({
   const err = (msg) => res.redirect('/panel/configuracion?err=' + encodeURIComponent(msg));
 
   const newEmail = clean(req.body.email, 120);
+  const newEmail2 = clean(req.body.email_repetir, 120);
   const currentPassword = String(req.body.password_actual || '');
   const newPassword = String(req.body.password_nuevo || '').slice(0, 200);
   const confirmPassword = String(req.body.password_repetir || '').slice(0, 200);
@@ -982,7 +1026,7 @@ router.post('/panel/configuracion', rateLimit({
     return err('Tu cuenta entra con Google y aún no tiene contraseña. Para crear una, usa «¿Has olvidado tu contraseña?» en la página de inicio de sesión.');
   }
 
-  if (!verifyPassword(currentPassword, req.user.password_hash)) {
+  if (!(await verifyPasswordAsync(currentPassword, req.user.password_hash))) {
     logSecurity('configuracion_password_incorrecta', `user=${req.user.id}`, req.ip, {
       userId: req.user.id, restaurantId: restaurantId(req)
     });
@@ -991,9 +1035,16 @@ router.post('/panel/configuracion', rateLimit({
 
   const doEmail = newEmail && newEmail.toLowerCase() !== String(req.user.email).toLowerCase();
   const doPassword = newPassword.length > 0;
+  const byLink = emailByLink();
 
-  if (doEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(newEmail)) {
+  if (doEmail && !isValidEmail(newEmail)) {
     return err('Email no válido.');
+  }
+
+  /* Sem link de confirmação, escrever o email duas vezes é a única proteção
+   * contra um erro de digitação que deixaria o dono sem acesso. */
+  if (doEmail && !byLink && newEmail.toLowerCase() !== newEmail2.toLowerCase()) {
+    return err('Los dos emails nuevos no coinciden.');
   }
 
   if (doEmail) {
@@ -1011,24 +1062,119 @@ router.post('/panel/configuracion', rateLimit({
   }
 
   const updates = {};
-  if (doEmail) updates.email = newEmail;
-  if (doPassword) updates.password_hash = hashPassword(newPassword);
+  if (doEmail && !byLink) updates.email = newEmail;
+  if (doPassword) updates.password_hash = await hashPasswordAsync(newPassword);
 
   if (Object.keys(updates).length > 0) {
     await run(sb().from('users').update(updates).eq('id', req.user.id), 'atualizar conta');
-    /* Credenciais mudaram: todas as OUTRAS sessões deste utilizador terminam
-     * (um atacante com uma sessão roubada perde-a). A atual mantém-se. */
-    await destroyUserSessions(req.user.id, req.session && req.session.tokenHash);
-    /* E os links de reposição já enviados deixam de valer: se o dono mudou de
-     * email por suspeitar da caixa antiga, um link nessa caixa não pode
-     * servir para lhe tirar a conta. */
-    await run(sb().from('password_resets').delete().eq('user_id', req.user.id), 'anular links de reposição');
+    await afterCredentialChange(req);
   }
 
-  logSecurity(doPassword ? 'password_cambiada' : (doEmail ? 'email_cambiado' : 'configuracion_actualizada'),
+  /* Uma senha nova anula também as mudanças de email pendentes (podiam ter
+   * sido pedidas por quem tinha a senha antiga); um pedido novo substitui o
+   * anterior. */
+  if (doPassword || (doEmail && byLink)) {
+    await run(sb().from('email_changes').delete().eq('user_id', req.user.id), 'anular mudanças de email pendentes');
+  }
+
+  let sentTo = '';
+  if (doEmail && byLink) {
+    const token = randomToken(32);
+    await run(sb().from('email_changes').insert({
+      token_hash: sha256(token),
+      user_id: req.user.id,
+      new_email: newEmail,
+      expires_at: new Date(Date.now() + EMAIL_CHANGE_TTL_MS).toISOString()
+    }), 'criar confirmação de email');
+    const status = await sendEmailChangeConfirmation({ to: newEmail, token });
+    if (status !== 'sent') {
+      await run(sb().from('email_changes').delete().eq('token_hash', sha256(token)), 'anular confirmação não enviada');
+      logSecurity('email_cambio_envio_fallido', `user=${req.user.id}`, req.ip, { userId: req.user.id, restaurantId: restaurantId(req) });
+      return err(doPassword
+        ? 'La contraseña se ha cambiado, pero no pudimos enviar el enlace de confirmación al nuevo email. Inténtalo de nuevo.'
+        : 'No pudimos enviar el enlace de confirmación al nuevo email. Inténtalo de nuevo.');
+    }
+    sentTo = newEmail;
+    logSecurity('email_cambio_pedido', `user=${req.user.id}`, req.ip, { userId: req.user.id, restaurantId: restaurantId(req) });
+  }
+
+  logSecurity(doPassword ? 'password_cambiada' : (doEmail && !byLink ? 'email_cambiado' : 'configuracion_actualizada'),
     `user=${req.user.id}`, req.ip, { userId: req.user.id, restaurantId: restaurantId(req) });
 
-  res.redirect('/panel/configuracion?ok=' + encodeURIComponent('Configuración actualizada.'));
+  res.redirect('/panel/configuracion?ok=' + encodeURIComponent(sentTo
+    ? req.tr('Te hemos enviado un enlace a {email}. Tu email de acceso cambiará cuando lo abras con la sesión iniciada (caduca en 24 horas).', { email: sentTo })
+    : 'Configuración actualizada.'));
+});
+
+/* Confirmação por link (só com SMTP). O GET só mostra a página com o botão:
+ * o email muda no POST, com CSRF, e só para o dono que pediu a mudança. Um
+ * programa que abra o link para o pré-visualizar não confirma nada. */
+const EMAIL_LINK_INVALID = 'El enlace no es válido o ha caducado. Vuelve a pedir el cambio en Configuración.';
+
+async function pendingEmailChange(req, token) {
+  if (!/^[a-f0-9]{64}$/.test(token)) return null;
+  const row = await one(
+    sb().from('email_changes').select('token_hash, user_id, new_email, expires_at, used_at').eq('token_hash', sha256(token)),
+    'confirmação de email'
+  );
+  /* De outra conta (a pessoa tem outra sessão aberta) é o mesmo que inválido. */
+  if (!row || row.used_at || Date.parse(row.expires_at) < Date.now() || String(row.user_id) !== String(req.user.id)) return null;
+  return row;
+}
+
+router.get('/panel/configuracion/email', async (req, res) => {
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  const token = clean(req.query.t, 200);
+  const row = await pendingEmailChange(req, token);
+  res.status(row ? 200 : 400).render('panel/email_confirm', {
+    token: row ? token : '',
+    newEmail: row ? row.new_email : '',
+    userEmail: req.user.email,
+    error: row ? '' : EMAIL_LINK_INVALID
+  });
+});
+
+router.post('/panel/configuracion/email', rateLimit({
+  windowMs: 15 * 60 * 1000, max: 10, name: 'settings-email', key: (req) => String(req.user && req.user.id)
+}), async (req, res) => {
+  if (!verifyCsrf(req)) return invalidSession(res);
+  res.setHeader('Referrer-Policy', 'no-referrer');
+
+  const fail = (msg) => res.status(400).render('panel/email_confirm', {
+    token: '', newEmail: '', userEmail: req.user.email, error: msg
+  });
+
+  const token = clean(req.body.token, 200);
+  const row = await pendingEmailChange(req, token);
+  if (!row) return fail(EMAIL_LINK_INVALID);
+
+  const taken = await one(
+    sb().from('users').select('id').eq('email', row.new_email).neq('id', req.user.id),
+    'email em uso'
+  );
+  if (taken) return fail('Ya existe una cuenta con ese email.');
+
+  /* Marca como usado ANTES de mudar o email e só se ainda não estava usado:
+   * dois pedidos simultâneos com o mesmo link não passam os dois. */
+  const claimed = await run(
+    sb().from('email_changes').update({ used_at: new Date().toISOString() })
+      .eq('token_hash', row.token_hash).is('used_at', null).select('token_hash'),
+    'consumir confirmação de email'
+  );
+  if (!claimed || claimed.length === 0) return fail(EMAIL_LINK_INVALID);
+
+  try {
+    await run(sb().from('users').update({ email: row.new_email }).eq('id', req.user.id), 'mudar email de acesso');
+  } catch (err) {
+    /* Outra conta ficou com o email entre a verificação e a escrita. */
+    if (err.supabaseCode === '23505') return fail('Ya existe una cuenta con ese email.');
+    throw err;
+  }
+  await run(sb().from('email_changes').delete().eq('user_id', req.user.id), 'anular confirmações de email');
+  await afterCredentialChange(req);
+
+  logSecurity('email_cambiado', `user=${req.user.id} via=enlace`, req.ip, { userId: req.user.id, restaurantId: restaurantId(req) });
+  res.redirect('/panel/configuracion?ok=' + encodeURIComponent('Email de acceso actualizado.'));
 });
 
 /* ================================================================== *
@@ -1186,7 +1332,10 @@ router.get('/panel/derechos', async (req, res) => {
 
   /* Para cada pedido, as candidaturas DESTE restaurante com o mesmo email —
    * é assim que o estabelecimento localiza os dados do titular. */
-  const emails = [...new Set(requests.map((r) => String(r.requester_email).toLowerCase()))];
+  /* Só emails válidos entram no filtro `in.(…)`: aspas, parênteses ou barras
+   * de um pedido antigo partiam o filtro do PostgREST e a página dava 500.
+   * Um pedido com email inválido fica simplesmente sem candidaturas ligadas. */
+  const emails = [...new Set(requests.map((r) => String(r.requester_email).toLowerCase()))].filter(isValidEmail);
   const matches = emails.length === 0 ? [] : await many(
     sb().from('application_list').select('id, candidate_id, email, first_name, last_name, job_title, applied_at')
       .eq('restaurant_id', rid).in('email', emails),
@@ -1333,9 +1482,9 @@ router.post('/panel/candidaturas/:id/retirar-consentimiento', async (req, res) =
   if (!result || !result.ok) return notFound(res);
 
   logSecurity('consentimiento_retirado', `app=${id}`, req.ip, { userId: req.user.id, restaurantId: restaurantId(req) });
-  /* Só se promete a limpeza automática quando ela está mesmo ligada
-   * (RETENTION_AUTO=1, ver src/routes/internal.js). */
-  res.redirect(`/panel/candidaturas/${id}?ok=` + encodeURIComponent(process.env.RETENTION_AUTO === '1'
+  /* Só se promete a limpeza automática quando ela corre mesmo
+   * (RETENTION_AUTO=1 e CRON_SECRET válido, ver src/routes/internal.js). */
+  res.redirect(`/panel/candidaturas/${id}?ok=` + encodeURIComponent(autoRetentionEnabled()
     ? 'Consentimiento retirado. Si la candidatura estaba en reserva, sus datos se borrarán en la próxima limpieza automática.'
     : 'Consentimiento retirado. Si la candidatura estaba en reserva y ya no necesitas sus datos, elimínala desde esta página.'));
 });

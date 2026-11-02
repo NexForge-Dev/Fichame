@@ -15,14 +15,19 @@
  */
 
 const { sb, run } = require('../db');
+const { PLANS, TRIAL_DAYS, formatPrice } = require('./pricing');
 
-const TERMS_VERSION = '2026-10-08-borrador';
+const TERMS_VERSION = '2026-11-02-precios';
 const DPA_VERSION = '2026-10-borrador';
 const COOKIES_VERSION = '2026-10';
 
 /* O que mudou na versão atual, em frases curtas para o negócio. */
 const TERMS_CHANGES = [
-  'Fíchame es gratuito durante la fase de prueba. Si algún día pasa a ser de pago, te avisaremos con 30 días de antelación y no se cobrará nada sin que lo aceptes expresamente.',
+  /* Construído a partir de src/lib/pricing.js para não escrever preços à mão. */
+  `Precios de lanzamiento (IVA no incluido): ${TRIAL_DAYS} días de prueba gratis desde el registro, sin tarjeta; plan Fundadores a ${formatPrice(PLANS.founders.monthly)}/mes para los primeros ${PLANS.founders.maxCustomers} negocios, con el precio garantizado ${PLANS.founders.lockMonths} meses; plan Profesional a ${formatPrice(PLANS.pro.monthly)}/mes o ${formatPrice(PLANS.pro.yearly)}/año.`,
+  'No se cobra nada sin tu aceptación expresa, nunca con carácter retroactivo, y te avisaremos con al menos 30 días de antelación. Los planes mensuales se pueden cancelar en cualquier momento.',
+  'Hoy no se recogen datos de pago. Cuando se activen los pagos, los tratará un proveedor de pagos y se actualizarán estos términos y la política de privacidad.',
+  'Fíchame se usa mediante código QR o enlace a la página de tu negocio.',
   'Se detalla la responsabilidad de cada parte: Fíchame no responde de tus decisiones de contratación ni de los contenidos que publicas, y tú respondes si usas la plataforma incumpliendo la ley.',
   'Se explica cómo darte de baja, cuándo puede suspenderse una cuenta y cómo se te avisará de futuros cambios.',
   'Ley española y juzgados de Granada para las controversias con negocios.'

@@ -115,11 +115,11 @@
   <% if (rows.length === 0) { %>
     <div class="card empty">
       <% if (anyFilter) { %>
-        <span class="empty-icon">🔍</span>
+        <span class="empty-icon" aria-hidden="true">🔍</span>
         <p><%= tr('No hay candidaturas con estos filtros.') %></p>
         <div class="actions-row center spaced"><a class="btn secondary small" href="/panel/candidaturas"><%= tr('Quitar filtros') %></a></div>
       <% } else { %>
-        <span class="empty-icon">📭</span>
+        <span class="empty-icon" aria-hidden="true">📭</span>
         <p><%= tr('Aún no has recibido candidaturas. Cuando alguien escanee tu QR o abra tu enlace, aparecerá aquí.') %></p>
         <div class="actions-row center spaced"><a class="btn small" href="/panel/qr"><%= tr('Ver mi código QR') %></a></div>
       <% } %>

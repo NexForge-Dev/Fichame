@@ -43,12 +43,13 @@
   <section class="qr-sheet">
     <img class="qr-brand" src="/img/logo.svg?v=<%= assetV %>" alt="" width="44" height="44">
     <h2 class="qr-title">¿Necesitas contratar personal?</h2>
-    <p class="qr-free">100&nbsp;% GRATIS</p>
+    <%# Prazo e preços: src/lib/pricing.js. Material impresso: sempre em espanhol. %>
+    <p class="qr-free"><%= pricing.TRIAL_DAYS %>&nbsp;DÍAS GRATIS</p>
     <p class="qr-lead">Encuentra a la persona adecuada sin perder candidatos ni tiempo</p>
-    <p class="qr-desc">Crea tus vacantes, recibe los CV en el móvil y organiza a tus candidatos en un solo lugar. Sin equipo de RR.&nbsp;HH. y sin pagar nada.</p>
+    <p class="qr-desc">Crea tus vacantes, recibe los CV en el móvil y organiza a tus candidatos en un solo lugar. Sin equipo de RR.&nbsp;HH. y con una cuota mensual sencilla, sin cargos por candidatura.</p>
     <!-- SVG gerado no servidor a partir de APP_URL + /conoce. -->
     <div class="qr-code"><%- qrSvg %></div>
-    <p class="qr-cta"><strong>Escanea el código y empieza hoy.</strong><br>Gratis durante nuestra prueba de mercado · Sin tarjeta · Sin permanencia</p>
+    <p class="qr-cta"><strong>Escanea el código y empieza hoy.</strong><br><%= pricing.TRIAL_DAYS %> días gratis · Sin tarjeta · Después, desde <%= pricing.formatPrice(pricing.PLANS.founders.monthly, 'es') %>/mes (IVA no incluido)</p>
     <p class="qr-url"><%= url %></p>
   </section>
 </main>

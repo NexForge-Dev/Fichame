@@ -52,11 +52,11 @@
 <main class="container-narrow public-main">
 
 <% if (restaurant.demo) { %>
-  <div class="flash ok"><strong><%= tr('Página de demostración.') %></strong> <%= tr('Este negocio es ficticio y el formulario no envía nada.') %> <a href="/registro"><%= tr('Crea la página de tu negocio gratis') %></a>.</div>
+  <div class="flash ok"><strong><%= tr('Página de demostración.') %></strong> <%= tr('Este negocio es ficticio y el formulario no envía nada.') %> <a href="/registro"><%= tr('Empieza tus {days} días gratis', { days: pricing.TRIAL_DAYS }) %></a>.</div>
 <% } %>
 
 <% if (typeof query !== 'undefined' && query && query.err) { %>
-  <div class="flash err"><%= tr(query.err) %></div>
+  <div class="flash err" role="alert"><%= tr(query.err) %></div>
 <% } %>
 
 <% if (mode === 'form') { %>
@@ -69,6 +69,7 @@
         <div class="job-item">
           <div class="title"><%= job.title %></div>
           <% if (job.description) { %><p class="desc"><%= job.description %></p><% } %>
+          <% if (job.requirements) { %><p class="desc job-req"><strong><%= tr('Requisitos:') %></strong> <%= job.requirements %></p><% } %>
           <% if (job.contract_type || job.work_schedule) { %>
             <div class="row spaced-sm">
               <% if (job.contract_type && CONTRACT_TYPES[job.contract_type]) { %>
@@ -89,7 +90,7 @@
     <p class="help help-lift"><%= tr('Menos de 2 minutos. Solo necesitas tus datos y tu CV en PDF. No hace falta crear ninguna cuenta.') %></p>
 
     <% if (errors && errors.general) { %>
-      <div class="flash err"><%= errors.general.map(function(e) { return tr(e); }).join(' ') %></div>
+      <div class="flash err" role="alert"><%= errors.general.map(function(e) { return tr(e); }).join(' ') %></div>
     <% } else if (hasErrors) { %>
       <div class="flash err" role="alert"><%= tr('Revisa los campos marcados en rojo.') %></div>
     <% } %>
@@ -214,7 +215,7 @@
 
 <% } else { %>
 
-  <div class="card">
+  <div class="card" id="interes">
     <% if (mode === 'paused') { %>
       <h2><%= tr('Actualmente no estamos contratando.') %></h2>
       <p class="muted"><%= tr('Puedes volver a consultar más adelante.') %></p>
@@ -226,10 +227,11 @@
     <div class="section-title"><%= tr('¿Quieres que guardemos tu candidatura para futuras oportunidades?') %></div>
 
     <% if (errors && errors.general) { %>
-      <div class="flash err"><%= errors.general.map(function(e) { return tr(e); }).join(' ') %></div>
+      <div class="flash err" role="alert"><%= errors.general.map(function(e) { return tr(e); }).join(' ') %></div>
     <% } %>
 
-    <form action="/r/<%= restaurant.slug %>/interes" method="post" data-busy="<%= tr('Enviando…') %>">
+    <%# #interes: depois de um erro a página volta já posicionada neste cartão. %>
+    <form action="/r/<%= restaurant.slug %>/interes#interes" method="post" data-busy="<%= tr('Enviando…') %>">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="hp" aria-hidden="true">
         <label>Sitio web</label>
@@ -260,7 +262,7 @@
       <%- include('privacy_layer', { purpose: 'avisarte si surge una vacante en este establecimiento', basis: 'Tu consentimiento (art. 6.1.a RGPD), que das marcando la casilla. Puedes retirarlo cuando quieras.', keep: 'Durante ' + retention.reserve + ' desde hoy, o hasta que retires el consentimiento.' }) %>
 
       <label class="check">
-        <input type="checkbox" name="consentimiento_futuro" value="1" <%= form.consent_futuro ? 'checked' : '' %>>
+        <input type="checkbox" name="consentimiento_futuro" value="1" required <%= form.consent_futuro ? 'checked' : '' %>>
         <span><span lang="es"><%= consentInterestText %></span> *</span>
       </label>
 

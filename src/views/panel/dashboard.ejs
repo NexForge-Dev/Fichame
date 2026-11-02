@@ -51,19 +51,19 @@
       /* Guia concluído, mas ainda sem candidaturas: em vez de um ecrã vazio,
        * o que ajuda a chegar à primeira — divulgar o link, ver as vagas
        * publicadas e saber onde vão aparecer as candidaturas. */
-      var shareText = tr('Estamos contratando en {name}. Envía tu candidatura aquí: {url}', { name: restaurant.name, url: nfcUrl });
+      var shareText = tr('Estamos contratando en {name}. Envía tu candidatura aquí: {url}', { name: restaurant.name, url: publicUrl });
     %>
-    <div class="nfc-box">
+    <div class="link-box">
       <div class="label"><%- icon('check') %> <%= tr('Primeros pasos completados') %></div>
       <p class="ready-title"><%= restaurant.hiring === 'open' ? tr('Tu página ya puede recibir candidaturas') : tr('Tu página está lista, pero las candidaturas están en pausa') %></p>
-      <div class="url"><%= nfcUrl %></div>
+      <div class="url"><%= publicUrl %></div>
       <div class="actions-row flat">
-        <button class="btn small" type="button" data-copy="<%= nfcUrl %>"><%= tr('Copiar enlace') %></button>
+        <button class="btn small" type="button" data-copy="<%= publicUrl %>"><%= tr('Copiar enlace') %></button>
         <a class="btn secondary small" href="https://wa.me/?text=<%= encodeURIComponent(shareText) %>" target="_blank" rel="noopener"><%= tr('Compartir por WhatsApp') %></a>
-        <a class="btn secondary small" href="<%= nfcUrl %>" target="_blank" rel="noopener"><%= tr('Ver página') %></a>
+        <a class="btn secondary small" href="<%= publicUrl %>" target="_blank" rel="noopener"><%= tr('Ver página') %></a>
         <a class="btn secondary small" href="/panel/qr"><%= tr('Código QR') %></a>
       </div>
-      <p class="small nfc-note"><%= tr('Aún no ha llegado ninguna candidatura. Cuanta más gente vea tu enlace, antes llegará la primera.') %></p>
+      <p class="small link-note"><%= tr('Aún no ha llegado ninguna candidatura. Cuanta más gente vea tu enlace, antes llegará la primera.') %></p>
     </div>
 
     <div class="card">

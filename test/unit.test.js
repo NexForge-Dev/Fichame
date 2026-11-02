@@ -227,6 +227,19 @@ test('/conoce: o texto não promete funcionalidades que o produto não tem', () 
   }
 });
 
+test('/conoce: preço honesto — prova de 30 dias e planos, nada de «100 % gratis» nem plano avançado', () => {
+  const pricing = require('../src/lib/pricing');
+  const all = JSON.stringify(COPY);
+  for (const claim of ['100 % gratis', '100% free', '100 % grátis', 'Sin cuota mensual', 'No monthly fee', 'Sem mensalidade',
+    'prueba de mercado', 'market test', 'teste de mercado', 'sin pagar nada', 'nothing to pay', 'sem pagar nada']) {
+    assert.ok(!all.toLowerCase().includes(claim.toLowerCase()), `texto promete «${claim}»`);
+  }
+  for (const lang of ['es', 'en', 'pt']) {
+    assert.ok(!JSON.stringify(COPY[lang]).includes(pricing.formatPrice(pricing.PLANS.advanced.monthly, lang)), `plano avançado em ${lang}`);
+    assert.ok(JSON.stringify(COPY[lang]).includes(String(pricing.TRIAL_DAYS)), `prazo da prova em ${lang}`);
+  }
+});
+
 const { redact, newRef } = require('../src/lib/errors');
 
 test('erros: código curto em hexadecimal maiúsculo', () => {

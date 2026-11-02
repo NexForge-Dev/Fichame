@@ -174,12 +174,12 @@ module.exports = {
     en: 'Hi {name}, this is {business}. We have seen your application for {job}. When would be a good time to talk?',
     pt: 'Olá {name}, escrevo-lhe de {business}. Vimos a sua candidatura para {job}. Quando lhe dá jeito falarmos?'
   },
-  'nuestro establecimiento': { en: 'our business', pt: 'o nosso estabelecimento' },
+  'nuestro negocio': { en: 'our business', pt: 'o nosso negócio' },
   'trabajar con nosotros': { en: 'working with us', pt: 'trabalhar connosco' },
   'Llamar': { en: 'Call', pt: 'Ligar' },
   'Abre WhatsApp con este número': { en: 'Opens WhatsApp with this number', pt: 'Abre o WhatsApp com este número' },
   'Candidatura para {job}': { en: 'Application for {job}', pt: 'Candidatura para {job}' },
-  'tu establecimiento': { en: 'your business', pt: 'o teu estabelecimento' },
+  'tu negocio': { en: 'your business', pt: 'o teu negócio' },
   'Datos personales': { en: 'Personal details', pt: 'Dados pessoais' },
   'Nombre': { en: 'Name', pt: 'Nome' },
   'Teléfono': { en: 'Phone', pt: 'Telefone' },
@@ -215,9 +215,9 @@ module.exports = {
   'Experiencia': { en: 'Experience', pt: 'Experiência' },
   'Observaciones del candidato': { en: 'Candidate’s comments', pt: 'Observações do candidato' },
   'Notas internas': { en: 'Internal notes', pt: 'Notas internas' },
-  'Solo visibles para tu establecimiento. Pero son datos personales del candidato: si ejerce su': {
+  'Solo visibles para tu negocio. Pero son datos personales del candidato: si ejerce su': {
     en: 'Only visible to your business. But they are the candidate’s personal data: if they exercise their',
-    pt: 'Só visíveis para o teu estabelecimento. Mas são dados pessoais do candidato: se exercer o seu'
+    pt: 'Só visíveis para o teu negócio. Mas são dados pessoais do candidato: se exercer o seu'
   },
   'derecho de acceso': { en: 'right of access', pt: 'direito de acesso' },
   ', tendrás que entregárselas.': { en: ', you will have to hand them over.', pt: ', terás de lhas entregar.' },
@@ -336,9 +336,9 @@ module.exports = {
     pt: 'Usa isto se o candidato te pedir que deixes de guardar os dados dele para futuras vagas.'
   },
   'Derechos del candidato': { en: 'Candidate rights', pt: 'Direitos do candidato' },
-  'Para atender una solicitud de acceso o portabilidad, descarga todos sus datos en este establecimiento (el CV se descarga aparte).': {
+  'Para atender una solicitud de acceso o portabilidad, descarga todos sus datos en este negocio (el CV se descarga aparte).': {
     en: 'To handle an access or portability request, download all their data held by this business (the CV is downloaded separately).',
-    pt: 'Para responder a um pedido de acesso ou portabilidade, descarrega todos os dados dele neste estabelecimento (o CV descarrega-se à parte).'
+    pt: 'Para responder a um pedido de acesso ou portabilidade, descarrega todos os dados dele neste negócio (o CV descarrega-se à parte).'
   },
   'Exportar datos (JSON)': { en: 'Export data (JSON)', pt: 'Exportar dados (JSON)' },
   'Historial': { en: 'History', pt: 'Histórico' },
@@ -354,9 +354,9 @@ module.exports = {
     en: 'Erase all of this person’s data (right to erasure)…',
     pt: 'Apagar todos os dados desta pessoa (direito ao apagamento)…'
   },
-  'Borra todas sus candidaturas en tu establecimiento, con CV, notas, historial y consentimientos. No afecta a otros establecimientos.': {
+  'Borra todas sus candidaturas en tu negocio, con CV, notas, historial y consentimientos. No afecta a otros negocios.': {
     en: 'Deletes all their applications at your business, including CVs, notes, history and consents. Other businesses are not affected.',
-    pt: 'Apaga todas as candidaturas dele no teu estabelecimento, com CV, notas, histórico e consentimentos. Não afeta outros estabelecimentos.'
+    pt: 'Apaga todas as candidaturas dele no teu negócio, com CV, notas, histórico e consentimentos. Não afeta outros negócios.'
   },
   'Confirmo la supresión definitiva.': { en: 'I confirm permanent erasure.', pt: 'Confirmo o apagamento definitivo.' },
   'Suprimir datos del candidato': { en: 'Erase candidate data', pt: 'Apagar dados do candidato' },

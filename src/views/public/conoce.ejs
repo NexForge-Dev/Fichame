@@ -248,25 +248,8 @@
     </div>
   </section>
 
-  <!-- 9. Quanto custa? Porque é grátis? -->
-  <section class="lp-section lp-section-alt" id="precio">
-    <div class="lp-wrap cn-free">
-      <div class="cn-free-copy">
-        <span class="lp-kicker"><%= t.free.kicker %></span>
-        <h2><%= t.free.title %></h2>
-        <p><%= t.free.p1 %></p>
-        <p><strong><%= t.free.p2 %></strong></p>
-      </div>
-      <div class="cn-price">
-        <span class="cn-price-num"><%= t.free.price %></span>
-        <span class="cn-price-label"><%= t.free.priceLabel %></span>
-        <ul>
-          <% t.free.items.forEach(function (i) { %><li><%- icon('check') %> <%= i %></li><% }) %>
-        </ul>
-        <p class="cn-price-fine"><%= t.free.fine %></p>
-      </div>
-    </div>
-  </section>
+  <!-- 9. Quanto custa? Prova grátis e planos (valores de src/lib/pricing.js). -->
+  <%- include('../partials/pricing', { p: t.pricing }) %>
 
   <!-- 10. Feedback -->
   <section class="lp-section">
@@ -277,8 +260,10 @@
       <p><%= t.feedback.text %></p>
       <div class="lp-cta-row lp-cta-center">
         <a class="btn lg" href="/registro"><%= t.feedback.cta %></a>
-        <% if (contactEmail) { %>
-          <a class="btn lg secondary" href="mailto:<%= contactEmail %>"><%- icon('mail') %> <%= t.feedback.mail %></a>
+        <%# Email de suporte: res.locals.supportEmail (config.contactEmail). %>
+        <% var mailTo = (typeof supportEmail !== 'undefined' && supportEmail) || (typeof contactEmail !== 'undefined' && contactEmail); %>
+        <% if (mailTo) { %>
+          <a class="btn lg secondary" href="mailto:<%= mailTo %>"><%- icon('mail') %> <%= t.feedback.mail %></a>
         <% } %>
       </div>
     </div>

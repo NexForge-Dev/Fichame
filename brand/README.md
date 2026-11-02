@@ -9,7 +9,7 @@ Ficheiros para usar fora do sistema (redes sociais, cartões, cartazes, apresent
 | `fichame-logo-claro.png` | Símbolo + nome, fundo transparente, para fundos claros |
 | `fichame-logo-escuro.png` | Símbolo + nome, fundo transparente, para fundos escuros |
 
-**Símbolo «Ficha»:** uma ficha de candidato (foto + dados) a chegar por NFC.
+**Símbolo «Ficha»:** uma ficha de candidato (foto + dados) a chegar pelo código QR.
 
 **Cores**
 

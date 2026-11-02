@@ -1,0 +1,49 @@
+<%
+/* Secção de preços partilhada pela landing (/) e pela apresentação (/conoce).
+ * Recebe `p` já traduzido: a landing monta-o com tr() e a /conoce traz-o de
+ * src/lib/conoce.js. Os valores vêm sempre de src/lib/pricing.js — nada de
+ * preços escritos à mão aqui.
+ *
+ * Sem checkout nem botões de pagamento: ainda não há cobrança. O único CTA
+ * leva ao registo (prova grátis).
+ *
+ * p = { id, kicker, title, lead, cards: [{ name, badge, price, per, vat,
+ *       alt, text, featured }], includesTitle, includes: [], cta, fine: [] }
+ */
+%>
+<section class="lp-section lp-section-alt pr" id="<%= p.id %>" aria-labelledby="<%= p.id %>-title">
+  <div class="lp-wrap">
+    <div class="lp-head">
+      <span class="lp-kicker"><%= p.kicker %></span>
+      <h2 id="<%= p.id %>-title"><%= p.title %></h2>
+      <p><%= p.lead %></p>
+    </div>
+
+    <ul class="pr-cards">
+      <% p.cards.forEach(function (c) { %>
+        <li class="pr-card<%= c.featured ? ' is-featured' : '' %>">
+          <% if (c.badge) { %><span class="pr-badge"><%= c.badge %></span><% } %>
+          <h3 class="pr-name"><%= c.name %></h3>
+          <p class="pr-price">
+            <span class="pr-amount"><%= c.price %></span><% if (c.per) { %><span class="pr-per"><%= c.per %></span><% } %>
+          </p>
+          <% if (c.vat) { %><p class="pr-vat"><%= c.vat %></p><% } %>
+          <% if (c.alt) { %><p class="pr-alt"><%= c.alt %></p><% } %>
+          <p class="pr-text"><%= c.text %></p>
+        </li>
+      <% }) %>
+    </ul>
+
+    <div class="pr-includes">
+      <h3><%= p.includesTitle %></h3>
+      <ul class="lp-list pr-list">
+        <% p.includes.forEach(function (i) { %><li><%- icon('check') %> <%= i %></li><% }) %>
+      </ul>
+    </div>
+
+    <div class="lp-cta-row lp-cta-center pr-cta">
+      <a class="btn lg" href="/registro"><%= p.cta %></a>
+    </div>
+    <% p.fine.forEach(function (f) { %><p class="pr-fine"><%= f %></p><% }) %>
+  </div>
+</section>

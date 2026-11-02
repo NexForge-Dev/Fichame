@@ -68,7 +68,7 @@ module.exports = {
     en: 'When reopened, the application form is available again straight away.',
     pt: 'Ao ativar, o formulário de candidaturas volta a estar disponível de imediato.'
   },
-  'Datos del establecimiento': { en: 'Business details', pt: 'Dados do estabelecimento' },
+  'Datos del negocio': { en: 'Business details', pt: 'Dados do negócio' },
   'Se muestra a los candidatos como responsable del tratamiento de sus datos.': {
     en: 'Shown to candidates as the controller of their data.',
     pt: 'Aparece aos candidatos como responsável pelo tratamento dos seus dados.'
@@ -98,9 +98,9 @@ module.exports = {
   'Foto actual': { en: 'Current photo', pt: 'Fotografia atual' },
   'Eliminar foto': { en: 'Remove photo', pt: 'Eliminar fotografia' },
   'Tu slug': { en: 'Your slug', pt: 'O teu slug' },
-  'identificador único de tu establecimiento en la plataforma.': {
+  'identificador único de tu negocio en la plataforma.': {
     en: 'your business’s unique identifier on the platform.',
-    pt: 'identificador único do teu estabelecimento na plataforma.'
+    pt: 'identificador único do teu negócio na plataforma.'
   },
   'Contacta con soporte si necesitas cambiarlo: cambiarlo invalidaría tu enlace y los códigos QR que ya hayas impreso.': { en: 'Contact support if you need to change it: changing it would break your link and any QR codes you have already printed.', pt: 'Contacta o suporte se precisares de o mudar: mudá-lo invalidaria o teu link e os códigos QR que já tenhas impresso.' },
 
@@ -267,9 +267,9 @@ module.exports = {
   'Plazo:': { en: 'Deadline:', pt: 'Prazo:' },
   'prorrogado': { en: 'extended', pt: 'prorrogado' },
   'VENCIDO': { en: 'OVERDUE', pt: 'EXPIRADO' },
-  'Ninguna candidatura con este email en tu establecimiento.': {
+  'Ninguna candidatura con este email en tu negocio.': {
     en: 'No application with this email at your business.',
-    pt: 'Nenhuma candidatura com este email no teu estabelecimento.'
+    pt: 'Nenhuma candidatura com este email no teu negócio.'
   },
   'Candidaturas con este email:': { en: 'Applications with this email:', pt: 'Candidaturas com este email:' },
   'sin puesto': { en: 'no position', pt: 'sem função' },

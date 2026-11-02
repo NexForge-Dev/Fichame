@@ -2,10 +2,31 @@
 
 const { sha256 } = require('../lib/crypto');
 
+/* Para onde voltar depois de um 429 num formulário. Nas rotas /r/:slug é a
+ * página do negócio; nas outras, o caminho do Referer — só o caminho, nunca
+ * o host, e nunca «//…» (seria um redirecionamento para outro site). */
+function backPath(req) {
+  const slug = String((req.params && req.params.slug) || '');
+  if (/^[a-z0-9][a-z0-9-]{0,80}$/.test(slug) && /^\/r\//.test(req.originalUrl || req.url || '')) return `/r/${slug}`;
+  try {
+    const ref = new URL(req.get('referer') || '', 'http://x');
+    if (/^\/(?![/\\])/.test(ref.pathname)) return ref.pathname;
+  } catch { /* Referer inválido */ }
+  return '/';
+}
+
 function tooMany(req, res, retry, message) {
   res.set('Retry-After', String(retry));
-  if (req.is('multipart/form-data') || req.xhr || req.is('application/json')) {
+  if (req.xhr || req.is('application/json')) {
     return res.status(429).send('Demasiadas solicitudes. Inténtalo más tarde.');
+  }
+  /* Formulário HTML com ficheiro (candidatura com CV): volta à página com a
+   * mensagem traduzida (?err=, como os outros erros de /r/:slug) em vez de
+   * um texto cru. O multer ainda não leu o corpo, por isso não há o que
+   * repor no formulário. */
+  if (req.is('multipart/form-data')) {
+    const msg = message || 'Demasiadas solicitudes. Inténtalo más tarde.';
+    return res.redirect(303, `${backPath(req)}?err=${encodeURIComponent(msg)}`);
   }
   return res.status(429).render('error', {
     status: 429,
@@ -79,24 +100,36 @@ function dbFailureLimit({ windowMs, max, key, message, name }) {
     return sha256(`${config.testPrefix}|${name}|${key(req)}`);
   };
 
+  /* Segundos até ao fim da janela se o limite foi atingido; 0 se não. */
+  async function retryAfter(req) {
+    const { sb } = require('../db');
+    try {
+      const { data, error } = await sb().from('rate_limit_hits')
+        .select('count, window_start').eq('key', keyOf(req)).maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!data) return 0;
+      const resetAt = Date.parse(data.window_start) + windowSeconds * 1000;
+      if (resetAt > Date.now() && Number(data.count) >= max) return Math.ceil((resetAt - Date.now()) / 1000);
+    } catch (err) {
+      console.error('[rate-limit] contador partilhado indisponível:', err.message);
+    }
+    return 0;
+  }
+
   return {
     /* true se já respondeu 429. */
     async blocked(req, res) {
-      const { sb } = require('../db');
-      try {
-        const { data, error } = await sb().from('rate_limit_hits')
-          .select('count, window_start').eq('key', keyOf(req)).maybeSingle();
-        if (error) throw new Error(error.message);
-        if (!data) return false;
-        const resetAt = Date.parse(data.window_start) + windowSeconds * 1000;
-        if (resetAt > Date.now() && Number(data.count) >= max) {
-          tooMany(req, res, Math.ceil((resetAt - Date.now()) / 1000), message);
-          return true;
-        }
-      } catch (err) {
-        console.error('[rate-limit] contador partilhado indisponível:', err.message);
+      const retry = await retryAfter(req);
+      if (retry > 0) {
+        tooMany(req, res, retry, message);
+        return true;
       }
       return false;
+    },
+    /* Só consulta, sem responder: para quem tem de dar a mesma resposta
+     * esteja ou não bloqueado (ex.: /recuperar, sem enumeração de contas). */
+    async isBlocked(req) {
+      return (await retryAfter(req)) > 0;
     },
     async hit(req) {
       const { rpc } = require('../db');
@@ -109,4 +142,4 @@ function dbFailureLimit({ windowMs, max, key, message, name }) {
   };
 }
 
-module.exports = { rateLimit, dbRateLimit, dbFailureLimit };
+module.exports = { rateLimit, dbRateLimit, dbFailureLimit, backPath };

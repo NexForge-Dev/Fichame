@@ -91,17 +91,32 @@ module.exports = {
     en: 'No candidate or business in this account is real, and changes are not saved.',
     pt: 'Nenhum candidato nem negócio desta conta é real e as alterações não são guardadas.'
   },
-  'Crea tu cuenta gratis': { en: 'Create your free account', pt: 'Cria a tua conta grátis' },
-  'Esto es una demostración: los cambios no se guardan. Crea tu cuenta gratis para usar Fíchame con tu negocio.': {
-    en: 'This is a demo: changes are not saved. Create your free account to use Fíchame with your business.',
-    pt: 'Isto é uma demonstração: as alterações não são guardadas. Cria a tua conta grátis para usar o Fíchame no teu negócio.'
+  'Empieza tus {days} días gratis': { en: 'Start your {days}-day free trial', pt: 'Começa os teus {days} dias grátis' },
+  // Aviso da prova grátis no painel (partials/flash.ejs)
+  'Te queda {n} día de prueba gratis. Después podrás elegir el plan Fundadores ({price}/mes, IVA no incluido) o Profesional.': {
+    en: 'You have {n} day of your free trial left. After that you can choose the Founders plan ({price}/month, VAT not included) or Professional.',
+    pt: 'Resta-te {n} dia de experiência grátis. Depois vais poder escolher o plano Fundadores ({price}/mês, IVA não incluído) ou Profissional.'
+  },
+  'Te quedan {n} días de prueba gratis. Después podrás elegir el plan Fundadores ({price}/mes, IVA no incluido) o Profesional.': {
+    en: 'You have {n} days of your free trial left. After that you can choose the Founders plan ({price}/month, VAT not included) or Professional.',
+    pt: 'Restam-te {n} dias de experiência grátis. Depois vais poder escolher o plano Fundadores ({price}/mês, IVA não incluído) ou Profissional.'
+  },
+  'Tu prueba gratuita ha terminado. Pronto podrás activar tu plan desde aquí; mientras tanto puedes seguir usando Fíchame.': {
+    en: 'Your free trial has ended. You will soon be able to activate your plan from here; in the meantime you can keep using Fíchame.',
+    pt: 'A tua experiência grátis terminou. Em breve vais poder ativar o teu plano a partir daqui; entretanto podes continuar a usar o Fíchame.'
+  },
+  'Ver precios': { en: 'See pricing', pt: 'Ver preços' },
+  'Soporte:': { en: 'Support:', pt: 'Suporte:' },
+  '{days} días gratis desde el registro. Sin tarjeta.': { en: '{days} days free from sign-up. No card needed.', pt: '{days} dias grátis desde o registo. Sem cartão.' },
+  'Esto es una demostración: los cambios no se guardan. Empieza tus 30 días gratis para usar Fíchame con tu negocio.': {
+    en: 'This is a demo: changes are not saved. Start your 30-day free trial to use Fíchame with your business.',
+    pt: 'Isto é uma demonstração: as alterações não são guardadas. Começa os teus 30 dias grátis para usar o Fíchame no teu negócio.'
   },
   'Página de demostración.': { en: 'Demo page.', pt: 'Página de demonstração.' },
   'Este negocio es ficticio y el formulario no envía nada.': {
     en: 'This business is fictional and the form does not send anything.',
     pt: 'Este negócio é fictício e o formulário não envia nada.'
   },
-  'Crea la página de tu negocio gratis': { en: 'Create your business page for free', pt: 'Cria a página do teu negócio grátis' },
   'Hemos actualizado los términos de uso.': { en: 'We have updated the terms of use.', pt: 'Atualizámos os termos de utilização.' },
   'Revisa los cambios y acéptalos': { en: 'Review and accept the changes', pt: 'Revê as alterações e aceita-as' }
 };

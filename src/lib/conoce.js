@@ -10,9 +10,33 @@
  * publicação em portais de emprego, sem agendamento de entrevistas, sem
  * mensagens automáticas. «Entrevista» é um estado da candidatura, não uma
  * agenda. Ao acrescentar uma frase aqui, confirmar primeiro no painel.
+ *
+ * Preços, prazos e limites saem de src/lib/pricing.js (ver money()). O plano
+ * avançado não aparece aqui enquanto não estiver disponível.
  */
 
+const {
+  PLANS, TRIAL_DAYS, formatPrice, yearlyMonthlyEquivalent, yearlyMonthsFree
+} = require('./pricing');
+
 const LANGS = ['es', 'en', 'pt'];
+
+/* Valores comerciais já formatados para cada idioma. Fonte única:
+ * src/lib/pricing.js — nada de preços, prazos ou limites escritos à mão. */
+function money(lang) {
+  return {
+    days: TRIAL_DAYS,
+    trial: formatPrice(PLANS.trial.monthly, lang),
+    founders: formatPrice(PLANS.founders.monthly, lang),
+    foundersMax: PLANS.founders.maxCustomers,
+    foundersLock: PLANS.founders.lockMonths,
+    pro: formatPrice(PLANS.pro.monthly, lang),
+    proYear: formatPrice(PLANS.pro.yearly, lang),
+    proYearMonthly: formatPrice(yearlyMonthlyEquivalent(), lang),
+    monthsFree: yearlyMonthsFree()
+  };
+}
+const M = { es: money('es'), en: money('en'), pt: money('pt') };
 
 /* ?lang= explícito ganha; senão o idioma do site (req.lang, do middleware
  * i18n: cookie do seletor ou língua do browser). Por omissão espanhol: os
@@ -25,18 +49,18 @@ function pickLang(req) {
 
 const es = {
   htmlLang: 'es',
-  title: 'Contrata a la persona adecuada sin perder candidatos — gratis',
-  description: 'Gratis durante la prueba de mercado: recibe a tus candidatos, ve su CV y organiza tus contrataciones en un solo lugar, sin departamento de RR. HH.',
-  nav: { login: 'Entrar', start: 'Empezar gratis', langLabel: 'Idioma' },
+  title: `Contrata a la persona adecuada sin perder candidatos — ${M.es.days} días gratis`,
+  description: `Prueba ${M.es.days} días gratis: recibe a tus candidatos, ve su CV y organiza tus contrataciones en un solo lugar, sin departamento de RR. HH. Después, una cuota mensual sencilla, sin cargos por candidatura.`,
+  nav: { login: 'Entrar', start: `${M.es.days} días gratis`, langLabel: 'Idioma' },
 
   hero: {
-    badge: 'Prueba de mercado · 100 % gratis',
+    badge: `Lanzamiento · ${M.es.days} días gratis`,
     title: 'Encuentra a tu próximo empleado',
     titleHl: 'sin perder tiempo ni candidatos.',
-    lead: 'Cuando te falta alguien en el negocio, cada día cuenta. Fíchame reúne en un solo lugar a todos los que quieren trabajar contigo: ves sus datos y su CV, los organizas y eliges a la persona adecuada. Sin departamento de Recursos Humanos y sin pagar nada.',
-    cta: 'Empezar gratis',
+    lead: 'Cuando te falta alguien en el negocio, cada día cuenta. Fíchame reúne en un solo lugar a todos los que quieren trabajar contigo: ves sus datos y su CV, los organizas y eliges a la persona adecuada. Sin departamento de Recursos Humanos y con una cuota mensual sencilla.',
+    cta: `Empieza tus ${M.es.days} días gratis`,
     cta2: 'Ver cómo funciona',
-    note: 'Gratis durante la prueba de mercado · Sin tarjeta · Sin permanencia'
+    note: `${M.es.days} días gratis · Sin tarjeta · Planes mensuales sin permanencia: cancela cuando quieras`
   },
 
   quick: {
@@ -45,7 +69,7 @@ const es = {
       { q: '¿Qué es?', a: 'Una web para organizar a tus candidatos y tus contrataciones.' },
       { q: '¿Necesito RR. HH.?', a: 'No. Lo puedes llevar tú mismo, desde el móvil.' },
       { q: '¿Hay que instalar algo?', a: 'No. Funciona en el navegador.' },
-      { q: '¿Cuánto cuesta?', a: 'Nada: 0 € durante la prueba de mercado, sin tarjeta y sin permanencia.' }
+      { q: '¿Cuánto cuesta?', a: `${M.es.days} días gratis, sin tarjeta. Después, desde ${M.es.founders}/mes (IVA no incluido), sin cargos por candidatura.` }
     ]
   },
 
@@ -62,7 +86,7 @@ const es = {
     ],
     scatter: 'Y todo repartido entre papeles, WhatsApp, emails, hojas de cálculo… y tu memoria.',
     pain: 'Mientras buscas aquel CV entre mensajes, el buen candidato acepta otro trabajo. Y el turno que falta lo cubres tú.',
-    answer: 'Fíchame pone orden en todo eso, en un solo lugar. Y es gratis.'
+    answer: `Fíchame pone orden en todo eso, en un solo lugar. Y lo pruebas ${M.es.days} días gratis.`
   },
 
   what: {
@@ -181,15 +205,52 @@ const es = {
     ]
   },
 
-  free: {
+  pricing: {
+    id: 'precio',
     kicker: 'Precio',
-    title: 'Gratis. Sin letra pequeña.',
-    p1: 'Fíchame está en fase de prueba de mercado: lo estamos probando con negocios reales para que sea de verdad útil en el día a día.',
-    p2: 'Por eso, durante esta fase, lo usas gratis. Tu negocio gana orden y no arriesgas nada.',
-    price: '0 €',
-    priceLabel: 'Gratis durante la prueba de mercado',
-    items: ['Sin cuota mensual', 'Sin tarjeta de crédito', 'Sin compromiso de permanencia'],
-    fine: 'No te pedimos ningún dato de pago, así que no hay nada que se pueda cobrar automáticamente.'
+    title: 'Una cuota mensual sencilla y previsible.',
+    lead: 'Pensado para pequeños negocios en España: pagas una cuota fija al mes, sin cargos por candidatura recibida ni por vacante creada.',
+    cards: [
+      {
+        name: `${M.es.days} días gratis`,
+        price: M.es.trial,
+        text: `Prueba Fíchame con tu negocio durante los primeros ${M.es.days} días desde el registro. Sin tarjeta.`
+      },
+      {
+        name: 'Plan Fundadores',
+        badge: 'Lanzamiento',
+        price: M.es.founders,
+        per: '/mes',
+        vat: 'IVA no incluido',
+        text: `Para los primeros ${M.es.foundersMax} negocios que se unan durante el lanzamiento. Precio garantizado durante ${M.es.foundersLock} meses desde que te unes.`,
+        featured: true
+      },
+      {
+        name: 'Plan Profesional',
+        price: M.es.pro,
+        per: '/mes',
+        vat: 'IVA no incluido',
+        alt: `O ${M.es.proYear}/año (IVA no incluido): unos ${M.es.proYearMonthly}/mes, como ${M.es.monthsFree} meses gratis.`,
+        text: 'Para cualquier negocio, con pago mensual o anual.'
+      }
+    ],
+    includesTitle: 'Incluido en la prueba gratis y en los dos planes',
+    includes: [
+      'Página de candidaturas personalizada',
+      'Acceso mediante código QR',
+      'Código QR personalizado para imprimir y compartir',
+      'CV de los candidatos en PDF',
+      'Gestión de vacantes',
+      'Tablero de candidatos con etapas de contratación',
+      'Búsqueda, filtros y favoritos',
+      'Métricas y avisos',
+      'Sin coste extra por candidato recibido ni por vacante creada'
+    ],
+    cta: `Empieza tus ${M.es.days} días gratis`,
+    fine: [
+      'Antes de que termine la prueba podrás elegir un plan de pago desde tu panel. No se cobra nada sin tu aceptación expresa.',
+      'Los planes mensuales no tienen permanencia: puedes cancelarlos cuando quieras.'
+    ]
   },
 
   feedback: {
@@ -207,33 +268,34 @@ const es = {
       { q: '¿Es difícil de usar?', a: 'No. Está pensado para usarse desde el móvil, entre cliente y cliente. Crear la cuenta y la primera vacante lleva pocos minutos, y el panel te guía con unos primeros pasos.' },
       { q: '¿Tengo que instalar algo?', a: 'No. Ni tú ni los candidatos tenéis que instalar ninguna aplicación: todo funciona en el navegador del móvil o del ordenador.' },
       { q: '¿Y si ya no necesito contratar?', a: 'Pausas las candidaturas con un botón. Tu página mostrará que no estás contratando y podrás reactivarla cuando quieras.' },
-      { q: '¿Quién ve los CV de mis candidatos?', a: 'Solo tú, desde tu panel. Los CV no tienen enlaces públicos y ningún otro negocio puede ver tus candidaturas.' }
+      { q: '¿Quién ve los CV de mis candidatos?', a: 'Solo tú, desde tu panel. Los CV no tienen enlaces públicos y ningún otro negocio puede ver tus candidaturas.' },
+      { q: `¿Qué pasa cuando terminan los ${M.es.days} días?`, a: 'Tu cuenta no se bloquea por sorpresa. Antes de que termine la prueba podrás elegir un plan desde tu panel, y no se cobra nada sin tu aceptación expresa.' }
     ]
   },
 
   final: {
     title: 'Tu próxima contratación puede empezar hoy.',
-    lead: 'Crea tu cuenta gratis, prepara tu primera vacante en pocos minutos y comparte tu enlace para empezar a recibir candidatos.',
-    cta: 'Empezar gratis',
+    lead: `Empieza tus ${M.es.days} días gratis, prepara tu primera vacante en pocos minutos y comparte tu enlace para empezar a recibir candidatos.`,
+    cta: `Empieza tus ${M.es.days} días gratis`,
     login: 'Ya tengo cuenta',
-    note: 'Gratis durante la prueba de mercado. Sin tarjeta de crédito.'
+    note: 'Sin tarjeta de crédito. No se cobra nada sin tu aceptación expresa.'
   }
 };
 
 const en = {
   htmlLang: 'en',
-  title: 'Hire the right person without losing candidates — free',
-  description: 'Free during the market test: receive your candidates, see their CV and organise your hiring in one place, without an HR department.',
-  nav: { login: 'Log in', start: 'Start free', langLabel: 'Language' },
+  title: `Hire the right person without losing candidates — ${M.en.days} days free`,
+  description: `Try it free for ${M.en.days} days: receive your candidates, see their CV and organise your hiring in one place, without an HR department. After that, a simple monthly fee with no charge per application.`,
+  nav: { login: 'Log in', start: `${M.en.days} days free`, langLabel: 'Language' },
 
   hero: {
-    badge: 'Market test · 100% free',
+    badge: `Launch · ${M.en.days} days free`,
     title: 'Find your next employee',
     titleHl: 'without losing time or candidates.',
-    lead: 'When you’re short-staffed, every day counts. Fíchame gathers everyone who wants to work with you in one place: you see their details and CV, organise them and pick the right person. No HR department, and nothing to pay.',
-    cta: 'Start free',
+    lead: 'When you’re short-staffed, every day counts. Fíchame gathers everyone who wants to work with you in one place: you see their details and CV, organise them and pick the right person. No HR department, and a simple monthly fee.',
+    cta: `Start your ${M.en.days}-day free trial`,
     cta2: 'See how it works',
-    note: 'Free during the market test · No card · No commitment'
+    note: `${M.en.days} days free · No card · Monthly plans with no minimum term: cancel any time`
   },
 
   quick: {
@@ -242,7 +304,7 @@ const en = {
       { q: 'What is it?', a: 'A web app to organise your candidates and your hiring.' },
       { q: 'Do I need HR?', a: 'No. You can run it yourself, from your phone.' },
       { q: 'Do I need to install anything?', a: 'No. It works in the browser.' },
-      { q: 'How much does it cost?', a: 'Nothing: €0 during the market test, no card and no commitment.' }
+      { q: 'How much does it cost?', a: `${M.en.days} days free, no card. After that, from ${M.en.founders}/month (VAT not included), with no charge per application.` }
     ]
   },
 
@@ -259,7 +321,7 @@ const en = {
     ],
     scatter: 'And all of it spread across paper, WhatsApp, emails, spreadsheets… and your memory.',
     pain: 'While you dig for that CV in your messages, the good candidate takes another job. And you end up covering the missing shift yourself.',
-    answer: 'Fíchame puts all of that in order, in one place. And it’s free.'
+    answer: `Fíchame puts all of that in order, in one place. And you can try it free for ${M.en.days} days.`
   },
 
   what: {
@@ -378,15 +440,52 @@ const en = {
     ]
   },
 
-  free: {
-    kicker: 'Price',
-    title: 'Free. No small print.',
-    p1: 'Fíchame is in its market test phase: we’re testing it with real businesses so it’s genuinely useful day to day.',
-    p2: 'That’s why, during this phase, you use it for free. Your business gets organised and you risk nothing.',
-    price: '€0',
-    priceLabel: 'Free during the market test',
-    items: ['No monthly fee', 'No credit card', 'No commitment'],
-    fine: 'We don’t ask for any payment details, so there is nothing that could be charged automatically.'
+  pricing: {
+    id: 'precio',
+    kicker: 'Pricing',
+    title: 'A simple, predictable monthly fee.',
+    lead: 'Built for small businesses in Spain: you pay a fixed monthly fee, with no charge per application received or per job opening created.',
+    cards: [
+      {
+        name: `${M.en.days} days free`,
+        price: M.en.trial,
+        text: `Try Fíchame with your business for the first ${M.en.days} days after signing up. No card needed.`
+      },
+      {
+        name: 'Founders plan',
+        badge: 'Launch offer',
+        price: M.en.founders,
+        per: '/month',
+        vat: 'VAT not included',
+        text: `For the first ${M.en.foundersMax} businesses that join during the launch. Price locked for ${M.en.foundersLock} months from when you join.`,
+        featured: true
+      },
+      {
+        name: 'Professional plan',
+        price: M.en.pro,
+        per: '/month',
+        vat: 'VAT not included',
+        alt: `Or ${M.en.proYear}/year (VAT not included): about ${M.en.proYearMonthly}/month, roughly ${M.en.monthsFree} months free.`,
+        text: 'For any business, paid monthly or yearly.'
+      }
+    ],
+    includesTitle: 'Included in the free trial and in both plans',
+    includes: [
+      'Your own custom applications page',
+      'Access via QR code',
+      'Custom QR code to print and share',
+      'Candidate CVs as PDF',
+      'Job opening management',
+      'Candidate board with hiring stages',
+      'Search, filters and favourites',
+      'Metrics and notifications',
+      'No extra charge per candidate received or job opening created'
+    ],
+    cta: `Start your ${M.en.days}-day free trial`,
+    fine: [
+      'Before your trial ends you will be able to choose a paid plan from your dashboard. Nothing is charged without your express acceptance.',
+      'Monthly plans have no minimum term: you can cancel them at any time.'
+    ]
   },
 
   feedback: {
@@ -404,33 +503,34 @@ const en = {
       { q: 'Is it hard to use?', a: 'No. It’s designed to be used on your phone, between customers. Creating your account and first opening takes a few minutes, and the dashboard guides you through the first steps.' },
       { q: 'Do I have to install anything?', a: 'No. Neither you nor your candidates need to install an app: everything works in the browser, on a phone or a computer.' },
       { q: 'What if I stop hiring?', a: 'Pause applications with one button. Your page will show you’re not hiring, and you can switch it back on whenever you like.' },
-      { q: 'Who can see my candidates’ CVs?', a: 'Only you, from your dashboard. CVs have no public links and no other business can see your applications.' }
+      { q: 'Who can see my candidates’ CVs?', a: 'Only you, from your dashboard. CVs have no public links and no other business can see your applications.' },
+      { q: `What happens when the ${M.en.days} days are over?`, a: 'Your account won’t be blocked by surprise. Before your trial ends you’ll be able to choose a plan from your dashboard, and nothing is charged without your express acceptance.' }
     ]
   },
 
   final: {
     title: 'Your next hire can start today.',
-    lead: 'Create your free account, set up your first opening in a few minutes and share your link to start receiving candidates.',
-    cta: 'Start free',
+    lead: `Start your ${M.en.days}-day free trial, set up your first opening in a few minutes and share your link to start receiving candidates.`,
+    cta: `Start your ${M.en.days}-day free trial`,
     login: 'I already have an account',
-    note: 'Free during the market test. No credit card.'
+    note: 'No credit card. Nothing is charged without your express acceptance.'
   }
 };
 
 const pt = {
   htmlLang: 'pt',
-  title: 'Contrata a pessoa certa sem perder candidatos — grátis',
-  description: 'Grátis durante o teste de mercado: recebe os teus candidatos, vê o CV deles e organiza as tuas contratações num só lugar, sem departamento de RH.',
-  nav: { login: 'Entrar', start: 'Começar grátis', langLabel: 'Idioma' },
+  title: `Contrata a pessoa certa sem perder candidatos — ${M.pt.days} dias grátis`,
+  description: `Experimenta ${M.pt.days} dias grátis: recebe os teus candidatos, vê o CV deles e organiza as tuas contratações num só lugar, sem departamento de RH. Depois, uma mensalidade simples, sem custos por candidatura.`,
+  nav: { login: 'Entrar', start: `${M.pt.days} dias grátis`, langLabel: 'Idioma' },
 
   hero: {
-    badge: 'Teste de mercado · 100 % grátis',
+    badge: `Lançamento · ${M.pt.days} dias grátis`,
     title: 'Encontra o teu próximo funcionário',
     titleHl: 'sem perder tempo nem candidatos.',
-    lead: 'Quando te falta alguém no negócio, cada dia conta. O Fíchame reúne num só lugar todos os que querem trabalhar contigo: vês os dados e o CV de cada um, organiza-los e escolhes a pessoa certa. Sem departamento de Recursos Humanos e sem pagar nada.',
-    cta: 'Começar grátis',
+    lead: 'Quando te falta alguém no negócio, cada dia conta. O Fíchame reúne num só lugar todos os que querem trabalhar contigo: vês os dados e o CV de cada um, organiza-los e escolhes a pessoa certa. Sem departamento de Recursos Humanos e com uma mensalidade simples.',
+    cta: `Começa os teus ${M.pt.days} dias grátis`,
     cta2: 'Ver como funciona',
-    note: 'Grátis durante o teste de mercado · Sem cartão · Sem fidelização'
+    note: `${M.pt.days} dias grátis · Sem cartão · Planos mensais sem fidelização: cancela quando quiseres`
   },
 
   quick: {
@@ -439,7 +539,7 @@ const pt = {
       { q: 'O que é?', a: 'Uma web para organizar os teus candidatos e as tuas contratações.' },
       { q: 'Preciso de RH?', a: 'Não. Podes tratar disso tu mesmo, a partir do telemóvel.' },
       { q: 'É preciso instalar alguma coisa?', a: 'Não. Funciona no browser.' },
-      { q: 'Quanto custa?', a: 'Nada: 0 € durante o teste de mercado, sem cartão e sem fidelização.' }
+      { q: 'Quanto custa?', a: `${M.pt.days} dias grátis, sem cartão. Depois, desde ${M.pt.founders}/mês (IVA não incluído), sem custos por candidatura.` }
     ]
   },
 
@@ -456,7 +556,7 @@ const pt = {
     ],
     scatter: 'E tudo espalhado entre papéis, WhatsApp, emails, folhas de cálculo… e a tua memória.',
     pain: 'Enquanto procuras aquele CV entre as mensagens, o bom candidato aceita outro trabalho. E o turno que falta acabas por fazê-lo tu.',
-    answer: 'O Fíchame põe ordem em tudo isso, num só lugar. E é grátis.'
+    answer: `O Fíchame põe ordem em tudo isso, num só lugar. E experimentas ${M.pt.days} dias grátis.`
   },
 
   what: {
@@ -575,15 +675,52 @@ const pt = {
     ]
   },
 
-  free: {
+  pricing: {
+    id: 'precio',
     kicker: 'Preço',
-    title: 'Grátis. Sem letras pequenas.',
-    p1: 'O Fíchame está em fase de teste de mercado: estamos a testá-lo com negócios reais para que seja mesmo útil no dia a dia.',
-    p2: 'Por isso, durante esta fase, usas o Fíchame grátis. O teu negócio ganha organização e não arriscas nada.',
-    price: '0 €',
-    priceLabel: 'Grátis durante o teste de mercado',
-    items: ['Sem mensalidade', 'Sem cartão de crédito', 'Sem fidelização'],
-    fine: 'Não te pedimos nenhum dado de pagamento, por isso não há nada que possa ser cobrado automaticamente.'
+    title: 'Uma mensalidade simples e previsível.',
+    lead: 'Pensado para pequenos negócios em Espanha: pagas uma mensalidade fixa, sem custos por candidatura recebida nem por vaga criada.',
+    cards: [
+      {
+        name: `${M.pt.days} dias grátis`,
+        price: M.pt.trial,
+        text: `Experimenta o Fíchame no teu negócio durante os primeiros ${M.pt.days} dias desde o registo. Sem cartão.`
+      },
+      {
+        name: 'Plano Fundadores',
+        badge: 'Lançamento',
+        price: M.pt.founders,
+        per: '/mês',
+        vat: 'IVA não incluído',
+        text: `Para os primeiros ${M.pt.foundersMax} negócios que aderirem durante o lançamento. Preço garantido durante ${M.pt.foundersLock} meses desde a adesão.`,
+        featured: true
+      },
+      {
+        name: 'Plano Profissional',
+        price: M.pt.pro,
+        per: '/mês',
+        vat: 'IVA não incluído',
+        alt: `Ou ${M.pt.proYear}/ano (IVA não incluído): cerca de ${M.pt.proYearMonthly}/mês, como ${M.pt.monthsFree} meses grátis.`,
+        text: 'Para qualquer negócio, com pagamento mensal ou anual.'
+      }
+    ],
+    includesTitle: 'Incluído na experiência grátis e nos dois planos',
+    includes: [
+      'Página de candidaturas personalizada',
+      'Acesso através de código QR',
+      'Código QR personalizado para imprimir e partilhar',
+      'CV dos candidatos em PDF',
+      'Gestão de vagas',
+      'Quadro de candidatos com etapas de contratação',
+      'Pesquisa, filtros e favoritos',
+      'Métricas e avisos',
+      'Sem custo extra por candidato recebido nem por vaga criada'
+    ],
+    cta: `Começa os teus ${M.pt.days} dias grátis`,
+    fine: [
+      'Antes de a experiência terminar vais poder escolher um plano pago a partir do teu painel. Nada é cobrado sem a tua aceitação expressa.',
+      'Os planos mensais não têm fidelização: podes cancelá-los quando quiseres.'
+    ]
   },
 
   feedback: {
@@ -601,16 +738,17 @@ const pt = {
       { q: 'É difícil de usar?', a: 'Não. Foi pensado para ser usado no telemóvel, entre cliente e cliente. Criar a conta e a primeira vaga leva poucos minutos, e o painel guia-te com uns primeiros passos.' },
       { q: 'Tenho de instalar alguma coisa?', a: 'Não. Nem tu nem os candidatos têm de instalar nenhuma aplicação: tudo funciona no browser do telemóvel ou do computador.' },
       { q: 'E se já não precisar de contratar?', a: 'Pausas as candidaturas com um botão. A tua página vai mostrar que não estás a contratar e podes reativá-la quando quiseres.' },
-      { q: 'Quem vê os CV dos meus candidatos?', a: 'Só tu, a partir do teu painel. Os CV não têm links públicos e nenhum outro negócio pode ver as tuas candidaturas.' }
+      { q: 'Quem vê os CV dos meus candidatos?', a: 'Só tu, a partir do teu painel. Os CV não têm links públicos e nenhum outro negócio pode ver as tuas candidaturas.' },
+      { q: `O que acontece quando terminam os ${M.pt.days} dias?`, a: 'A tua conta não é bloqueada de surpresa. Antes de a experiência terminar vais poder escolher um plano no teu painel, e nada é cobrado sem a tua aceitação expressa.' }
     ]
   },
 
   final: {
     title: 'A tua próxima contratação pode começar hoje.',
-    lead: 'Cria a tua conta grátis, prepara a tua primeira vaga em poucos minutos e partilha o teu link para começares a receber candidatos.',
-    cta: 'Começar grátis',
+    lead: `Começa os teus ${M.pt.days} dias grátis, prepara a tua primeira vaga em poucos minutos e partilha o teu link para começares a receber candidatos.`,
+    cta: `Começa os teus ${M.pt.days} dias grátis`,
     login: 'Já tenho conta',
-    note: 'Grátis durante o teste de mercado. Sem cartão de crédito.'
+    note: 'Sem cartão de crédito. Nada é cobrado sem a tua aceitação expressa.'
   }
 };
 

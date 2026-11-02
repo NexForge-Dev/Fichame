@@ -1,14 +1,14 @@
 # Fíchame
 
-**NFC-based job applications for any business in Spain — restaurants, shops, hotels, hair salons, gyms…**
+**QR-code job applications for any business in Spain — restaurants, shops, hotels, hair salons, gyms…**
 
-The candidate taps their phone on the business's NFC tag, opens the business page, fills in the form and uploads their CV as a PDF. The application shows up in the business owner's dashboard, where they organize it, contact the candidate and follow the process through to hiring.
+The candidate scans the business's QR code with their phone (or opens its link), lands on the business page, fills in the form and uploads their CV as a PDF. The application shows up in the business owner's dashboard, where they organize it, contact the candidate and follow the process through to hiring.
 
 ```
-NFC tag → /r/:slug → form + CV (PDF) → business dashboard → Nuevo … Contratado
+QR code / link → /r/:slug → form + CV (PDF) → business dashboard → Nuevo … Contratado
 ```
 
-The tag is **not programmed by the system**: Fíchame provides the URL and the owner writes it to the tag with any NFC writer app (e.g. NFC Tools).
+Fíchame generates the QR code for that link (`/panel/qr`): the owner prints it and puts it up in the venue, or shares the link on WhatsApp and social media.
 
 > 🎨 Logo and brand colors: [`brand/`](brand/README.md)
 >
@@ -34,8 +34,8 @@ The tag is **not programmed by the system**: Fíchame provides the URL and the o
 - Free-text search, filters (status, position, availability, dates), favorites and sorting.
 - Candidate profile with CV, internal notes, history and `tel:`, `mailto:` and WhatsApp shortcuts.
 - Positions: create, edit, enable/disable and delete.
-- Pause/resume applications **without touching the NFC tag**.
-- QR code for the same URL, ready to print or download as PNG (`/panel/qr`).
+- Pause/resume applications **without changing the QR code or the link**.
+- QR code for the business link, ready to print or download as PNG (`/panel/qr`).
 - In-dashboard and email notifications (optional SMTP).
 
 **Landing page** — `/`
@@ -43,10 +43,12 @@ The tag is **not programmed by the system**: Fíchame provides the URL and the o
 - The form and dashboard mockups are HTML/CSS (no images), so they follow dark mode.
 
 **Introduction page** — `/conoce`
-- Target of the QR printed on the cards handed to businesses: explains from scratch what Fíchame is, how it works, that no HR team is needed and that it is free during the market test.
+- Target of the QR printed on the cards handed to businesses: explains from scratch what Fíchame is, how it works, that no HR team is needed, and the launch pricing (30-day free trial, Founders and Professional plans; values from `src/lib/pricing.js`).
 - Spanish by default, English with `?lang=en` (or if the browser is in English). Copy lives in `src/lib/conoce.js` — it only describes what the product does today.
 - **Video:** `public/video/fichame-demo.mp4` (Spanish subtitles) and `fichame-demo-en.mp4` (English), recorded from the real app with fictitious data. To regenerate after UI changes, see the header of [`scripts/demo-video/record.js`](scripts/demo-video/record.js). Without the file, the page shows “Vídeo en preparación”. Nothing is downloaded until play is pressed.
-- `CONTACT_EMAIL` (optional) shows a “Write to us” button in the feedback section.
+- `CONTACT_EMAIL` (optional, defaults to the support address) is the support email shown on `/conoce`, in the terms and on error pages.
+
+**Pricing** — `src/lib/pricing.js` is the single source of prices, durations and limits (all + VAT). There is no checkout or payment provider yet: plan CTAs go to `/registro`.
 
 **Languages** — Spanish, English and Portuguese
 - Detected from the browser; can be chosen in *Settings → Language* or in the footer (`fichame_lang` cookie, set only when the user chooses).
@@ -142,9 +144,9 @@ The server checks Supabase on startup and refuses to serve if a migration or buc
 
 1. Register a business at `/registro` — you land straight in the dashboard.
 2. Create a position under **Vacantes**.
-3. Under **Mi restaurante**, copy the tag URL (`https://<APP_URL>/r/<slug>`) and write it to the NFC tag.
+3. Under **Mi negocio**, copy the public link (`https://<APP_URL>/r/<slug>`) or open **Código QR** to print it.
 
-> Set `APP_URL` to the real domain **before** writing the tags.
+> Set `APP_URL` to the real domain **before** printing QR codes.
 
 ---
 
@@ -174,7 +176,7 @@ See [`.env.example`](.env.example) for the commented list.
 | Variable | Default | Description |
 |---|---|---|
 | `PORT` | `3000` | HTTP port |
-| `APP_URL` | `http://localhost:3000` | Public URL — **base of the NFC URLs** |
+| `APP_URL` | `http://localhost:3000` | Public URL — **base of the business links and QR codes** |
 | `SUPABASE_URL` | — | **Required** |
 | `SUPABASE_ANON_KEY` | — | Publishable key |
 | `SUPABASE_SERVICE_ROLE_KEY` | — | **Required.** Never in the frontend, in git or in logs |
@@ -207,7 +209,7 @@ src/
   middleware/        session, csrf, auth, rate limit, uploads
   lib/               crypto, slug, statuses, consent, storage, mailer
   locales/           UI translations (English, Portuguese)
-  routes/            public (NFC), auth, panel, admin, legal
+  routes/            public (business page), auth, panel, admin, legal
   views/             EJS templates
 public/              client-side CSS and JS
 test/                unit, HTTP, DB and E2E tests

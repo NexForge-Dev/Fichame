@@ -275,6 +275,30 @@ async function sendPasswordReset({ to, token }) {
   return deliver({ to, subject, text, html, kind: 'recuperação de senha' });
 }
 
+/* Confirmação da mudança do email de acesso (/panel/configuracion). Vai para
+ * o email NOVO: só muda quando o dono, com sessão iniciada, abre o link.
+ * Uso único, 24 h. O link leva o token na query (a página que o abre não
+ * carrega recursos externos e responde com Referrer-Policy: no-referrer). */
+async function sendEmailChangeConfirmation({ to, token }) {
+  const link = `${config.appUrl}/panel/configuracion/email?t=${token}`;
+  const subject = 'Confirma tu nuevo email de acceso a Fíchame';
+  const text = [
+    'Has pedido cambiar el email con el que entras en Fíchame a esta dirección.',
+    'Para confirmarlo, abre este enlace con la sesión iniciada en tu cuenta. Caduca en 24 horas y solo se puede usar una vez:',
+    '',
+    link,
+    '',
+    'Si no lo has pedido tú, ignora este mensaje: el email de la cuenta no cambia.'
+  ].join('\n');
+  const html = [
+    '<p>Has pedido cambiar el email con el que entras en Fíchame a esta dirección.</p>',
+    '<p>Para confirmarlo, abre este enlace con la sesión iniciada en tu cuenta. Caduca en 24 horas y solo se puede usar una vez:</p>',
+    `<p><a href="${escapeHtml(link)}">Confirmar el nuevo email</a></p>`,
+    '<p>Si no lo has pedido tú, ignora este mensaje: el email de la cuenta no cambia.</p>'
+  ].join('\n');
+  return deliver({ to, subject, text, html, kind: 'confirmação de email' });
+}
+
 /* Novo reporte de problema (/panel/reportar) para o admin da plataforma
  * (ADMIN_EMAIL). Sem o texto do reporte — pode trazer dados que não devem
  * sair por email: só o tipo, o negócio e o link para o admin. */
@@ -296,4 +320,4 @@ async function notifyProblemReport({ kind, restaurantName }) {
   return deliver({ to, subject, text, html, kind: 'reporte de problema' });
 }
 
-module.exports = { notifyNewApplication, notifyRightsRequest, sendPasswordReset, notifyProblemReport };
+module.exports = { notifyNewApplication, notifyRightsRequest, sendPasswordReset, sendEmailChangeConfirmation, notifyProblemReport };

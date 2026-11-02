@@ -39,6 +39,9 @@
   <div class="card narrow-card">
     <h2><%= tr('Cuenta de acceso') %></h2>
     <p class="muted small"><%= tr('Email actual:') %> <strong><%= userEmail %></strong></p>
+    <% if (typeof pendingEmail !== 'undefined' && pendingEmail) { %>
+    <p class="muted small"><%= tr('Cambio pendiente de confirmar:') %> <strong><%= pendingEmail %></strong>. <%= tr('Abre el enlace que te hemos enviado a ese email.') %></p>
+    <% } %>
 
     <% if (!hasPassword) { %>
     <div class="notice-box">
@@ -52,8 +55,15 @@
       <div class="field">
         <label for="email"><%= tr('Nuevo email de acceso') %></label>
         <input id="email" type="email" name="email" maxlength="120" placeholder="<%= tr('Déjalo vacío para no cambiarlo') %>">
-        <div class="help"><%= tr('Es el email con el que inicias sesión.') %></div>
+        <div class="help"><%= tr('Es el email con el que inicias sesión.') %><% if (emailByLink) { %><%= tr('Te enviaremos un enlace al nuevo email: el cambio solo se hace cuando lo abras.') %><% } %></div>
       </div>
+      <% if (!emailByLink) { %>
+      <div class="field">
+        <label for="email_repetir"><%= tr('Repetir nuevo email') %></label>
+        <input id="email_repetir" type="email" name="email_repetir" maxlength="120" autocomplete="off">
+        <div class="help"><%= tr('Escríbelo otra vez para evitar errores: si te equivocas, no podrías entrar.') %></div>
+      </div>
+      <% } %>
 
       <div class="section-title"><%= tr('Cambiar contraseña') %></div>
 

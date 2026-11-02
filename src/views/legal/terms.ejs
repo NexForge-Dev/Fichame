@@ -18,7 +18,7 @@
 
   <div class="card">
     <h2>2. Qué es Fíchame</h2>
-    <p>Fíchame es una <strong>herramienta tecnológica</strong> que permite a un negocio publicar una página para recibir candidaturas (accesible por etiqueta NFC, código QR o enlace) y organizarlas en un panel privado.</p>
+    <p>Fíchame es una <strong>herramienta tecnológica</strong> que permite a un negocio publicar una página para recibir candidaturas (accesible por código QR o enlace) y organizarlas en un panel privado.</p>
     <ul>
       <li>Fíchame <strong>no selecciona</strong> candidatos, no los recomienda, no los puntúa, no los busca ni los presenta a negocios, y no comparte candidatos entre negocios.</li>
       <li>Fíchame <strong>no garantiza</strong> la contratación ni promete empleo a ningún candidato.</li>
@@ -56,18 +56,28 @@
     <p>El incumplimiento puede dar lugar a la suspensión de la cuenta, sin perjuicio de otras acciones legales.</p>
   </div>
 
+  <%
+    /* Preços: fonte única em src/lib/pricing.js. Texto legal em espanhol. */
+    var PL = pricing.PLANS;
+    var eur = function (n) { return pricing.formatPrice(n, 'es'); };
+  %>
   <div class="card">
-    <h2>6. Fase de prueba y precio</h2>
+    <h2>6. Prueba gratuita, planes y precio</h2>
+    <p>Todos los precios se indican en euros y <strong>no incluyen el IVA</strong> (IVA no incluido), que se añadirá según la normativa aplicable.</p>
     <ul>
-      <li>Fíchame está en <strong>fase de prueba de mercado</strong>. Durante esta fase el servicio es <strong>gratuito</strong> para los negocios. Fíchame puede añadir, cambiar o retirar funcionalidades mientras dure la prueba.</li>
-      <li>Fíchame <strong>podrá cobrar por el servicio en el futuro</strong> (por ejemplo, mediante una suscripción). En ese caso:
+      <li><strong>Prueba gratuita:</strong> cada negocio puede usar Fíchame gratis (<%= eur(PL.trial.monthly) %>) durante los primeros <strong><%= pricing.TRIAL_DAYS %> días</strong> desde su registro, sin tarjeta. Al terminar la prueba la cuenta no se bloquea por ello mientras no exista la opción de contratar un plan.</li>
+      <li><strong>Plan Fundadores:</strong> <%= eur(PL.founders.monthly) %>/mes (IVA no incluido), disponible solo para los <strong>primeros <%= PL.founders.maxCustomers %> negocios</strong> que se unan durante el lanzamiento. Ese precio se mantiene durante <strong><%= PL.founders.lockMonths %> meses</strong> desde la fecha de adhesión; después, el negocio podrá pasar al precio público vigente en ese momento, del que se le avisará con antelación.</li>
+      <li><strong>Plan Profesional:</strong> <%= eur(PL.pro.monthly) %>/mes o <%= eur(PL.pro.yearly) %>/año (IVA no incluido en ambos casos). No hay cargos adicionales por candidatura recibida ni por vacante creada.</li>
+      <li>Antes de que termine la prueba, el negocio podrá elegir un plan de pago desde su panel. Para cobrar cualquier importe:
         <ul>
-          <li>avisará con al menos <strong>30 días de antelación</strong>, por email y en el panel, indicando el precio y las condiciones;</li>
-          <li><strong>no cobrará nada sin que el negocio lo acepte de forma expresa</strong>, ni de forma automática ni con carácter retroactivo: el uso durante la fase gratuita nunca se cobrará;</li>
-          <li>el negocio que no acepte podrá darse de baja sin coste y obtener o suprimir sus datos según el apartado 10.</li>
+          <li>Fíchame avisará con al menos <strong>30 días de antelación</strong>, por email y en el panel, indicando el precio y las condiciones;</li>
+          <li><strong>no cobrará nada sin que el negocio lo acepte de forma expresa</strong>, ni de forma automática ni con carácter retroactivo: el uso durante la prueba gratuita nunca se cobrará;</li>
+          <li>los planes mensuales no tienen permanencia y pueden cancelarse en cualquier momento, sin coste;</li>
+          <li>el negocio que no acepte un plan podrá darse de baja sin coste y obtener o suprimir sus datos según el apartado 10.</li>
         </ul>
       </li>
-      <li>Hoy Fíchame no pide ni guarda datos de pago.</li>
+      <li>Fíchame puede añadir, cambiar o retirar funcionalidades durante el lanzamiento. Un cambio de precio para quien ya tenga un plan se avisará con al menos 30 días de antelación y nunca se aplicará de forma retroactiva.</li>
+      <li><strong>Datos de pago:</strong> hoy Fíchame todavía no recoge datos de pago. Cuando se activen los pagos, los tratará un proveedor de pagos externo y se actualizarán estos términos y la <a href="/privacidad">política de privacidad</a> antes de cobrar nada.</li>
       <li>Los <strong>candidatos nunca pagan</strong> por usar Fíchame.</li>
     </ul>
   </div>
@@ -114,6 +124,11 @@
     <h2>12. Ley aplicable y jurisdicción</h2>
     <p>Estos términos se rigen por la legislación española. Para cualquier controversia con un negocio, las partes se someten a los juzgados y tribunales de <strong>Granada</strong>, salvo que una norma imperativa establezca otro fuero.</p>
     <p>Si quien usa Fíchame tiene la condición de consumidor, podrá acudir a los juzgados de su domicilio y conserva todos los derechos que le reconoce la normativa de consumo.</p>
+  </div>
+
+  <div class="card">
+    <h2>13. Contacto y soporte</h2>
+    <p>Para dudas sobre el servicio, los planes o estos términos, escribe a <a href="mailto:<%= supportEmail %>"><%= supportEmail %></a>. Para cuestiones de protección de datos, usa el email del apartado 1.</p>
   </div>
 
   <div class="actions-row center-row spaced">

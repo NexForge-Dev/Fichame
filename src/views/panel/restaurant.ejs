@@ -9,16 +9,16 @@
 
   <%- include('../partials/flash') %>
 
-  <!-- A URL da etiqueta é o centro do produto: destaque próprio. -->
-  <div class="nfc-box">
+  <!-- O link público (o mesmo do código QR) é o centro do produto: destaque próprio. -->
+  <div class="link-box">
     <div class="label"><%- icon('qr') %> <%= tr('URL de tu página pública') %></div>
-    <div class="url"><%= nfcUrl %></div>
+    <div class="url"><%= publicUrl %></div>
     <div class="actions-row flat">
-      <button class="btn small" type="button" data-copy="<%= nfcUrl %>"><%= tr('Copiar URL') %></button>
-      <a class="btn secondary small" href="<%= nfcUrl %>" target="_blank" rel="noopener"><%= tr('Abrir página') %></a>
+      <button class="btn small" type="button" data-copy="<%= publicUrl %>"><%= tr('Copiar enlace') %></button>
+      <a class="btn secondary small" href="<%= publicUrl %>" target="_blank" rel="noopener"><%= tr('Abrir página') %></a>
       <a class="btn secondary small" href="/panel/qr"><%= tr('Generar código QR') %></a>
     </div>
-    <p class="small nfc-note"><%= tr('Comparte esta URL o imprime su código QR. Nunca cambiará, aunque pauses o reactives las candidaturas.') %></p>
+    <p class="small link-note"><%= tr('Comparte esta URL o imprime su código QR. Nunca cambiará, aunque pauses o reactives las candidaturas.') %></p>
   </div>
 
   <div class="card">
@@ -49,12 +49,12 @@
   </div>
 
   <div class="card">
-    <h2><%= tr('Datos del establecimiento') %></h2>
+    <h2><%= tr('Datos del negocio') %></h2>
     <form action="/panel/restaurante" method="post" enctype="multipart/form-data">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
       <div class="field">
-        <label for="name"><%= tr('Nombre del establecimiento') %> *</label>
+        <label for="name"><%= tr('Nombre del negocio') %> *</label>
         <input id="name" type="text" name="name" maxlength="100" required value="<%= restaurant.name %>">
       </div>
       <div class="field">
@@ -63,7 +63,7 @@
         <div class="help"><%= tr('Es el nombre que verán los candidatos en tu página pública.') %></div>
       </div>
       <div class="field">
-        <label for="establecimiento"><%= tr('Tipo de establecimiento') %> *</label>
+        <label for="establecimiento"><%= tr('Tipo de negocio') %> *</label>
         <select id="establecimiento" name="establecimiento" required>
           <option value=""><%= tr('Selecciona…') %></option>
           <% Object.keys(ESTABLISHMENT_TYPES).forEach(function(key) { %>
@@ -170,7 +170,7 @@
 
   <div class="card">
     <h2><%= tr('Tu slug') %></h2>
-    <p class="muted small flat"><strong>/<%= restaurant.slug %></strong> — <%= tr('identificador único de tu establecimiento en la plataforma.') %></p>
+    <p class="muted small flat"><strong>/<%= restaurant.slug %></strong> — <%= tr('identificador único de tu negocio en la plataforma.') %></p>
     <p class="help"><%= tr('Contacta con soporte si necesitas cambiarlo: cambiarlo invalidaría tu enlace y los códigos QR que ya hayas impreso.') %></p>
   </div>
 </main>

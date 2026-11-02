@@ -9,13 +9,25 @@
 
 <main class="container-narrow public-main">
 
+<%
+  /* Faixa de borrador igual à das páginas legais (legal/draft_banner). A rota
+     não passa operatorComplete/legalReviewed: calcula-se aqui a partir do
+     `operator` (marcadores [..] por preencher) e de LEGAL_REVIEWED. O aviso
+     de idioma do banner fica de fora (lang: 'es') porque esta página já o
+     mostra no cartão principal. */
+  var privOperatorComplete = typeof operatorComplete !== 'undefined' ? operatorComplete
+    : !Object.keys(operator).some(function (k) { return k !== 'dpo' && /^\[.*\]$/.test(String(operator[k])); });
+  var privLegalReviewed = typeof legalReviewed !== 'undefined' ? legalReviewed : process.env.LEGAL_REVIEWED === '1';
+%>
+<%- include('../legal/draft_banner', { lang: 'es', operatorComplete: privOperatorComplete, legalReviewed: privLegalReviewed }) %>
+
 <% if (sentRef) { %>
   <div class="card center pad-lg">
-    <div class="success-mark">✓</div>
+    <div class="success-mark" aria-hidden="true">✓</div>
     <h2><%= tr('Solicitud registrada') %></h2>
     <p><%= tr('Referencia:') %> <strong><%= sentRef %></strong></p>
     <p class="muted">
-      <%= tr('La solicitud se ha enviado al establecimiento, que es quien decide sobre tus datos. Debe responderte en el plazo de') %>
+      <%= tr('La solicitud se ha enviado al negocio, que es quien decide sobre tus datos. Debe responderte en el plazo de') %>
       <strong><%= tr('un mes') %></strong>
       <%= tr('(ampliable dos meses más en casos complejos, avisándote). Te contestará al email que has indicado; para proteger tus datos, puede pedirte que confirmes tu identidad.') %>
     </p>
@@ -77,7 +89,7 @@
 
   <div class="card" id="derechos">
     <h2><%= tr('Ejercer mis derechos') %></h2>
-    <p class="help help-lift"><%= tr('La solicitud llega al establecimiento, que debe responderte en un mes. Usa el mismo email con el que enviaste la candidatura: así pueden encontrar tus datos.') %></p>
+    <p class="help help-lift"><%= tr('La solicitud llega al negocio, que debe responderte en un mes. Usa el mismo email con el que enviaste la candidatura: así pueden encontrar tus datos.') %></p>
 
     <form action="/r/<%= restaurant.slug %>/derechos" method="post">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">

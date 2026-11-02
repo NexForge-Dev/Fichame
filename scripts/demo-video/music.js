@@ -150,15 +150,6 @@ function buildAudio({ duration, dropAt, outroAt, cues = [] }) {
         }
       });
     },
-    nfc(t, g = 1) {
-      [0, 0.11].forEach((dt, k) => {
-        const n = Math.floor(0.07 * SR), s0 = Math.floor((t + dt) * SR), f = k ? 2093 : 1568;
-        for (let i = 0; i < n; i++) {
-          const x = i / SR;
-          add(L, R, s0 + i, Math.sin(2 * Math.PI * f * x) * Math.min(1, x / 0.003, (0.07 - x) / 0.01) * 0.14 * g);
-        }
-      });
-    },
     tick(t, g = 1) {
       const n = Math.floor(0.09 * SR), s0 = Math.floor(t * SR);
       for (let i = 0; i < n; i++) {

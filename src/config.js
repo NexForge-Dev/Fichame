@@ -50,9 +50,9 @@ const config = {
   appUrl: (process.env.APP_URL || vercelUrl || `http://localhost:${port}`).replace(/\/+$/, ''),
   onVercel,
 
-  /* Email de contacto mostrado na página de apresentação (/conoce), para
-   * receber opiniões durante a prova de mercado. Opcional. */
-  contactEmail: (process.env.CONTACT_EMAIL || '').trim(),
+  /* Email de suporte e contacto, mostrado em /conoce, nos termos e na página
+   * de erro. CONTACT_EMAIL sobrepõe-se ao valor por omissão. */
+  contactEmail: (process.env.CONTACT_EMAIL || 'nexforge.d4v29@gmail.com').trim(),
 
   supabase: {
     url: (process.env.SUPABASE_URL || '').replace(/\/+$/, ''),
@@ -131,8 +131,8 @@ function assertConfig() {
     throw new Error(`Valor inválido (esperado inteiro positivo) em: ${badInt.join(', ')}.`);
   }
 
-  /* Em produção na Vercel, APP_URL vai parar às etiquetas NFC, aos QR e aos
-   * emails: um http:// ou localhost é um erro que não se pode deixar passar. */
+  /* Em produção na Vercel, APP_URL vai parar aos QR, aos links partilhados e
+   * aos emails: um http:// ou localhost é um erro que não se pode deixar passar. */
   if (process.env.VERCEL_ENV === 'production' && !/^https:\/\/(?!localhost|127\.)/.test(config.appUrl)) {
     throw new Error(`APP_URL tem de ser https em produção (atual: ${config.appUrl}).`);
   }

@@ -148,6 +148,54 @@ module.exports = {
   '¿Puedo cambiar las vacantes después?': { en: 'Can I change the openings later?', pt: 'Posso alterar as vagas depois?' },
   'Sí, cuando quieras. Las vacantes se crean, editan, pausan o eliminan desde el panel, y tu página siempre muestra las actuales.': { en: 'Yes, whenever you like. Openings are created, edited, paused or deleted from the dashboard, and your page always shows the current ones.', pt: 'Sim, quando quiseres. As vagas criam-se, editam-se, pausam-se ou eliminam-se no painel, e a tua página mostra sempre as atuais.' },
 
+  // Preços (partials/pricing.ejs). Valores interpolados a partir de src/lib/pricing.js.
+  'Precios': { en: 'Pricing', pt: 'Preços' },
+  'Una cuota mensual sencilla y previsible.': { en: 'A simple, predictable monthly fee.', pt: 'Uma mensalidade simples e previsível.' },
+  'Pensado para pequeños negocios en España: pagas una cuota fija al mes, sin cargos por candidatura recibida ni por vacante creada.': {
+    en: 'Built for small businesses in Spain: you pay a fixed monthly fee, with no charge per application received or per job opening created.',
+    pt: 'Pensado para pequenos negócios em Espanha: pagas uma mensalidade fixa, sem custos por candidatura recebida nem por vaga criada.'
+  },
+  '{days} días gratis': { en: '{days} days free', pt: '{days} dias grátis' },
+  'Prueba Fíchame con tu negocio durante los primeros {days} días desde el registro. Sin tarjeta.': {
+    en: 'Try Fíchame with your business for the first {days} days after signing up. No card needed.',
+    pt: 'Experimenta o Fíchame no teu negócio durante os primeiros {days} dias desde o registo. Sem cartão.'
+  },
+  'Plan Fundadores': { en: 'Founders plan', pt: 'Plano Fundadores' },
+  'Lanzamiento': { en: 'Launch offer', pt: 'Lançamento' },
+  '/mes': { en: '/month', pt: '/mês' },
+  'IVA no incluido': { en: 'VAT not included', pt: 'IVA não incluído' },
+  'Para los primeros {n} negocios que se unan durante el lanzamiento. Precio garantizado durante {months} meses desde que te unes.': {
+    en: 'For the first {n} businesses that join during the launch. Price locked for {months} months from when you join.',
+    pt: 'Para os primeiros {n} negócios que aderirem durante o lançamento. Preço garantido durante {months} meses desde a adesão.'
+  },
+  'Plan Profesional': { en: 'Professional plan', pt: 'Plano Profissional' },
+  'O {price}/año (IVA no incluido): unos {monthly}/mes, como {months} meses gratis.': {
+    en: 'Or {price}/year (VAT not included): about {monthly}/month, roughly {months} months free.',
+    pt: 'Ou {price}/ano (IVA não incluído): cerca de {monthly}/mês, como {months} meses grátis.'
+  },
+  'Para cualquier negocio, con pago mensual o anual.': { en: 'For any business, paid monthly or yearly.', pt: 'Para qualquer negócio, com pagamento mensal ou anual.' },
+  'Incluido en la prueba gratis y en los dos planes': { en: 'Included in the free trial and in both plans', pt: 'Incluído na experiência grátis e nos dois planos' },
+  'Página de candidaturas personalizada': { en: 'Your own custom applications page', pt: 'Página de candidaturas personalizada' },
+  'Acceso mediante código QR': { en: 'Access via QR code', pt: 'Acesso através de código QR' },
+  'Código QR personalizado para imprimir y compartir': { en: 'Custom QR code to print and share', pt: 'Código QR personalizado para imprimir e partilhar' },
+  'CV de los candidatos en PDF': { en: 'Candidate CVs as PDF', pt: 'CV dos candidatos em PDF' },
+  'Gestión de vacantes': { en: 'Job opening management', pt: 'Gestão de vagas' },
+  'Tablero de candidatos con etapas de contratación': { en: 'Candidate board with hiring stages', pt: 'Quadro de candidatos com etapas de contratação' },
+  'Búsqueda, filtros y favoritos': { en: 'Search, filters and favourites', pt: 'Pesquisa, filtros e favoritos' },
+  'Métricas y avisos': { en: 'Metrics and notifications', pt: 'Métricas e avisos' },
+  'Sin coste extra por candidato recibido ni por vacante creada': {
+    en: 'No extra charge per candidate received or job opening created',
+    pt: 'Sem custo extra por candidato recebido nem por vaga criada'
+  },
+  'Antes de que termine la prueba podrás elegir un plan de pago desde tu panel. No se cobra nada sin tu aceptación expresa.': {
+    en: 'Before your trial ends you will be able to choose a paid plan from your dashboard. Nothing is charged without your express acceptance.',
+    pt: 'Antes de a experiência terminar vais poder escolher um plano pago a partir do teu painel. Nada é cobrado sem a tua aceitação expressa.'
+  },
+  'Los planes mensuales no tienen permanencia: puedes cancelarlos cuando quieras.': {
+    en: 'Monthly plans have no minimum term: you can cancel them at any time.',
+    pt: 'Os planos mensais não têm fidelização: podes cancelá-los quando quiseres.'
+  },
+
   // CTA final
   'Tu próxima incorporación puede estar ahora mismo en tu local.': {
     en: 'Your next team member could be in your venue right now.',

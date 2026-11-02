@@ -8,7 +8,7 @@
  *     telemóvel, painel do dono). Cada clip guarda marcadores (instante +
  *     retângulo do elemento) que dizem à câmara do palco onde fazer zoom.
  *  2. Render — stage.html monta os clips dentro de um portátil e de um
- *     telemóvel, com abertura, cartão QR/NFC, transições e fecho; é
+ *     telemóvel, com abertura, cartão com o código QR, transições e fecho; é
  *     capturado frame a frame (30 fps) e juntado à música de music.js.
  *
  * As ferramentas não são dependências do projeto. Instalar numa pasta à
@@ -53,6 +53,7 @@ const { buildAudio, writeWav } = require('./music');
 require(path.join(ROOT, 'src', 'config')); // carrega o .env
 const { createClient } = require(path.join(ROOT, 'node_modules', '@supabase', 'supabase-js'));
 const QRCode = require(path.join(ROOT, 'node_modules', 'qrcode'));
+const pricing = require(path.join(ROOT, 'src', 'lib', 'pricing'));
 
 /* Os dados de demonstração ficam em espanhol nas duas versões: a aplicação
  * só existe em espanhol (a /conoce inglesa avisa disso). */
@@ -478,7 +479,7 @@ async function render(clips) {
     await stage.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
     stage.on('pageerror', (e) => console.log('  ! palco:', e.message));
     await stage.goto(pathToFileURL(path.join(__dirname, 'stage.html')).href, { waitUntil: 'load' });
-    const tl = await stage.evaluate((d) => window.setup(d), { lang: LANG, site: SITE, logoSvg, qrSvg, clips });
+    const tl = await stage.evaluate((d) => window.setup(d), { lang: LANG, site: SITE, logoSvg, qrSvg, clips, prices: { days: pricing.TRIAL_DAYS, founders: pricing.formatPrice(pricing.PLANS.founders.monthly, LANG) } });
 
     if (PREVIEW.length) {
       const dir = path.join(WORK, 'preview');

@@ -96,8 +96,6 @@
   #stand .cta { font-size: 20px; color: #44403c; margin-top: 14px; line-height: 1.35; }
   #stand .foot { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 18px; font-weight: 800; font-size: 18px; color: #78716c; }
   #stand .foot i { width: 26px; height: 26px; display: inline-block; }
-  #stand .nfc { position: absolute; right: -26px; top: -26px; width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(140deg, #d9553d, #8e2b1c); display: grid; place-items: center; box-shadow: 0 14px 30px rgba(142,43,28,.4); }
-  .nfcRing { border: 5px solid #c9402a; border-radius: 50%; }
 
   /* Lista de verificação (telemóvel) */
   .check { display: flex; align-items: center; gap: 20px; font-size: 36px; font-weight: 700; letter-spacing: -.02em; margin-top: 26px; }
@@ -183,9 +181,7 @@
     <div class="abs bokeh" style="left:780px;top:180px;width:200px;height:200px;background:rgba(255,220,160,.5)"></div>
     <div class="abs" id="counter"></div>
   </div>
-  <div class="abs nfcRing" id="n1"></div><div class="abs nfcRing" id="n2"></div><div class="abs nfcRing" id="n3"></div>
   <div class="abs" id="stand">
-    <div class="nfc"><svg viewBox="0 0 24 24" width="50" height="50" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M6 8.5a5 5 0 0 1 0 7"/><path d="M10 5.5a10 10 0 0 1 0 13"/><path d="M14 3a14 14 0 0 1 0 18"/></svg></div>
     <h3>La Plaza</h3>
     <div class="q" data-k="standQ"></div>
     <div class="qr"></div>
@@ -266,22 +262,22 @@ const TEXT = {
     h3: ['…y', 'el', 'buen', 'candidato', '<span class="hl">se', 'te', 'escapa.</span>'],
     cv: 'CURRÍCULUM', wa: '¡Hola! ¿Seguís buscando camarero? 🙏', mail: 'Re: Re: Fwd: CV_final_v2.pdf',
     post: '¿Llamar a Ana… o a Marta?', call: '3 llamadas perdidas', cand: 'Camarera · 3 años de experiencia',
-    tagline: 'Todos tus candidatos, en un solo lugar.', free: '100 % GRATIS',
+    tagline: 'Todos tus candidatos, en un solo lugar.', free: '{days} DÍAS GRATIS',
     s1: ['Crea tu vacante', 'Puesto, contrato y jornada. En un minuto.'],
-    s2: ['Pon tu QR o etiqueta NFC en el local', 'Quien quiera trabajar contigo, se apunta.'],
+    s2: ['Pon tu código QR en el local', 'Quien quiera trabajar contigo, se apunta.'],
     s3: ['El candidato se apunta desde su móvil', ''],
     s4: ['Todo llega a tu panel', ''],
     s4subs: ['Ves al momento quién es nuevo', 'Todos tus candidatos, ordenados', 'Su ficha y su CV, a un clic', 'Apunta tus notas', 'Mueve a cada uno de etapa', 'Sabes siempre en qué punto está cada uno'],
-    standQ: '¿Quieres trabajar con nosotros?', standCta: 'Escanea el código o acerca tu móvil a la etiqueta NFC',
+    standQ: '¿Quieres trabajar con nosotros?', standCta: 'Escanea el código QR con la cámara del móvil',
     bannerT: 'Abrir «La Plaza»', bannerS: 'Fíchame · candidaturas',
     checks: ['Sin instalar ninguna app', 'Sin crear una cuenta', 'Sus datos y su CV en PDF', 'En menos de 2 minutos'],
     sent: '✓ ¡Candidatura enviada!',
     now: 'ahora', nTitle: 'Nueva candidatura', nBody: 'Camarero/a · Lucía Fernández', nText: 'Y llega directa a tu panel.',
     pipe: ['Nuevo', 'Revisado', 'Contactar', 'Entrevista', 'Contratado'],
     benTitle: '¿Por qué Fíchame?', b0: 'Ningún candidato se pierde', b1: 'Sin equipo de RR. HH.', b2: 'Todo desde tu móvil',
-    price: '0 €', freeTxt: '100 % gratis durante la<br>prueba de mercado',
+    price: '{days}', freeTxt: 'días gratis para empezar.<br>Después, desde {founders}/mes + IVA',
     cta: ['Tu', 'próxima', 'contratación', '<br>', 'puede', 'empezar', '<span class="hl">hoy.</span>'],
-    ctaBtn: 'Empezar gratis', ctaNote: 'Sin tarjeta · Sin permanencia · Listo en minutos'
+    ctaBtn: 'Empieza tus {days} días gratis', ctaNote: 'Sin tarjeta · Planes mensuales sin permanencia · Listo en minutos'
   },
   en: {
     h1: ['Need', 'to', 'hire', '<span class="hl">someone?</span>'],
@@ -289,22 +285,22 @@ const TEXT = {
     h3: ['…and', 'the', 'best', 'candidate', '<span class="hl">slips', 'away.</span>'],
     cv: 'CURRICULUM', wa: 'Hi! Still looking for a waiter? 🙏', mail: 'Re: Re: Fwd: CV_final_v2.pdf',
     post: 'Call Ana… or Marta?', call: '3 missed calls', cand: 'Waitress · 3 years’ experience',
-    tagline: 'All your candidates, in one place.', free: '100% FREE',
+    tagline: 'All your candidates, in one place.', free: '{days} DAYS FREE',
     s1: ['Create your job opening', 'Role, contract and hours. In one minute.'],
-    s2: ['Put your QR or NFC tag in your venue', 'Anyone who wants to work with you can apply.'],
+    s2: ['Put your QR code up in your venue', 'Anyone who wants to work with you can apply.'],
     s3: ['Candidates apply from their phone', ''],
     s4: ['Everything lands in your dashboard', ''],
     s4subs: ['See who’s new at a glance', 'All your candidates, organised', 'Their profile and CV, one click away', 'Keep your own notes', 'Move each one through the stages', 'Always know where everyone is'],
-    standQ: 'Want to work with us?', standCta: 'Scan the code or tap your phone on the NFC tag',
+    standQ: 'Want to work with us?', standCta: 'Scan the QR code with your phone camera',
     bannerT: 'Open “La Plaza”', bannerS: 'Fíchame · applications',
     checks: ['No app to install', 'No account needed', 'Their details and PDF CV', 'In under 2 minutes'],
     sent: '✓ Application sent!',
     now: 'now', nTitle: 'New application', nBody: 'Waiter · Lucía Fernández', nText: 'And it lands in your dashboard.',
     pipe: ['New', 'Reviewed', 'To contact', 'Interview', 'Hired'],
     benTitle: 'Why Fíchame?', b0: 'No candidate gets lost', b1: 'No HR team needed', b2: 'All from your phone',
-    price: '€0', freeTxt: '100% free during<br>the market test',
+    price: '{days}', freeTxt: 'days free to start.<br>Then from {founders}/month + VAT',
     cta: ['Your', 'next', 'hire', 'can', '<br>', 'start', '<span class="hl">today.</span>'],
-    ctaBtn: 'Start free', ctaNote: 'No card · No commitment · Ready in minutes'
+    ctaBtn: 'Start your {days}-day free trial', ctaNote: 'No card · Monthly plans, cancel any time · Ready in minutes'
   }
 };
 
@@ -444,7 +440,11 @@ function confetti(t, t0, ox, oy) {
 /* ---------- montagem ---------- */
 let CL, MAP, CAM;
 window.setup = async function (data) {
-  D = data; T = TEXT[D.lang];
+  D = data;
+  /* Preços e prazos chegam de record.js (src/lib/pricing.js): {days}, {founders}. */
+  const fill = (v) => typeof v === 'string' ? v.replace(/\{(\w+)\}/g, (m, k) => (D.prices && D.prices[k] != null ? D.prices[k] : m))
+    : Array.isArray(v) ? v.map(fill) : v;
+  T = Object.fromEntries(Object.entries(TEXT[D.lang]).map(([k, v]) => [k, fill(v)]));
   $$('[data-k]').forEach((el) => { el.innerHTML = T[el.dataset.k]; });
   /* Cada cópia do logótipo precisa do seu id de gradiente: url(#…) aponta
    * para a primeira cópia, que pode estar escondida. */
@@ -498,7 +498,7 @@ window.setup = async function (data) {
   [1.25, 1.45, 1.65, 1.85, 2.05].forEach((t) => c('pop', t, 0.8));
   c('whoosh', 4.35, 0.6); c('impact', 6.0, 1); c('pop', 8.0, 0.9);
   WIPES.forEach((t) => c('whoosh', t, 0.85));
-  c('whoosh', 17.15, 0.45); c('nfc', 18.45); c('click', 19.25); c('pop', 19.3, 0.5);
+  c('whoosh', 17.15, 0.45); c('click', 19.25); c('pop', 19.3, 0.5);
   [[22.6], [23.4]].forEach(([t]) => c('tick', t));
   c('tick', MAP.mob.inv(m.m('cv').t) || 26); c('tick', MAP.mob.inv(m.m('sent').t) || 29.5);
   c('sparkle', MAP.mob.inv(m.m('sent').t) || 29.5); c('pop', (MAP.mob.inv(m.m('sent').t) || 29.5) + 0.05, 0.7);
@@ -569,7 +569,6 @@ function appScene(t) {
   const inVac = t < 16, inQr = t >= 16 && t < 22, inMob = t >= 22 && t < 32, inPanel = t >= 34;
   show(lap, inVac || inPanel); show(bar, inQr); show(stand, inQr); show(ph, inQr || inMob);
   show($('#dots'), !inQr);
-  ['#n1', '#n2', '#n3'].forEach((id) => show($(id), inQr));
   show($('#checks'), inMob); show($('#sentPill'), inMob); show($('#pipe'), inPanel);
   css($('#dots'), { transform: `translate(${(t * 6) % 36}px, ${(t * 4) % 36}px)` });
   show($('#mark'), inMob);
@@ -590,10 +589,6 @@ function appScene(t) {
     const si = prog(u, 0, 0.7), so = prog(u, 4.4, 5.4);
     css(stand, { left: tw(u, 0, 0.7, -600, 230) - E.in(so) * 900 + 'px', top: 170 + 'px',
       transform: `perspective(1600px) rotateY(${14 - 4 * E.out(si)}deg) rotate(${(1 - E.out(si)) * -8}deg)`, opacity: 1 - so });
-    ['#n1', '#n2', '#n3'].forEach((id, i) => {
-      const q = prog(u, 2.4 + i * 0.25, 3.5 + i * 0.25), size = 120 + q * 520;
-      css($(id), { width: size + 'px', height: size + 'px', left: 600 - size / 2 + 'px', top: 220 - size / 2 + 'px', opacity: q > 0 && q < 1 ? (1 - q) : 0 });
-    });
     // telemóvel: entra, aproxima-se do QR, e fica à esquerda para o passo 3
     let x, y, rot, sc;
     if (u < 1.8) { const p = E.out(prog(u, 0.9, 1.8)); x = 2300 + (1080 - 2300) * p; y = 900 + (130 - 900) * p; rot = 18 - 22 * p; sc = 0.9; }

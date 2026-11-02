@@ -108,6 +108,27 @@ async function findOrphanCvs({ minAgeMs = 24 * 60 * 60 * 1000 } = {}) {
   return orphans;
 }
 
+/* Links de confirmação de mudança de email (0013) caducados há mais de um
+ * dia ou já usados. Uma tabela sem `id`, por isso não usa purgeOlderThan. */
+async function purgeEmailChanges(apply) {
+  const cutoff = new Date(Date.now() - 86400000).toISOString();
+  const filter = (q) => q.or(`expires_at.lt.${cutoff},used_at.not.is.null`);
+  const { count: n, error } = await filter(sb().from('email_changes').select('token_hash', { count: 'exact', head: true }));
+  if (error) throw new Error(`Supabase: contar email_changes — ${error.message}`);
+  if (apply && n > 0) {
+    const { error: e2 } = await filter(sb().from('email_changes').delete());
+    if (e2) throw new Error(`Supabase: apagar email_changes — ${e2.message}`);
+  }
+  return n || 0;
+}
+
+/* A mensagem do painel «se borrarán en la próxima limpieza automática» só é
+ * verdade quando a supressão automática corre mesmo: RETENTION_AUTO=1 e um
+ * CRON_SECRET válido (sem ele /internal/retention responde 404 ao cron). */
+function autoRetentionEnabled(env = process.env) {
+  return env.RETENTION_AUTO === '1' && String(env.CRON_SECRET || '').length >= 32;
+}
+
 /* Limpeza técnica: sessões e tokens expirados, limites de pedidos, logs,
  * erros do servidor, reportes resolvidos e CVs órfãos. Não toca em
  * candidaturas, por isso pode correr todos os dias mesmo com a supressão
@@ -123,6 +144,7 @@ async function runCleanup({ apply = false, log = () => {} } = {}, report = { app
       `rate limit: ${purge.rate_limits} · logs > ${SECURITY_LOG_DAYS} d: ${purge.security_logs} · ` +
       `pedidos de direitos fechados > ${RIGHTS_REQUEST_DAYS} d: ${purge.rights_requests}`);
 
+  report.emailChanges = await purgeEmailChanges(apply);
   report.errorEvents = await purgeOlderThan('error_events', ERROR_EVENT_DAYS, apply);
   report.problemReports = await purgeOlderThan('problem_reports', REPORT_DAYS, apply,
     (q) => q.eq('status', 'resuelto'), 'updated_at');
@@ -168,4 +190,4 @@ async function runRetention({ apply = false, log = () => {} } = {}) {
   return report;
 }
 
-module.exports = { runRetention, runCleanup, findOrphanCvs, SECURITY_LOG_DAYS, RIGHTS_REQUEST_DAYS, ERROR_EVENT_DAYS, REPORT_DAYS };
+module.exports = { runRetention, runCleanup, findOrphanCvs, autoRetentionEnabled, SECURITY_LOG_DAYS, RIGHTS_REQUEST_DAYS, ERROR_EVENT_DAYS, REPORT_DAYS };

@@ -1,6 +1,20 @@
 <% if (typeof isDemo !== 'undefined' && isDemo) { %>
   <div class="flash ok">
-    <span><strong><%= tr('Demostración con datos ficticios.') %></strong> <%= tr('Ningún candidato ni negocio de esta cuenta es real y los cambios no se guardan.') %> <a href="/registro"><%= tr('Crea tu cuenta gratis') %></a>.</span>
+    <span><strong><%= tr('Demostración con datos ficticios.') %></strong> <%= tr('Ningún candidato ni negocio de esta cuenta es real y los cambios no se guardan.') %> <a href="/registro"><%= tr('Empieza tus {days} días gratis', { days: pricing.TRIAL_DAYS }) %></a>.</span>
+  </div>
+<% } %>
+<%# Prova grátis (res.locals.trial, só nas páginas do dono). Só informa: não bloqueia nada. %>
+<% if (!(typeof isDemo !== 'undefined' && isDemo) && typeof trial !== 'undefined' && trial) { %>
+  <div class="flash trial">
+    <% if (trial.active) {
+      var trialVars = { n: trial.daysLeft, price: pricing.formatPrice(pricing.PLANS.founders.monthly, lang) }; %>
+      <span><%= trial.daysLeft === 1
+        ? tr('Te queda {n} día de prueba gratis. Después podrás elegir el plan Fundadores ({price}/mes, IVA no incluido) o Profesional.', trialVars)
+        : tr('Te quedan {n} días de prueba gratis. Después podrás elegir el plan Fundadores ({price}/mes, IVA no incluido) o Profesional.', trialVars) %>
+        <a href="/conoce#precio"><%= tr('Ver precios') %></a></span>
+    <% } else { %>
+      <span><%= tr('Tu prueba gratuita ha terminado. Pronto podrás activar tu plan desde aquí; mientras tanto puedes seguir usando Fíchame.') %></span>
+    <% } %>
   </div>
 <% } %>
 <% if (!(typeof isDemo !== 'undefined' && isDemo) && typeof termsPending !== 'undefined' && termsPending && path !== '/panel/terminos') { %>

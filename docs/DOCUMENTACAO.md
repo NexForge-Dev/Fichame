@@ -1,6 +1,6 @@
 # Fíchame — Documentação Técnica
 
-Documentação do que foi construído no sistema **Fíchame — Reclutamiento por NFC para bares y restaurantes**.
+Documentação do que foi construído no sistema **Fíchame — Reclutamiento por código QR para cualquier negocio**.
 
 > Público-alvo desta documentação: quem vai manter, auditar ou evoluir o código.
 > Para instruções de uso, ver também o [`README.md`](../README.md).
@@ -9,9 +9,9 @@ Documentação do que foi construído no sistema **Fíchame — Reclutamiento po
 
 ## 1. Resumo
 
-Sistema web completo de recrutamento para bares/restaurantes da Espanha, com alta rotatividade de funcionários. O dono grava uma **URL única numa etiqueta NFC**; o candidato aproxima o celular, preenche o formulário, envia o CV em PDF e a candidatura cai organizada no painel do restaurante.
+Sistema web completo de recrutamento para bares/restaurantes da Espanha, com alta rotatividade de funcionários. Cada negócio tem uma **URL única** e o respetivo **código QR**; o candidato lê o QR com o telemóvel (ou abre o link), preenche o formulário, envia o CV em PDF e a candidatura cai organizada no painel do restaurante.
 
-- **NFC como mecanismo principal**: NFC → navegador → página do restaurante. O QR code (`/panel/qr`) é opcional, impresso pelo dono para quem não tem NFC, e aponta para a mesma URL.
+- **Código QR como mecanismo principal**: QR → navegador → página do negócio. O QR (`/panel/qr`) é gerado no servidor, impresso ou descarregado pelo dono, e aponta para a mesma URL que se partilha por WhatsApp e redes.
 - **Sem login para o candidato**: fluxo em menos de 2 minutos, mobile-first, em espanhol.
 - **Sem tocar na tag para pausar**: o dono pausa/ativa as candidaturas pelo painel; a URL da tag nunca muda.
 
@@ -26,9 +26,9 @@ Sistema web completo de recrutamento para bares/restaurantes da Espanha, com alt
 | 3 | Schema do banco | 13 tabelas com FKs, índices, checks e isolamento por `restaurant_id` |
 | 4 | Middleware de segurança | Sessão própria em BD, CSRF, rate limiting, auth owner/admin |
 | 5 | Autenticação | Registro de estabelecimento, login, logout, admin seed |
-| 6 | Página pública NFC | `/r/:slug` com estados (formulário / pausado / sem vagas) |
+| 6 | Página pública do negócio | `/r/:slug` com estados (formulário / pausado / sem vagas) |
 | 7 | Upload de CV | PDF validado por extensão + MIME + magic bytes + tamanho, bucket privado |
-| 8 | Painel do dono | Dashboard, lista+filtros, perfil, CV, estados, notas, vagas, pausa, dados, URL NFC |
+| 8 | Painel do dono | Dashboard, lista+filtros, perfil, CV, estados, notas, vagas, pausa, dados, link público + QR |
 | 9 | Área admin | Métricas, ativar/desativar restaurantes, bloquear usuários |
 | 10 | Notificações | Email via SMTP mínimo (opcional) + tabela `notifications` + log |
 | 11 | Testes E2E | `test/smoke.js` — **54 verificações, todas passando** |
@@ -54,7 +54,7 @@ Sistema web completo de recrutamento para bares/restaurantes da Espanha, com alt
 - **Candidaturas**: filtros (texto livre, estado, vaga, disponibilidade, datas), **ordenação** (recentes/antigas), **favoritos** (★ + filtro), **pipeline visual** com contagem por estado, cards completos (telefone, email, disponibilidade).
 - **Perfil**: dados + consentimentos (com versão) + **histórico** (recebida + mudanças de estado com data/hora), botões 📞 `tel:`, ✉️ `mailto:` e **WhatsApp** (`wa.me/<somente dígitos>`), Ver/Descargar CV, seletor dos 8 estados, **notas internas com autor**, favorito, eliminação segura.
 - **Vacantes**: criar/editar/ativar/desativar/**eliminar**; campos extra **contrato** (Indefinido/Temporal…), **jornada**, **requisitos**, **disponibilidade**; contagem de candidaturas (preservada após eliminar a vaga via snapshot `job_title`).
-- **Mi restaurante**: edição dos dados + **logo/foto** (PNG/JPG/WEBP validados) + URL da etiqueta NFC (copiar/abrir) + pausa/ativação + slug.
+- **Mi restaurante**: edição dos dados + **logo/foto** (PNG/JPG/WEBP validados) + link público (copiar/abrir) e código QR + pausa/ativação + slug.
 - **Notificações**: badge com não lidas + «Marcar todas como leídas» (`/panel/notificaciones/marcar-leidas`).
 - **Configuração**: trocar email de acesso e senha (exige senha atual).
 
@@ -71,7 +71,7 @@ Sistema web completo de recrutamento para bares/restaurantes da Espanha, com alt
 
 ## 4. Mapa de rotas
 
-### Públicas (NFC)
+### Públicas (página do negócio)
 | Método | Rota | Descrição |
 |---|---|---|
 | GET | `/r/:slug` | Página pública: formulário, pausado ou sem vagas |
@@ -114,8 +114,8 @@ Sistema web completo de recrutamento para bares/restaurantes da Espanha, com alt
 | POST | `/panel/vagas/:id/eliminar` | Elimina vaga (candidaturas preservadas) |
 | POST | `/panel/vagas/:id/toggle` | Liga/desliga vaga |
 | POST | `/panel/contratacion` | `accion=pausar|activar` |
-| GET/POST | `/panel/restaurante` | Edita dados (multipart: logo/foto) + mostra URL NFC |
-| GET | `/panel/qr` | Folha imprimível com o QR code da URL NFC (SVG gerado no servidor) |
+| GET/POST | `/panel/restaurante` | Edita dados (multipart: logo/foto) + mostra o link público |
+| GET | `/panel/qr` | Folha imprimível com o código QR do link público (SVG gerado no servidor) |
 | GET | `/panel/qr.png` | QR code em PNG 1024 px para descarregar |
 | GET | `/panel/notificaciones` | Área de notificações: histórico de avisos + estado de entrega dos emails |
 | POST | `/panel/notificaciones/marcar-leidas` | Marca notificações do restaurante como lidas |
@@ -139,9 +139,9 @@ Todas as rotas POST passam por verificação de CSRF (multipart validado após o
 
 ## 5. Fluxos principais
 
-### 5.1 Candidatura por NFC
+### 5.1 Candidatura por código QR
 ```
-Tag NFC → GET /r/:slug
+Código QR / link → GET /r/:slug
   ├─ restaurante não existe/inativo → 404 genérico (anti-enumeration)
   ├─ hiring_status=paused          → mensagem + formulário de interesse
   ├─ sem vagas ativas              → "no tenemos vacantes" + interesse
@@ -170,7 +170,7 @@ A ordem importa: o caminho do objeto é preciso para gravar a linha em `cvs`, po
 ```
 Painel → POST /panel/contratacion (accion=pausar)
   → restaurants.hiring_status = 'paused'
-  → página NFC passa a mostrar "Actualmente no estamos contratando"
+  → página pública passa a mostrar "Actualmente no estamos contratando"
   → POST /apply é rejeitado; /interes continua ativo (entra como Reserva)
 Painel → accion=activar
   → formulário volta no mesmo instante; URL da tag inalterada
@@ -211,7 +211,7 @@ security_logs                         (event, user_id, restaurant_id, ip, user_a
 
 | Tabela | Campos principais | Notas |
 |---|---|---|
-| `restaurants` | slug UNIQUE, name, commercial_name, establishment_type, postal_code, description, `logo_path`, `photo_path`, owner_name, email, phone, address, city, `hiring_status` ('open'/'paused'), `active`, `test_prefix` | slug = URL NFC; `*_path` são caminhos no bucket `media`, não URLs |
+| `restaurants` | slug UNIQUE, name, commercial_name, establishment_type, postal_code, description, `logo_path`, `photo_path`, owner_name, email, phone, address, city, `hiring_status` ('open'/'paused'), `active`, `test_prefix` | slug = link público (e QR); `*_path` são caminhos no bucket `media`, não URLs |
 | `users` | email UNIQUE (citext), password_hash, full_name, phone, role ('owner'/'admin'), blocked | scrypt |
 | `jobs` | restaurant_id FK, title, description, requirements, contract_type, work_schedule, availability, active | contrato/jornada em `CONTRACT_TYPES`/`WORK_SCHEDULES` |
 | `candidates` | **restaurant_id FK**, first_name, last_name, email (citext), phone, doc_type, doc_number | `UNIQUE (restaurant_id, email)`; documento pode ficar vazio |
@@ -298,7 +298,7 @@ src/
   lib/statuses.js        estados, disponibilidades, tipos de documento, tipos de estabelecimento,
                          contratos, jornadas, CONSENT_VERSION, HISTORY_EVENTS + labels
   lib/mailer.js          cliente SMTP mínimo (EHLO/STARTTLS/AUTH/DATA) + notifications
-  routes/public.js       página NFC + imagens + apply + interes + enviado
+  routes/public.js       página pública + imagens + apply + interes + enviado
   routes/auth.js         /, registro, login, logout
   routes/panel.js        todo o painel (prefixo /panel protegido)
   routes/admin.js        área admin (prefixo /admin protegido)
@@ -368,7 +368,7 @@ O teste sobe um servidor e valida, **contra o Supabase real**, por esta ordem. C
 
 1. **Registro e sessão** — render, criação de conta (com tipo de estabelecimento), dashboard
 2. **Vagas** — criação e presença no painel
-3. **Página NFC** — render com estado contratando + vagas
+3. **Página pública** — render com estado contratando + vagas
 4. **Candidatura** — envio multipart com PDF → confirmação → aparece no painel
 5. **Perfil/CV** — dados completos, PDF servido com `application/pdf` + `no-store`, download attachment
 6. **Estado e notas** — alteração refletida, nota guardada
@@ -401,7 +401,7 @@ npm run dev       # watch mode
 npm test          # unitários + HTTP + migrations (sem Supabase)
 ```
 
-Variáveis em `.env` (ver `.env.example`): `PORT`, `APP_URL` (**base da URL gravada na tag NFC**), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_BUCKET_CVS`, `SUPABASE_BUCKET_MEDIA`, `DATABASE_URL` (só para `npm run migrate`), `SESSION_TTL_DAYS`, `COOKIE_SECURE`, `TRUST_PROXY`, `MAX_CV_MB`, `MAX_IMAGE_MB`, `ADMIN_*`, `SMTP_*`.
+Variáveis em `.env` (ver `.env.example`): `PORT`, `APP_URL` (**base do link público e do código QR**), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_BUCKET_CVS`, `SUPABASE_BUCKET_MEDIA`, `DATABASE_URL` (só para `npm run migrate`), `SESSION_TTL_DAYS`, `COOKIE_SECURE`, `TRUST_PROXY`, `MAX_CV_MB`, `MAX_IMAGE_MB`, `ADMIN_*`, `SMTP_*`.
 
 A `SUPABASE_SERVICE_ROLE_KEY` ignora RLS e existe exclusivamente no backend: nunca no frontend, no git ou em logs. O `npm run check` valida o ambiente (ligação, migrations aplicadas, views acessíveis, buckets privados) e corre também no arranque do servidor.
 

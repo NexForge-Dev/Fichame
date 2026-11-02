@@ -41,7 +41,11 @@ select
   r.slug          as restaurant_slug,
   r.name          as restaurant_name,
   r.active        as restaurant_active,
-  r.hiring_status as restaurant_hiring
+  r.hiring_status as restaurant_hiring,
+  -- Acrescentada em 0013 (prova grátis no painel). Repetida aqui porque
+  -- `create or replace view` não pode retirar colunas: sem ela, reaplicar
+  -- 0002 depois de 0013 falharia.
+  r.created_at    as restaurant_created_at
 from sessions s
 left join users u       on u.id = s.user_id
 left join restaurants r on r.id = u.restaurant_id;

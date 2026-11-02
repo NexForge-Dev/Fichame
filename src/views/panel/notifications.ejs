@@ -20,7 +20,7 @@
 
   <% if (notifications.length === 0) { %>
     <div class="card empty">
-      <span class="empty-icon">🔔</span>
+      <span class="empty-icon" aria-hidden="true">🔔</span>
       <p><%= tr('Todavía no hay avisos. Aquí aparecerán las nuevas candidaturas y el resultado de los emails de notificación.') %></p>
     </div>
   <% } else { %>

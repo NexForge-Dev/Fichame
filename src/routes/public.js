@@ -12,14 +12,20 @@ const { uploadCvFile, inspectPdf, safeFilename } = require('../middleware/upload
 const { notifyNewApplication, notifyRightsRequest } = require('../lib/mailer');
 const analytics = require('../lib/analytics');
 const { PRIVACY_NOTICE_VERSION, CONSENT_VERSION, futureText, interestText, days2months } = require('../lib/consent');
-const { operator } = require('../lib/legal');
+const { operator, operatorComplete } = require('../lib/legal');
+
+/* Como em src/routes/legal.js: dados do operador completos e faixa de
+ * borrador até LEGAL_REVIEWED=1. */
+function legalFlags() {
+  return { operatorComplete: operatorComplete(), legalReviewed: process.env.LEGAL_REVIEWED === '1' };
+}
 const storage = require('../lib/storage');
 const { DEMO_PREFIX } = require('../lib/demo');
 const { background } = require('../lib/background');
+const { isValidEmail } = require('../lib/privacy');
 
 const router = express.Router();
 
-const EMAIL_RE = /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]{2,}$/;
 /* Aceita os separadores habituais (espaços, pontos, hífens, parênteses):
  * «612.345.678» é um telefone válido e não deve fazer perder o CV. */
 const PHONE_RE = /^[\d\s().+-]{6,25}$/;
@@ -52,15 +58,21 @@ const PUBLIC_COLUMNS = [
 
 /* Estabelecimento inexistente e estabelecimento desativado dão a MESMA
  * resposta 404: a página pública não permite descobrir que contas existem
- * nem quais foram desativadas. */
-async function getPublicRestaurant(slug) {
+ * nem quais foram desativadas.
+ *
+ * Exceção: a informação de privacidade e o formulário de direitos
+ * (`includeInactive`). Os titulares continuam a poder exercer os seus
+ * direitos sobre os dados que um negócio desativado ainda conserva; candidatar-
+ * se ou deixar interesse continua bloqueado. */
+async function getPublicRestaurant(slug, { includeInactive = false } = {}) {
   const s = String(slug || '');
   if (!/^[a-z0-9][a-z0-9-]{0,80}$/.test(s)) return null;
-  const r = await one(
-    sb().from('restaurants').select(PUBLIC_COLUMNS).eq('slug', s).eq('active', true),
-    'restaurante público'
-  );
+  let query = sb().from('restaurants').select(`${PUBLIC_COLUMNS}, active`).eq('slug', s);
+  if (!includeInactive) query = query.eq('active', true);
+  const r = await one(query, 'restaurante público');
   if (r) {
+    r.inactive = !r.active;
+    delete r.active;
     /* Negócio fictício do modo demo: a página mostra-se, mas não recebe
      * candidaturas nem pedidos (ver src/lib/demo.js). */
     r.demo = r.test_prefix === DEMO_PREFIX;
@@ -73,7 +85,7 @@ async function getPublicRestaurant(slug) {
 
 async function openJobs(restaurantId) {
   return many(
-    sb().from('jobs').select('id, title, description, contract_type, work_schedule')
+    sb().from('jobs').select('id, title, description, requirements, contract_type, work_schedule')
       .eq('restaurant_id', restaurantId).eq('active', true).order('title'),
     'vagas abertas'
   );
@@ -107,7 +119,7 @@ function notFoundRestaurant(res, message) {
   return res.status(404).render('error', {
     status: 404,
     title: 'Establecimiento no encontrado',
-    message: message || 'No encontramos este establecimiento. Comprueba el enlace o el código QR.'
+    message: message || 'No encontramos este negocio. Comprueba el enlace o el código QR.'
   });
 }
 
@@ -117,7 +129,7 @@ function logPublic(event, detail, req, restaurantId) {
 }
 
 /* ------------------------------------------------------------------ *
- * GET /r/:slug — página pública (NFC)
+ * GET /r/:slug — página pública (QR ou link)
  * ------------------------------------------------------------------ */
 router.get('/r/:slug', ensureSession, async (req, res) => {
   const restaurant = await getPublicRestaurant(req.params.slug);
@@ -195,7 +207,7 @@ router.post('/r/:slug/apply', ...applyLimiters, uploadCvFile, async (req, res) =
 
   const errors = {};
   if (form.nombre.length < 2) errors.nombre = 'Indica tu nombre.';
-  if (!EMAIL_RE.test(form.email)) errors.email = 'Indica un email válido.';
+  if (!isValidEmail(form.email)) errors.email = 'Indica un email válido.';
   if (!PHONE_RE.test(form.telefono)) errors.telefono = 'Indica un teléfono válido.';
   if (form.disponibilidad && !Object.prototype.hasOwnProperty.call(res.app.locals.AVAILABILITIES, form.disponibilidad)) {
     form.disponibilidad = '';
@@ -241,7 +253,8 @@ router.post('/r/:slug/apply', ...applyLimiters, uploadCvFile, async (req, res) =
 
   if (Object.keys(errors).length > 0) return fail(errors);
 
-  /* Duplicado (mesmo email, mesmo estabelecimento, < 48 h): a resposta é
+  /* Duplicado (mesmo email, mesmo estabelecimento, mesma vaga — ou ambas
+   * sem vaga —, < 48 h; ver submit_application em 0013): a resposta é
    * IGUAL à de um envio aceite. Dizer «ya te habías candidatado» deixaria
    * qualquer pessoa descobrir, só com um email, se alguém se candidatou a
    * este negócio. O segundo envio não é gravado. */
@@ -251,11 +264,10 @@ router.post('/r/:slug/apply', ...applyLimiters, uploadCvFile, async (req, res) =
   };
 
   const since = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
-  const dup = await one(
-    sb().from('application_list').select('id')
-      .eq('restaurant_id', restaurant.id).eq('email', form.email).gt('applied_at', since).limit(1),
-    'candidatura duplicada'
-  );
+  let dupQuery = sb().from('application_list').select('id')
+    .eq('restaurant_id', restaurant.id).eq('email', form.email).gt('applied_at', since);
+  dupQuery = job ? dupQuery.eq('job_id', job.id) : dupQuery.is('job_id', null);
+  const dup = await one(dupQuery.limit(1), 'candidatura duplicada');
   if (dup) return dupResponse();
 
   /* Ordem: primeiro o ficheiro, depois a BD. Se a função falhar, o objeto é
@@ -361,7 +373,7 @@ router.post('/r/:slug/interes', ...interestLimiters, async (req, res) => {
 
   const errors = [];
   if (form.nombre.length < 2) errors.push('Indica tu nombre.');
-  if (!EMAIL_RE.test(form.email)) errors.push('Indica un email válido.');
+  if (!isValidEmail(form.email)) errors.push('Indica un email válido.');
   if (!PHONE_RE.test(form.telefono)) errors.push('Indica un teléfono válido.');
   /* Aqui o consentimento é o próprio pedido: o formulário só serve para a
    * reserva. Sem ele não há nada para guardar. */
@@ -432,11 +444,12 @@ router.get('/r/:slug/enviado', ensureSession, async (req, res) => {
  * estabelecimento responde ao email que consta na candidatura.
  */
 router.get('/r/:slug/privacidad', ensureSession, async (req, res) => {
-  const restaurant = await getPublicRestaurant(req.params.slug);
+  const restaurant = await getPublicRestaurant(req.params.slug, { includeInactive: true });
   if (!restaurant) return notFoundRestaurant(res);
   res.render('public/restaurant_privacy', {
     restaurant,
     operator,
+    ...legalFlags(),
     kinds: RIGHTS_KINDS,
     form: {},
     errors: null,
@@ -454,7 +467,10 @@ router.post('/r/:slug/derechos',
   rateLimit({ windowMs: 60 * 60 * 1000, max: 5, name: 'rights', key: (req) => `${req.ip}|${req.params.slug}` }),
   dbRateLimit({ windowMs: 24 * 60 * 60 * 1000, max: 10, name: 'rights-ip', key: (req) => String(req.ip) }),
   async (req, res) => {
-    const restaurant = await getPublicRestaurant(req.params.slug);
+    /* Também num negócio desativado (ver getPublicRestaurant). A demo nunca
+     * recebe pedidos: nenhum titular real deve enviar dados a um negócio
+     * fictício. */
+    const restaurant = await getPublicRestaurant(req.params.slug, { includeInactive: true });
     if (!restaurant || restaurant.demo) return notFoundRestaurant(res);
     if (!verifyCsrf(req)) {
       return res.status(403).render('error', { status: 403, title: 'Sesión no válida', message: 'Vuelve a abrir la página.' });
@@ -470,6 +486,7 @@ router.post('/r/:slug/derechos',
     const render = (extra) => res.status(extra.status || 200).render('public/restaurant_privacy', {
       restaurant,
       operator,
+      ...legalFlags(),
       kinds: RIGHTS_KINDS,
       noticeVersion: PRIVACY_NOTICE_VERSION,
       retention: {
@@ -488,7 +505,7 @@ router.post('/r/:slug/derechos',
     const errors = {};
     if (!Object.prototype.hasOwnProperty.call(RIGHTS_KINDS, form.kind)) errors.tipo = 'Selecciona el tipo de solicitud.';
     if (form.name.length < 2) errors.nombre = 'Indica tu nombre.';
-    if (!EMAIL_RE.test(form.email)) errors.email = 'Indica el email con el que te candidataste.';
+    if (!isValidEmail(form.email)) errors.email = 'Indica el email con el que te candidataste.';
     if (Object.keys(errors).length > 0) return render({ errors, status: 422 });
 
     const ref = 'FCH-' + crypto.randomBytes(5).toString('hex').toUpperCase();
@@ -512,7 +529,7 @@ router.post('/r/:slug/derechos',
 /* ------------------------------------------------------------------ *
  * GET /r/:slug/imagen/:tipo — logo ou foto do estabelecimento
  * ------------------------------------------------------------------ *
- * As imagens são públicas por destino (aparecem na página NFC) mas vivem num
+ * As imagens são públicas por destino (aparecem na página pública) mas vivem num
  * bucket privado e são servidas por aqui. Assim o CSP continua a ser
  * `img-src 'self'` e o domínio do Supabase não precisa de ser autorizado no
  * browser.

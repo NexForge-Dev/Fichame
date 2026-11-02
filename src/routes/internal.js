@@ -9,10 +9,11 @@
  * reportes resolvidos, CVs órfãos): corre todos os dias pelo Vercel Cron
  * (vercel.json) e precisa apenas de CRON_SECRET.
  *
- * /internal/retention (supressão de candidaturas) fica desativado (404) se
- * CRON_SECRET não estiver definido ou se RETENTION_AUTO
- * não for 1: a supressão automática só deve ser ligada depois de os prazos
- * terem sido validados juridicamente. Não usa sessão nem cookies; a
+ * /internal/retention (supressão de candidaturas) também está agendado todos
+ * os dias no vercel.json (04:30 UTC, depois da limpeza), mas fica desativado
+ * (404) se CRON_SECRET não estiver definido ou se RETENTION_AUTO não for 1:
+ * a supressão automática só deve ser ligada depois de os prazos terem sido
+ * validados juridicamente. Não usa sessão nem cookies; a
  * comparação do segredo é em tempo constante. Não devolve dados pessoais.
  */
 

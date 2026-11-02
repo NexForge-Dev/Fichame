@@ -19,6 +19,7 @@
       <a href="#como-funciona"><%= tr('Cómo funciona') %></a>
       <a href="#funciones"><%= tr('Funciones') %></a>
       <a href="#privacidad"><%= tr('Privacidad') %></a>
+      <a href="#precios"><%= tr('Precios') %></a>
       <a href="#preguntas"><%= tr('Preguntas') %></a>
     </nav>
     <div class="lp-top-actions">
@@ -286,8 +287,63 @@
     </div>
   </section>
 
+  <!-- ============================ PREÇOS ============================ -->
+  <%
+    /* Valores sempre de src/lib/pricing.js (res.locals.pricing). */
+    var PL = pricing.PLANS;
+    var fp = function (n) { return pricing.formatPrice(n, lang); };
+    var landingPricing = {
+      id: 'precios',
+      kicker: tr('Precios'),
+      title: tr('Una cuota mensual sencilla y previsible.'),
+      lead: tr('Pensado para pequeños negocios en España: pagas una cuota fija al mes, sin cargos por candidatura recibida ni por vacante creada.'),
+      cards: [
+        {
+          name: tr('{days} días gratis', { days: pricing.TRIAL_DAYS }),
+          price: fp(PL.trial.monthly),
+          text: tr('Prueba Fíchame con tu negocio durante los primeros {days} días desde el registro. Sin tarjeta.', { days: pricing.TRIAL_DAYS })
+        },
+        {
+          name: tr('Plan Fundadores'),
+          badge: tr('Lanzamiento'),
+          price: fp(PL.founders.monthly),
+          per: tr('/mes'),
+          vat: tr('IVA no incluido'),
+          text: tr('Para los primeros {n} negocios que se unan durante el lanzamiento. Precio garantizado durante {months} meses desde que te unes.', { n: PL.founders.maxCustomers, months: PL.founders.lockMonths }),
+          featured: true
+        },
+        {
+          name: tr('Plan Profesional'),
+          price: fp(PL.pro.monthly),
+          per: tr('/mes'),
+          vat: tr('IVA no incluido'),
+          alt: tr('O {price}/año (IVA no incluido): unos {monthly}/mes, como {months} meses gratis.', { price: fp(PL.pro.yearly), monthly: fp(pricing.yearlyMonthlyEquivalent()), months: pricing.yearlyMonthsFree() }),
+          text: tr('Para cualquier negocio, con pago mensual o anual.')
+        }
+      ],
+      includesTitle: tr('Incluido en la prueba gratis y en los dos planes'),
+      includes: [
+        tr('Página de candidaturas personalizada'),
+        tr('Acceso mediante código QR'),
+        tr('Código QR personalizado para imprimir y compartir'),
+        tr('CV de los candidatos en PDF'),
+        tr('Gestión de vacantes'),
+        tr('Tablero de candidatos con etapas de contratación'),
+        tr('Búsqueda, filtros y favoritos'),
+        tr('Métricas y avisos'),
+        tr('Sin coste extra por candidato recibido ni por vacante creada')
+      ],
+      cta: tr('Empieza tus {days} días gratis', { days: pricing.TRIAL_DAYS }),
+      fine: [
+        tr('Antes de que termine la prueba podrás elegir un plan de pago desde tu panel. No se cobra nada sin tu aceptación expresa.'),
+        tr('Los planes mensuales no tienen permanencia: puedes cancelarlos cuando quieras.')
+      ]
+    };
+  %>
+  <%- include('../partials/pricing', { p: landingPricing }) %>
+
   <!-- ============================= FAQ ============================= -->
-  <section class="lp-section lp-section-alt" id="preguntas">
+  <section class="lp-section" id="preguntas">
     <div class="lp-wrap lp-wrap-narrow">
       <div class="lp-head">
         <span class="lp-kicker"><%= tr('Preguntas frecuentes') %></span>

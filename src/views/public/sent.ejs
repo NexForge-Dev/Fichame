@@ -9,7 +9,7 @@
 
 <main class="container-narrow public-main">
   <div class="card center pad-lg">
-    <div class="success-mark">✓</div>
+    <div class="success-mark" aria-hidden="true">✓</div>
     <% if (future) { %>
       <h2><%= tr('¡Datos guardados correctamente!') %></h2>
       <p class="muted">
@@ -18,7 +18,7 @@
     <% } else { %>
       <h2><%= tr('¡Candidatura enviada correctamente!') %></h2>
       <p class="muted">
-        <%= tr('El establecimiento ha recibido tus datos y tu CV. Si tu perfil encaja, te contactarán por teléfono o email.') %>
+        <%= tr('El negocio ha recibido tus datos y tu CV. Si tu perfil encaja, te contactarán por teléfono o email.') %>
       </p>
     <% } %>
     <div class="actions-row center-row spaced">

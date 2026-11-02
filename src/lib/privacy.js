@@ -38,4 +38,15 @@ function emailTag(email) {
   return 'e:' + mac.slice(0, 12);
 }
 
-module.exports = { truncateIp, emailTag };
+/* Validação de email partilhada por todos os formulários (candidatura,
+ * interesse, direitos, registo, login, recuperação, configuração e dados do
+ * negócio). Para além de espaços, @, <, >, vírgula e ponto e vírgula, recusa
+ * aspas, parênteses e barra invertida: o filtro `in.(…)` do PostgREST usa-os
+ * como delimitadores e um email com eles rebentava /panel/derechos (500). */
+const EMAIL_RE = /^[^\s@<>,;"()\\]+@[^\s@<>,;"()\\]+\.[^\s@<>,;"()\\]{2,}$/;
+
+function isValidEmail(email) {
+  return typeof email === 'string' && email.length <= 254 && EMAIL_RE.test(email);
+}
+
+module.exports = { truncateIp, emailTag, EMAIL_RE, isValidEmail };

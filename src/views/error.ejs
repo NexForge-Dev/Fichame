@@ -16,6 +16,11 @@
         <p class="help"><%= tr('Si el problema se repite, indica este código al contactar con el soporte.') %></p>
       <% } %>
     <% } %>
+    <%# supportEmail vem de res.locals; numa falha muito cedo pode não existir. %>
+    <% if (typeof supportEmail !== 'undefined' && supportEmail) {
+      var hasRef = typeof errorRef !== 'undefined' && errorRef; %>
+      <p class="help"><%= tr('Soporte:') %> <a href="mailto:<%= supportEmail %>?subject=<%= encodeURIComponent('Fíchame · ' + (hasRef ? errorRef : status)) %>"><%= supportEmail %></a></p>
+    <% } %>
     <div class="actions-row center-row spaced">
       <% if (typeof canReport !== 'undefined' && canReport && errorRef) { %>
         <a class="btn" href="/panel/reportar?ref=<%= errorRef %>&amp;desde=<%= encodeURIComponent(fromPath) %>"><%= tr('Reportar este problema') %></a>

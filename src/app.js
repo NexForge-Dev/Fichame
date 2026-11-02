@@ -14,6 +14,7 @@ const { icon, initials } = require('./lib/icons');
 const { newRef, recordError } = require('./lib/errors');
 const { background } = require('./lib/background');
 const { i18n, setLanguageRoute, translate, LANGS, LANG_NAMES } = require('./lib/i18n');
+const pricing = require('./lib/pricing');
 
 /* O PostgREST devolve timestamptz como ISO 8601 com fuso ("…+00:00"), que o
  * Date do JS lê diretamente. O ramo que acrescenta 'Z' cobre valores sem
@@ -189,6 +190,10 @@ function createApp() {
   app.use((req, res, next) => {
     res.locals.csrfToken = req.session ? req.session.csrfToken : '';
     res.locals.path = req.path || '';
+    /* Preços (fonte única: src/lib/pricing.js) e email de suporte, para
+     * qualquer view. */
+    res.locals.pricing = pricing;
+    res.locals.supportEmail = config.contactEmail;
     next();
   });
   /* Idioma da interface (src/lib/i18n.js). Depois de app.locals estar
