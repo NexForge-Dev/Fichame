@@ -17,7 +17,7 @@
 
 ## Segredos
 
-- `.gitignore` exclui `.env*` (exceto `.env.example`). Verificado: nenhum segredo no histórico git (pesquisa por padrões de chaves Supabase, JWT, `postgres://user:pass@`, `SMTP_PASS=`, `ADMIN_PASSWORD=` em 2026-10-06).
+- `.gitignore` exclui `.env*` (exceto `.env.example`). Verificado: nenhum segredo no histórico git (pesquisa por padrões de chaves Supabase, JWT, `postgres://user:pass@`, `SMTP_PASS=`, `ADMIN_PASSWORD=` em 2026-10-06; repetido em 2026-11-02 em `git log --all -p` com `sb_secret_`, `service_role`, `GOCSPX`, `sk_live`, `sk_test`, `postgres://`, `DATABASE_URL=postgres`, JWT `eyJ…`: só nomes de variáveis, documentação e valores de teste fictícios). O repositório é **público**.
 - Se algum segredo for alguma vez commitado: **SECRET ROTATION REQUIRED** — rodar a chave no fornecedor; apagar do histórico não basta.
 - `LOG_HMAC_SECRET`: definir em produção (por omissão deriva da service key; rodar a service key altera os pseudónimos dos logs).
 
@@ -29,8 +29,17 @@
 ## Dependências
 
 - `npm run audit` (0 vulnerabilidades em 2026-10-06). Dependências diretas: `@supabase/supabase-js`, `express` 5, `ejs` 3.1.10 (existe uma major 7 — **não atualizada**: exige rever compatibilidade de templates; 3.1.10 inclui a correção do CVE-2024-33883), `multer` 2 (uploads), `qrcode`.
+- 2026-11-02: `npm audit` mostra 4 *moderate* (GHSA-g3hv-75wg-m249, minimatch < 11.0.1) via `ejs → jake → filelist → minimatch`. Não há correção sem major: todas as versões de `filelist` dependem de minimatch vulnerável, e só o ejs ≥ 5 deixou de depender de `jake`. O caminho vulnerável **não é carregado em runtime** (o `jake` só é usado pelo CLI `ejs`, `node_modules/ejs/bin/cli.js`; `lib/ejs.js` só requer `fs`, `path` e `./utils`). O CI corre `npm audit --audit-level=high`. Atualizar para ejs 7 num PR próprio, com revisão de todos os templates.
 - Rever mensalmente; atualizar com `npm test` completo.
+
+## Supabase Auth (não usado)
+
+O Fíchame tem sessões próprias (tabela `sessions`) e **não usa Supabase Auth**. Com os registos do Auth abertos, qualquer pessoa com a `SUPABASE_ANON_KEY` (pública por natureza) pode criar utilizadores em `auth.users` — não dão acesso a nada (RLS deny-all), mas são dados pessoais sem finalidade e enchem a quota de emails do Auth. Desligar no painel:
+
+1. Supabase → **Authentication → Sign In / Providers** (ou *Settings*): desligar **Allow new users to sign up**.
+2. Na mesma página, desligar os providers que não se usam (Email, Phone, Anonymous sign-ins, OAuth).
+3. **Authentication → Users**: confirmar que a lista está vazia (apagar contas de teste, se houver).
 
 ## Produção (Vercel)
 
-`COOKIE_SECURE=1`, `TRUST_PROXY=1`, `APP_URL=https://…`, região de funções na UE, `OPERATOR_*` preenchidos, SMTP configurado, `CRON_SECRET` + agendamento de retenção (depois da validação jurídica dos prazos), `npm run check` sem avisos.
+`COOKIE_SECURE=1`, `TRUST_PROXY=1`, `APP_URL=https://…`, região de funções na UE, `OPERATOR_*` preenchidos, SMTP configurado, `CRON_SECRET` + agendamento de retenção (depois da validação jurídica dos prazos), `npm run check` sem avisos. Monitorização: `GET /api/health` (só booleanos `config`, `db`, `migrations`, `ok`; 200/503). Passos do dia: [`docs/DEPLOY-TODAY.md`](../DEPLOY-TODAY.md).

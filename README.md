@@ -86,7 +86,7 @@ Logic that PostgREST cannot express (aggregations, multi-field search, transacti
 
 ## Getting started
 
-**Requirements:** Node.js ≥ 22 and a [Supabase](https://supabase.com) project.
+**Requirements:** Node.js 22.x (pinned in `engines`; Vercel and CI use it) and a [Supabase](https://supabase.com) project.
 
 ### 1. Install and configure
 
@@ -182,13 +182,16 @@ See [`.env.example`](.env.example) for the commented list.
 | `DATABASE_URL` | — | Only for `npm run migrate`; the app does not use it |
 | `SESSION_TTL_DAYS` | `30` | Business session lifetime (anonymous sessions: 2 h) |
 | `COOKIE_SECURE` / `TRUST_PROXY` | `0` (on Vercel: `1`) | `1` in production with HTTPS / behind a proxy. On Vercel they turn on automatically; in production a non-https `APP_URL` prevents startup |
-| `MAX_CV_MB` / `MAX_IMAGE_MB` | `4` / `2` | Upload limits. On Vercel the CV never exceeds 4 MB (4.5 MB per-request limit) |
+| `MAX_CV_MB` / `MAX_IMAGE_MB` | `4` / `2` | Upload limits. On Vercel the CV is clamped to 4 MB (4.5 MB per-request limit) with a warning |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NAME` | — | Admin seed |
 | `SMTP_*` | empty | Without SMTP there are no email alerts and password recovery goes through the admin (`/admin/usuarios`). Without `SMTP_SECURE=1`, STARTTLS is mandatory |
 | `OPERATOR_*` | placeholders | Identification of the Fíchame operator on the legal pages |
 | `CRON_SECRET` / `RETENTION_AUTO` | — / `0` | Daily technical cleanup via `GET /internal/cleanup` (Vercel Cron in `vercel.json`, needs only `CRON_SECRET`); erasure of applications via `GET /internal/retention` (also needs `RETENTION_AUTO=1`) |
 | `SECURITY_LOG_DAYS` / `RIGHTS_REQUEST_DAYS` | `365` / `1095` | Retention of logs and closed rights requests |
 | `CONTACT_EMAIL` | — | Optional “Write to us” button on `/conoce` |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | — | Optional Google login. The button only shows when the id ends in `.apps.googleusercontent.com` and the secret is set (otherwise a startup warning) |
+| `LOG_HMAC_SECRET` | derived from the service key | Secret used to pseudonymise emails in logs |
+| `LEGAL_REVIEWED` | — | `1` hides the “BORRADOR — REQUIERE REVISIÓN JURÍDICA” banner. Set only after a real legal review |
 
 ---
 
@@ -240,7 +243,7 @@ npm test                              # no Supabase needed (also runs in CI: .gi
 EZCV_E2E_CONFIRM=1 npm run test:e2e   # E2E, writes to the Supabase project in .env
 ```
 
-- `test/http.test.js` — boots the app without a DB: internal endpoints, multipart outside upload routes, cache headers and config validation.
+- `test/http.test.js` — boots the app without a DB: health endpoint and refused-config fallback, legal draft banner, internal endpoints, multipart outside upload routes, cache headers and config validation.
 - `test/unit.test.js` — no network: PDF and filename validation, protected-characteristics detector, IP truncation, password policy, consent texts, headers.
 - `test/db.js` — creates a **temporary** PostgreSQL (initdb), simulates Supabase, applies the migrations twice and tests tenant isolation in the DB, reservation/consent, per-tenant retention, `legal_hold`, erasure, `anon` permissions and self-diagnostics. Requires the PostgreSQL binaries (`PG_BIN`).
 - `test/smoke.js` — E2E against Supabase (only with `EZCV_E2E_CONFIRM=1` or `EZCV_E2E_PROJECT_REF`): full flow, legal information, A↔B IDOR, malicious uploads, XSS, CSRF, headers, enumeration, brute force, password recovery, session invalidation, rights (export, erasure, withdrawal), auditing, admin without access to candidates.
@@ -258,6 +261,10 @@ Resolve the **BLOCKERS** in [`docs/security/production-compliance-gate.md`](docs
 - HTTPS with `COOKIE_SECURE=1`, `TRUST_PROXY=1`, `APP_URL=https://…`; real SMTP.
 - `CRON_SECRET` set on Vercel (daily technical cleanup); retention periods validated before `RETENTION_AUTO=1`.
 - Backups (retention, tested restore) and 2FA on Supabase/Vercel/GitHub.
+- Supabase Auth sign-ups turned off (the app has its own sessions and never uses Supabase Auth).
+- Uptime monitor on `GET /api/health` (booleans only: `config`, `db`, `migrations`, `ok`; 200 or 503).
+
+Today's deploy steps (Vercel env vars, SQL, Supabase dashboard): [`docs/DEPLOY-TODAY.md`](docs/DEPLOY-TODAY.md).
 - Technical to-dos: email verification at sign-up, 2FA for businesses, multiple users per business (RBAC).
 - Real pagination in the application list (it currently shows 200 plus the real filtered total).
 

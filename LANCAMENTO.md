@@ -20,8 +20,9 @@ precisa de mais alterações para isto; falta configuração, contas e decisões
    (Alternativa: voltar a correr `migrations/0007_google_login.sql` e
    `migrations/0008_onboarding_steps.sql`, que agora se registam sozinhos.)
 2. Localmente: `npm run check` → tem de terminar sem erros.
-3. Confirmar a **região** do projeto Supabase (UE, ex.: Frankfurt/Irlanda) e
-   aceitar o DPA do Supabase e da Vercel (transferências internacionais).
+3. Região: Supabase **eu-west-1 (Irlanda)**, funções Vercel **dub1 (Dublim)** em `vercel.json`
+   (já indicadas em /privacidad). Aceitar o DPA do Supabase e da Vercel (transferências internacionais).
+   Desligar os registos do **Supabase Auth** (não usado — ver `docs/security/operational-security.md`).
 4. Criar o admin da plataforma: definir `ADMIN_EMAIL` e `ADMIN_PASSWORD` no
    `.env` local e correr `npm run setup` (escreve na BD de produção).
 
@@ -43,23 +44,28 @@ recuperação de senha passa pelo admin em `/admin/usuarios`).
 
 ## 3. Deploy na Vercel
 
-1. Confirmar **que repositório/branch** está ligado ao projeto Vercel `ezcv`
-   (o repo local tem 3 remotes: `origin`, `nexforge`, `fichame`; o trabalho
-   atual está em `revisao-melhorias` = `nexforge/main`; o `main` local está atrasado).
+1. Projeto Vercel: **`fichame`** na team **`nex-forge4`** (o antigo `ezcv` já não é usado).
+   Ligação local: `npx vercel link --project fichame --scope nex-forge4` (sem `--yes`: recusar
+   o `env pull`, que reescreve o `.env.local`)
+   (cria `.vercel/project.json`, que está no .gitignore). Confirmar que repositório/branch
+   está ligado ao projeto (Settings → Git). Node: `engines` fixa **22.x** (sobrepõe-se ao 26.x do painel).
+   **Passo a passo do dia: [`docs/DEPLOY-TODAY.md`](docs/DEPLOY-TODAY.md).**
 2. Vercel → Project → Settings → **Environment Variables** (Production): colar
    todas as variáveis da secção 2. **Não** definir `COOKIE_SECURE=0` nem
    `TRUST_PROXY=0` (na Vercel ficam 1 por omissão). `MAX_CV_MB` ≤ 4.
    `RETENTION_AUTO` fica `0` até os prazos de conservação terem validação jurídica.
 3. Deploy (push para a branch de produção ou `vercel --prod`).
-4. Vercel → **Logs**: não pode haver `[config] Páginas legais com marcadores`
+4. `curl https://<domínio>/api/health` → `{"config":true,"db":true,"migrations":true,"ok":true}` (200).
+   Com `config:false` (503) a configuração foi recusada: ver Runtime Logs (`[config] Arranque recusado`).
+5. Vercel → **Logs**: não pode haver `[config] Páginas legais com marcadores`
    nem `[config] CRON_SECRET em falta`.
-5. Vercel → Settings → **Cron Jobs**: confirmar `/internal/cleanup` diário (03:00 UTC).
+6. Vercel → Settings → **Cron Jobs**: confirmar `/internal/cleanup` diário (03:00 UTC).
 
 ## 4. Legal (antes de vender)
 
 - `/privacidad`, `/terminos`, `/encargo`, `/cookies` existem (em espanhol — o
   mercado é Espanha, RGPD/LOPDGDD/LSSI). Mostram a faixa **«BORRADOR — REQUIERE
-  REVISIÓN JURÍDICA»** e marcadores `[RAZÓN SOCIAL]`, `[NIF]`… até preencher `OPERATOR_*`.
+  REVISIÓN JURÍDICA»** (some só com `LEGAL_REVIEWED=1`, depois da revisão) e marcadores `[RAZÓN SOCIAL]`, `[NIF]`… até preencher `OPERATOR_*`.
 - Revisão por advogado: ver `docs/legal/00-legal-review-required.md` e
   `docs/security/production-compliance-gate.md` (itens BLOCKER: identidade do
   operador, transferências internacionais, análise «agencia de colocación»).
