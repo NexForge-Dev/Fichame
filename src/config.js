@@ -146,6 +146,15 @@ function assertConfig() {
       console.warn('[config] CRON_SECRET em falta ou com menos de 32 caracteres: a limpeza diária (/internal/cleanup) não corre.');
     }
   }
+  /* Login com Google mal configurado: o botão fica escondido (lib/google.js)
+   * em vez de aparecer e falhar depois do clique. */
+  const googleProblem = require('./lib/google').configProblem();
+  if (googleProblem) {
+    console.warn(`[config] Login com Google desativado: ${googleProblem}.`);
+  }
+  if (onVercel && maxCvMb > VERCEL_MAX_UPLOAD_MB) {
+    console.warn(`[config] MAX_CV_MB=${maxCvMb} acima do limite de pedidos da Vercel (4,5 MB): usa-se ${VERCEL_MAX_UPLOAD_MB}.`);
+  }
   if (onVercel && (!config.cookieSecure || !config.trustProxy)) {
     console.warn('[config] Na Vercel, COOKIE_SECURE e TRUST_PROXY devem ser 1.');
   }

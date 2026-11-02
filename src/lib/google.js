@@ -19,8 +19,27 @@ const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const ISSUERS = new Set(['https://accounts.google.com', 'accounts.google.com']);
 
+/* Um client id real da Google termina sempre em .apps.googleusercontent.com.
+ * Um valor de exemplo ou trocado (ex.: o secret no lugar do id) mostrava o
+ * botão e a Google respondia «invalid_client» depois do clique. */
+const CLIENT_ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*\.apps\.googleusercontent\.com$/;
+
+function clientIdLooksValid(clientId = config.google.clientId) {
+  return CLIENT_ID_RE.test(String(clientId || '').trim());
+}
+
 function enabled() {
-  return Boolean(config.google.clientId && config.google.clientSecret);
+  return Boolean(clientIdLooksValid() && String(config.google.clientSecret || '').trim());
+}
+
+/* Motivo (sem valores) para o aviso no arranque, ou '' se está tudo certo ou
+ * se o login com Google não foi configurado de todo. */
+function configProblem() {
+  const { clientId, clientSecret } = config.google;
+  if (!clientId && !clientSecret) return '';
+  if (!clientIdLooksValid(clientId)) return 'GOOGLE_CLIENT_ID não termina em .apps.googleusercontent.com';
+  if (!String(clientSecret || '').trim()) return 'GOOGLE_CLIENT_SECRET em falta';
+  return '';
 }
 
 function redirectUri() {
@@ -136,5 +155,6 @@ function verifyPending(value, now = Date.now()) {
 }
 
 module.exports = {
+  clientIdLooksValid, configProblem,
   enabled, newFlow, authUrl, exchangeCode, validateIdToken, signPending, verifyPending, PENDING_TTL_MS
 };

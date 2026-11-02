@@ -240,3 +240,30 @@ test('erros: emails e números longos saem da mensagem', () => {
   assert.ok(out.includes('[email]') && out.includes('[número]'), out);
   assert.ok(out.includes('id 42'), 'números curtos (ids) ficam');
 });
+
+test('google: botão só com client id com formato real e secret definido', () => {
+  const config = require('../src/config');
+  const saved = { ...config.google };
+  try {
+    assert.equal(google.enabled(), true);
+    for (const [clientId, clientSecret] of [
+      ['fake-client-id', 'segredo'],
+      ['GOCSPX-trocado', 'segredo'],
+      ['x.apps.googleusercontent.com.evil.com', 'segredo'],
+      ['123-abc.apps.googleusercontent.com', ''],
+      ['', '']
+    ]) {
+      Object.assign(config.google, { clientId, clientSecret });
+      assert.equal(google.enabled(), false, clientId);
+    }
+    Object.assign(config.google, { clientId: '123-abc.apps.googleusercontent.com', clientSecret: 'segredo' });
+    assert.equal(google.enabled(), true);
+    assert.equal(google.configProblem(), '');
+    Object.assign(config.google, { clientId: 'fake', clientSecret: 'segredo' });
+    assert.match(google.configProblem(), /GOOGLE_CLIENT_ID/);
+    Object.assign(config.google, { clientId: '', clientSecret: '' });
+    assert.equal(google.configProblem(), '');
+  } finally {
+    Object.assign(config.google, saved);
+  }
+});
