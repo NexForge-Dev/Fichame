@@ -280,3 +280,43 @@ test('google: botão só com client id com formato real e secret definido', () =
     Object.assign(config.google, saved);
   }
 });
+
+/* Email: cabeçalhos Date/Message-ID e corpo em base64 (UTF-8 seguro). Um
+ * servidor SMTP falso local recebe a mensagem; nada sai da máquina. */
+test('mailer: mensagem com Date, Message-ID e corpo base64 que descodifica para UTF-8', async () => {
+  const net = require('node:net');
+  const { execFile } = require('node:child_process');
+  let data = '';
+  const server = net.createServer((sock) => {
+    let inData = false;
+    sock.write('220 local\r\n');
+    sock.on('data', (chunk) => {
+      for (const line of chunk.toString('utf8').split('\r\n')) {
+        if (inData) {
+          if (line === '.') { inData = false; sock.write('250 ok\r\n'); } else data += line + '\n';
+          continue;
+        }
+        if (/^EHLO/.test(line)) sock.write('250 local\r\n');
+        else if (/^(MAIL|RCPT)/.test(line)) sock.write('250 ok\r\n');
+        else if (line === 'DATA') { inData = true; sock.write('354 go\r\n'); }
+        else if (line === 'QUIT') { sock.write('221 bye\r\n'); sock.end(); }
+      }
+    });
+  });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const port = server.address().port;
+  const out = await new Promise((resolve) => execFile(process.execPath, ['-e',
+    "require('./src/lib/mailer').sendPasswordReset({ to: 'dueña@example.com'.replace('ñ','n'), token: 'abc' }).then((s) => console.log(s))"], {
+    cwd: require('node:path').join(__dirname, '..'),
+    env: { ...process.env, SMTP_HOST: '127.0.0.1', SMTP_PORT: String(port), SMTP_INSECURE: '1', SMTP_USER: '', SMTP_FROM: 'no-reply@fichame.es' }
+  }, (err, stdout) => resolve(String(stdout).trim())));
+  server.close();
+  assert.equal(out.split('\n').pop(), 'sent');
+  assert.match(data, /^Date: .+\+0000$/m);
+  assert.match(data, /^Message-ID: <[0-9a-f]{32}@fichame\.es>$/m);
+  assert.match(data, /Content-Transfer-Encoding: base64/);
+  const parts = data.split(/--ezcv-[0-9a-f]+/).filter((p) => /base64/.test(p));
+  const text = Buffer.from(parts[0].split('\n\n')[1].replace(/\s+/g, ''), 'base64').toString('utf8');
+  assert.match(text, /contraseña de tu cuenta de Fíchame/);
+  assert.ok(data.split('\n').every((l) => l.length <= 998));
+});

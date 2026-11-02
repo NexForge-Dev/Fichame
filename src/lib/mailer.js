@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('crypto');
 const net = require('net');
 const tls = require('tls');
 const config = require('../config');
@@ -18,6 +19,13 @@ function encodeHeaderWord(text) {
   const s = String(text);
   if (/^[\x20-\x7e]*$/.test(s)) return s;
   return '=?UTF-8?B?' + Buffer.from(s, 'utf8').toString('base64') + '?=';
+}
+
+/* Corpo em base64, em linhas de 76: o texto tem acentos e o servidor pode
+ * não anunciar 8BITMIME. UTF-8 cru sem Content-Transfer-Encoding chegava com
+ * caracteres trocados nalguns clientes (e linhas > 998 bytes violam o RFC). */
+function base64Lines(s) {
+  return (Buffer.from(String(s), 'utf8').toString('base64').match(/.{1,76}/g) || ['']).join('\r\n');
 }
 
 /* ---------------------------------------------------------------------------
@@ -137,11 +145,15 @@ async function smtpSend({ to, subject, text, html }) {
     socket.write('DATA\r\n');
     await expect(socket, [354]);
 
-    const boundary = 'ezcv-' + Math.random().toString(36).slice(2);
+    const boundary = 'ezcv-' + crypto.randomBytes(12).toString('hex');
+    /* Date e Message-ID: sem eles alguns servidores (e o Gmail) tratam o
+     * email como suspeito. */
     const headers = [
       `From: ${encodeHeaderWord('Fíchame')} <${from}>`,
       `To: <${to}>`,
       `Subject: ${encodeHeaderWord(subject.replace(/[\r\n]+/g, ' '))}`,
+      `Date: ${new Date().toUTCString().replace('GMT', '+0000')}`,
+      `Message-ID: <${crypto.randomBytes(16).toString('hex')}@${String(from).split('@')[1]}>`,
       'MIME-Version: 1.0',
       `Content-Type: multipart/alternative; boundary="${boundary}"`,
       ''
@@ -150,10 +162,12 @@ async function smtpSend({ to, subject, text, html }) {
     const body = [
       `--${boundary}`,
       'Content-Type: text/plain; charset=utf-8',
-      '', text,
+      'Content-Transfer-Encoding: base64',
+      '', base64Lines(text),
       `--${boundary}`,
       'Content-Type: text/html; charset=utf-8',
-      '', html,
+      'Content-Transfer-Encoding: base64',
+      '', base64Lines(html),
       `--${boundary}--`,
       ''
     ].join('\r\n');
