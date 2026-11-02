@@ -15,7 +15,7 @@ const { emailTag, isValidEmail, truncateIp } = require('../lib/privacy');
 const { sendPasswordReset } = require('../lib/mailer');
 const { TERMS_VERSION, DPA_VERSION } = require('../lib/legal');
 const { ESTABLISHMENT_TYPES } = require('../lib/statuses');
-const { DEMO_EMAIL, isDemoUser } = require('../lib/demo');
+const { DEMO_EMAIL, isDemoUser, demoReadOnlyMessage } = require('../lib/demo');
 const analytics = require('../lib/analytics');
 
 const router = express.Router();
@@ -273,7 +273,7 @@ router.post('/login/google/vincular',
     if (!verifyCsrf(req)) return badCsrf(res);
     const back = (msg) => res.redirect('/panel/configuracion?err=' + encodeURIComponent(msg));
     if (req.user.role === 'admin') return back('Las cuentas de administración no pueden usar Google.');
-    if (isDemoUser(req.user)) return back('Esto es una demostración: los cambios no se guardan. Empieza tus 30 días gratis para usar Fíchame con tu negocio.');
+    if (isDemoUser(req.user)) return back(demoReadOnlyMessage(req));
     if (!req.user.password_hash || !(await verifyPasswordAsync(String(req.body.password_actual || ''), req.user.password_hash))) {
       logSecurity('configuracion_password_incorrecta', `user=${req.user.id}`, req.ip, { userId: req.user.id });
       return back('La contraseña actual es incorrecta.');
@@ -319,7 +319,7 @@ router.get('/login/google/callback',
       if (!req.user) return res.redirect('/login');
       const back = (key, msg) => res.redirect(`/panel/configuracion?${key}=` + encodeURIComponent(msg));
       if (req.user.role === 'admin') return back('err', 'Las cuentas de administración no pueden usar Google.');
-      if (isDemoUser(req.user)) return back('err', 'Esto es una demostración: los cambios no se guardan. Empieza tus 30 días gratis para usar Fíchame con tu negocio.');
+      if (isDemoUser(req.user)) return back('err', demoReadOnlyMessage(req));
       if (bySub && bySub.id !== req.user.id) return back('err', 'Esa cuenta de Google ya está vinculada a otra cuenta de Fíchame.');
       await run(sb().from('users').update({ google_sub: account.sub }).eq('id', req.user.id), 'vincular google');
       logSecurity('google_vinculado', `user=${req.user.id}`, req.ip, { userId: req.user.id, userAgent: req.headers['user-agent'] });

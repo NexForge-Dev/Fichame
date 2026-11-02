@@ -165,6 +165,7 @@
           <div class="actions-row tight">
             <form action="/panel/vagas/<%= job.id %>/toggle" method="post">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="quiero" value="<%= job.active ? 0 : 1 %>">
               <% if (job.active) { %>
                 <button class="btn secondary small" type="submit"><%= tr('Pausar esta vacante') %></button>
               <% } else { %>

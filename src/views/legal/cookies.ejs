@@ -8,7 +8,7 @@
 
   <div class="card">
     <h2>Qué usamos</h2>
-    <p>Fíchame usa <strong>una cookie técnica</strong>, estrictamente necesaria, y otra de <strong>preferencia de idioma</strong> que solo se instala si eliges un idioma. No usamos cookies de analítica, publicidad, redes sociales ni de terceros, ni otras tecnologías de seguimiento (píxeles, huella digital del navegador, almacenamiento local con fines de seguimiento).</p>
+    <p>Fíchame usa <strong>cookies técnicas</strong>, estrictamente necesarias (la de sesión y, solo si entras con Google, dos de corta duración), y otra de <strong>preferencia de idioma</strong> que solo se instala si eliges un idioma. No usamos cookies de analítica, publicidad, redes sociales ni de terceros, ni otras tecnologías de seguimiento (píxeles, huella digital del navegador, almacenamiento local con fines de seguimiento).</p>
     <div class="table-wrap">
       <table class="table">
         <thead><tr><th>Nombre</th><th>Titular</th><th>Finalidad</th><th>Duración</th></tr></thead>
@@ -25,6 +25,18 @@
             <td>Recordar el idioma que has elegido (español, inglés o portugués). Solo se instala cuando lo eliges en el selector de idioma. Contiene únicamente el código del idioma.</td>
             <td>1 año, o hasta que borres las cookies del navegador.</td>
           </tr>
+          <tr>
+            <td><code><%= cookieName.indexOf('__Host-') === 0 ? '__Host-' : '' %>fichame_gflow</code></td>
+            <td>Fíchame (propia)</td>
+            <td>Solo al pulsar «Continuar con Google»: valores aleatorios de un solo uso que comprueban que la respuesta de Google corresponde a este navegador (protección contra suplantación). Sin datos personales.</td>
+            <td>10 minutos, o hasta volver de Google.</td>
+          </tr>
+          <tr>
+            <td><code><%= cookieName.indexOf('__Host-') === 0 ? '__Host-' : '' %>fichame_greg</code></td>
+            <td>Fíchame (propia)</td>
+            <td>Solo si te registras con Google: guarda, firmados, tu identificador de Google, tu email y tu nombre mientras completas el formulario del negocio.</td>
+            <td>30 minutos, o hasta terminar el registro.</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -37,12 +49,12 @@
 
   <div class="card">
     <h2>¿Por qué no te pedimos consentimiento?</h2>
-    <p>El art. 22.2 de la Ley 34/2002 (LSSI) exige consentimiento para las cookies, salvo para las estrictamente necesarias para prestar un servicio que el usuario ha solicitado expresamente. La cookie de sesión es imprescindible para enviar una candidatura o usar el panel de forma segura, y la de idioma es una cookie de personalización que se instala solo a petición tuya, al elegir un idioma; por eso no mostramos un banner. Si algún día añadimos otras cookies, te pediremos el consentimiento antes de instalarlas, con la misma facilidad para aceptar que para rechazar.</p>
+    <p>El art. 22.2 de la Ley 34/2002 (LSSI) exige consentimiento para las cookies, salvo para las estrictamente necesarias para prestar un servicio que el usuario ha solicitado expresamente. La cookie de sesión es imprescindible para enviar una candidatura o usar el panel de forma segura, las de Google solo existen durante el inicio de sesión que tú pides, y la de idioma es una cookie de personalización que se instala solo a petición tuya, al elegir un idioma; por eso no mostramos un banner. Si algún día añadimos otras cookies, te pediremos el consentimiento antes de instalarlas, con la misma facilidad para aceptar que para rechazar.</p>
   </div>
 
   <div class="card">
-    <h2>Cómo eliminarla</h2>
-    <p>Puedes borrarla desde la configuración de tu navegador. Si la bloqueas, no podrás enviar formularios ni iniciar sesión.</p>
+    <h2>Cómo eliminarlas</h2>
+    <p>Puedes borrarlas desde la configuración de tu navegador. Si bloqueas la de sesión, no podrás enviar formularios ni iniciar sesión.</p>
   </div>
 
   <div class="actions-row center-row spaced">

@@ -14,7 +14,7 @@ const { uploadRestaurantImages } = require('../middleware/uploads');
 const { destroyUserSessions } = require('../middleware/session');
 const { findProtectedTerms } = require('../lib/sensitive');
 const { passwordProblem } = require('./auth');
-const { isDemoUser } = require('../lib/demo');
+const { isDemoUser, demoReadOnlyMessage } = require('../lib/demo');
 const { isValidEmail } = require('../lib/privacy');
 const { autoRetentionEnabled } = require('../lib/retention');
 const { sendEmailChangeConfirmation } = require('../lib/mailer');
@@ -85,7 +85,7 @@ router.use('/panel', (req, res, next) => {
     const ref = new URL(req.get('referer') || '', 'http://x');
     if (ref.pathname.startsWith('/panel')) back = ref.pathname;
   } catch { /* Referer inválido: volta ao início */ }
-  res.redirect(back + '?err=' + encodeURIComponent('Esto es una demostración: los cambios no se guardan. Empieza tus 30 días gratis para usar Fíchame con tu negocio.'));
+  res.redirect(back + '?err=' + encodeURIComponent(demoReadOnlyMessage(req)));
 });
 
 /* «2026-03-15» + hora → instante com o offset de Madrid nesse dia (+01:00
@@ -672,6 +672,15 @@ router.post('/panel/vagas/crear', rateLimit({
 
 router.post('/panel/vagas/:id/toggle', async (req, res) => {
   if (!verifyCsrf(req)) return invalidSession(res);
+
+  /* quiero=1/0: estado pedido. A função SQL alterna; um duplo envio ou uma
+   * aba antiga voltava a pausar a vaga que se acabou de publicar. */
+  const want = req.body.quiero === '1' ? true : req.body.quiero === '0' ? false : null;
+  if (want !== null) {
+    const job = await one(sb().from('jobs').select('active').eq('id', Number(req.params.id)).eq('restaurant_id', restaurantId(req)), 'estado da vaga');
+    if (!job) return notFound(res);
+    if (job.active === want) return res.redirect('/panel/vagas?ok=' + encodeURIComponent('Vacante actualizada.'));
+  }
 
   const result = await rpc('toggle_job_active', {
     job_id: Number(req.params.id),

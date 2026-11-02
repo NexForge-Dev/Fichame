@@ -22,4 +22,11 @@ function isDemoUser(user) {
   return Boolean(user) && String(user.email || '').toLowerCase() === DEMO_EMAIL;
 }
 
-module.exports = { DEMO_PREFIX, DEMO_EMAIL, isDemoUser };
+/* Aviso de «só leitura», já traduzido (com os dias da prova de pricing.js). */
+function demoReadOnlyMessage(req) {
+  const { TRIAL_DAYS } = require('./pricing');
+  const text = 'Esto es una demostración: los cambios no se guardan. Empieza tus {days} días gratis para usar Fíchame con tu negocio.';
+  return req.tr ? req.tr(text, { days: TRIAL_DAYS }) : text.replace('{days}', String(TRIAL_DAYS));
+}
+
+module.exports = { DEMO_PREFIX, DEMO_EMAIL, isDemoUser, demoReadOnlyMessage };

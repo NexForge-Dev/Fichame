@@ -92,6 +92,7 @@
                 <td>
                   <form action="/admin/restaurantes/<%= r.id %>/toggle" method="post">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input type="hidden" name="quiero" value="<%= r.active ? 0 : 1 %>">
                     <button class="btn secondary small" type="submit"><%= r.active ? 'Desactivar' : 'Activar' %></button>
                   </form>
                 </td>

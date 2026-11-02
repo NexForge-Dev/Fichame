@@ -71,6 +71,7 @@
                   <div class="actions-row flat">
                     <form action="/admin/usuarios/<%= u.id %>/bloquear" method="post">
                       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <input type="hidden" name="quiero" value="<%= u.blocked ? 0 : 1 %>">
                       <button class="btn <%= u.blocked ? 'secondary' : 'danger' %> small" type="submit"><%= u.blocked ? 'Desbloquear' : 'Bloquear' %></button>
                     </form>
                     <form action="/admin/usuarios/<%= u.id %>/enlace" method="post">

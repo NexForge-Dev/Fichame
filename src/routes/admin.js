@@ -25,6 +25,13 @@ function clean(value, max = 200) {
   return String(value == null ? '' : value).trim().slice(0, max);
 }
 
+/* Estado pedido pelo formulário (quiero=1/0), ou null. As funções SQL
+ * alternam o valor: sem isto, um duplo envio ou uma segunda aba desatualizada
+ * desfaziam a ação (desbloquear quem se acabou de bloquear). */
+function wanted(value) {
+  return value === '1' ? true : value === '0' ? false : null;
+}
+
 function num(v) {
   return Number(v || 0);
 }
@@ -150,6 +157,14 @@ router.post('/admin/restaurantes/:id/toggle', async (req, res) => {
   if (!verifyCsrf(req)) return invalidSession(res);
 
   const id = Number(req.params.id);
+  const want = wanted(req.body.quiero);
+  if (want !== null) {
+    const cur = await one(sb().from('restaurants').select('name, active').eq('id', id), 'estado do restaurante');
+    if (!cur) return res.redirect('/admin?err=' + encodeURIComponent('Establecimiento no encontrado.'));
+    if (cur.active === want) {
+      return res.redirect('/admin?ok=' + encodeURIComponent(`${cur.name}: ${want ? 'activado' : 'desactivado'}`));
+    }
+  }
   const result = await rpc('toggle_restaurant_active', { restaurant_id: id }, 'ativar restaurante');
 
   if (!result || !result.ok) {
@@ -171,6 +186,15 @@ router.post('/admin/usuarios/:id/bloquear', async (req, res) => {
 
   if (id === req.user.id) {
     return res.redirect('/admin/usuarios?err=' + encodeURIComponent('No puedes bloquearte a ti mismo.'));
+  }
+
+  const want = wanted(req.body.quiero);
+  if (want !== null) {
+    const cur = await one(sb().from('users').select('email, blocked').eq('id', id), 'estado do utilizador');
+    if (!cur) return res.redirect('/admin/usuarios?err=' + encodeURIComponent('Usuario no encontrado.'));
+    if (Boolean(cur.blocked) === want) {
+      return res.redirect('/admin/usuarios?ok=' + encodeURIComponent(`${cur.email}: ${want ? 'bloqueado' : 'desbloqueado'}`));
+    }
   }
 
   /* A função não bloqueia administradores e, ao bloquear, termina as sessões

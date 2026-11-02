@@ -35,5 +35,12 @@ module.exports = {
   'Demasiadas solicitudes. Espera unos minutos.': { en: 'Too many requests. Wait a few minutes.', pt: 'Demasiados pedidos. Espera uns minutos.' },
 
   // src/app.js (redirecionamento HTTPS)
-  'HTTPS requerido.': { en: 'HTTPS required.', pt: 'HTTPS obrigatório.' }
+  'HTTPS requerido.': { en: 'HTTPS required.', pt: 'HTTPS obrigatório.' },
+
+  // src/routes/admin.js
+  'No puedes bloquearte a ti mismo.': { en: 'You cannot block yourself.', pt: 'Não te podes bloquear a ti mesmo.' },
+  'Usuario no encontrado.': { en: 'User not found.', pt: 'Utilizador não encontrado.' },
+  'No se puede generar un enlace para un administrador.': { en: 'A link cannot be generated for an administrator.', pt: 'Não é possível gerar um link para um administrador.' },
+  'Solicitud descartada.': { en: 'Request dismissed.', pt: 'Pedido descartado.' },
+  'Reporte no encontrado.': { en: 'Report not found.', pt: 'Relatório não encontrado.' }
 };

@@ -181,7 +181,7 @@ function createApp() {
    * público (imagens do negócio) substituem este cabeçalho. */
   app.use((req, res, next) => {
     res.setHeader('Cache-Control', 'no-store');
-    const indexable = req.path === '/' || req.path === '/conoce' || /^\/(privacidad|cookies|terminos|aviso-legal|encargo)$/.test(req.path) ||
+    const indexable = req.path === '/' || req.path === '/conoce' || /^\/(privacidad|cookies|terminos|encargo)$/.test(req.path) ||
       /^\/r\/[a-z0-9-]+\/?$/.test(req.path);
     if (!indexable) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
     next();

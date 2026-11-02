@@ -108,9 +108,9 @@ module.exports = {
   'Ver precios': { en: 'See pricing', pt: 'Ver preços' },
   'Soporte:': { en: 'Support:', pt: 'Suporte:' },
   '{days} días gratis desde el registro. Sin tarjeta.': { en: '{days} days free from sign-up. No card needed.', pt: '{days} dias grátis desde o registo. Sem cartão.' },
-  'Esto es una demostración: los cambios no se guardan. Empieza tus 30 días gratis para usar Fíchame con tu negocio.': {
-    en: 'This is a demo: changes are not saved. Start your 30-day free trial to use Fíchame with your business.',
-    pt: 'Isto é uma demonstração: as alterações não são guardadas. Começa os teus 30 dias grátis para usar o Fíchame no teu negócio.'
+  'Esto es una demostración: los cambios no se guardan. Empieza tus {days} días gratis para usar Fíchame con tu negocio.': {
+    en: 'This is a demo: changes are not saved. Start your {days}-day free trial to use Fíchame with your business.',
+    pt: 'Isto é uma demonstração: as alterações não são guardadas. Começa os teus {days} dias grátis para usar o Fíchame no teu negócio.'
   },
   'Página de demostración.': { en: 'Demo page.', pt: 'Página de demonstração.' },
   'Este negocio es ficticio y el formulario no envía nada.': {
