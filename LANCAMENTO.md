@@ -3,10 +3,12 @@
 Lista curta do que **o dono** tem de fazer antes de abrir ao público. O código não
 precisa de mais alterações para isto; falta configuração, contas e decisões.
 
-> O Fíchame **não tem cobrança/pagamentos** implementados. Os preços de
-> lançamento (prova grátis de 30 dias, plano Fundadores, plano Profissional,
-> todos + IVA) vivem em `src/lib/pricing.js` e aparecem na landing, na /conoce
-> e nos termos. Para cobrar falta integrar o fornecedor (Stripe) — trabalho novo.
+> Cobrança: assinaturas Stripe (Checkout e Customer Portal alojados) em
+> `/panel/plan`. Os preços (prova grátis de 30 dias, Fundadores, Profissional,
+> todos + IVA) vivem só em `src/lib/pricing.js`. Sem `STRIPE_SECRET_KEY` e
+> `STRIPE_WEBHOOK_SECRET` a cobrança fica desligada e o painel só mostra os planos.
+> Configuração: secção **Stripe** abaixo. O fim da prova ou um pagamento falhado
+> **nunca bloqueiam** o uso (só avisos).
 
 ## 1. Base de dados (Supabase cloud)
 
@@ -45,8 +47,8 @@ recuperação de senha passa pelo admin em `/admin/usuarios`).
 
 ## 3. Deploy na Vercel
 
-1. Projeto Vercel: **`fichame`** na team **`nex-forge4`** (o antigo `ezcv` já não é usado).
-   Ligação local: `npx vercel link --project fichame --scope nex-forge4` (sem `--yes`: recusar
+1. Projeto Vercel: **`fichame`** na team **`nex-forge5`** (o antigo `ezcv` já não é usado).
+   Ligação local: `npx vercel link --project fichame --scope nex-forge5` (sem `--yes`: recusar
    o `env pull`, que reescreve o `.env.local`)
    (cria `.vercel/project.json`, que está no .gitignore). Confirmar que repositório/branch
    está ligado ao projeto (Settings → Git). Node: `engines` fixa **22.x** (sobrepõe-se ao 26.x do painel).
@@ -61,6 +63,45 @@ recuperação de senha passa pelo admin em `/admin/usuarios`).
 5. Vercel → **Logs**: não pode haver `[config] Páginas legais com marcadores`
    nem `[config] CRON_SECRET em falta`.
 6. Vercel → Settings → **Cron Jobs**: confirmar `/internal/cleanup` diário (03:00 UTC).
+
+## 3b. Stripe (subscriptions)
+
+Start in **test mode** (`sk_test_…`). Order: **migrate 0014 → deploy**.
+
+1. **Database first:** `npm run migrate` (applies `0014_billing.sql`), then
+   `npm run check` must end with "Tudo pronto." Without 0014 `/api/health` reports
+   `migrations:false`.
+2. **Prices:** with `STRIPE_SECRET_KEY` in your local `.env`, run
+   `npm run stripe:setup`. It creates the product "Fíchame" and three recurring
+   EUR prices (tax behaviour *exclusive*) with lookup keys derived from
+   `src/lib/pricing.js`: `fichame_founders_monthly_990`, `fichame_pro_monthly_1490`,
+   `fichame_pro_yearly_14900`. It is idempotent, prints the account country (warns
+   if not ES) and never prints secrets. Run it once with the test key and once
+   with the live key. After changing a price in `pricing.js`, run it again (new
+   lookup key → new price); until then Checkout refuses with a logged error.
+3. **Webhook:** Dashboard → Developers → Webhooks → Add endpoint
+   `https://fichame-ten.vercel.app/webhooks/stripe` (or the custom domain) with the events
+   `checkout.session.completed`, `customer.subscription.created`,
+   `customer.subscription.updated`, `customer.subscription.deleted`,
+   `invoice.paid`, `invoice.payment_failed`. Copy its signing secret (`whsec_…`).
+4. **Customer Portal:** Settings → Billing → Customer portal → enable it; allow
+   cancellation **at the end of the billing period**; allow updating payment
+   methods and viewing invoices; under "Subscriptions → switch plans" add only the
+   Profesional monthly and yearly prices (never Fundadores).
+5. **IVA:** with `STRIPE_AUTOMATIC_TAX=1`, register for Spanish VAT in Stripe Tax
+   (Settings → Tax → Registrations → Spain) and set the origin address. With
+   automatic tax off, create a 21 % *exclusive* tax rate and set
+   `STRIPE_TAX_RATE_ID=txr_…` (otherwise no IVA is added).
+6. **Vercel env vars (Production):** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
+   `STRIPE_AUTOMATIC_TAX` (`1` or `0`), optional `STRIPE_TAX_RATE_ID`, and
+   `STRIPE_ALLOW_TEST=1` **only** while testing with an `sk_test_` key in
+   production (without it a test key is refused there). No publishable key is
+   needed (hosted Checkout, no Stripe.js).
+7. **Deploy**, then test with card `4242 4242 4242 4242`: `/panel/plan` → plan →
+   Stripe → back; the plan shows as active within seconds (Dashboard → Webhooks
+   shows `200`). Try the portal (switch monthly/yearly, cancel at period end).
+
+Production: Vercel project `fichame`, team `nex-forge5`, https://fichame-ten.vercel.app.
 
 ## 4. Legal (antes de vender)
 

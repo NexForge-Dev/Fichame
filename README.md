@@ -127,6 +127,8 @@ npm run migrate
 10. `migrations/0010_terms_acceptances.sql`
 11. `migrations/0011_password_help_requests.sql`
 12. `migrations/0012_review_fixes.sql`
+13. `migrations/0013_launch_fixes.sql`
+14. `migrations/0014_billing.sql` (Stripe billing)
 
 Migrations are idempotent. `0000_reset.sql` is **destructive** (drops the schema) and only runs with `npm run migrate -- --reset`.
 
@@ -192,6 +194,8 @@ See [`.env.example`](.env.example) for the commented list.
 | `SECURITY_LOG_DAYS` / `RIGHTS_REQUEST_DAYS` | `365` / `1095` | Retention of logs and closed rights requests |
 | `CONTACT_EMAIL` | — | Optional “Write to us” button on `/conoce` |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | — | Optional Google login. The button only shows when the id ends in `.apps.googleusercontent.com` and the secret is set (otherwise a startup warning) |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | — | Stripe subscriptions (hosted Checkout + Customer Portal at `/panel/plan`, webhook `POST /webhooks/stripe`). Billing is on only with both; an `sk_test_` key is refused in production unless `STRIPE_ALLOW_TEST=1`. Prices come from `src/lib/pricing.js` via `npm run stripe:setup`. See LANCAMENTO.md §3b |
+| `STRIPE_AUTOMATIC_TAX` / `STRIPE_TAX_RATE_ID` | `0` / — | IVA: `1` = Stripe Tax; otherwise the optional fixed exclusive tax rate `txr_…` |
 | `LOG_HMAC_SECRET` | derived from the service key | Secret used to pseudonymise emails in logs |
 | `LEGAL_REVIEWED` | — | `1` hides the “BORRADOR — REQUIERE REVISIÓN JURÍDICA” banner. Set only after a real legal review |
 

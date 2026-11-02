@@ -61,6 +61,21 @@ router.get('/admin', async (req, res) => {
     )
   ]);
 
+  /* Plano e estado da assinatura (0014), numa query à parte para que a view
+   * admin_restaurant_list (0002) não dependa das colunas de cobrança. */
+  const ids = restaurants.map((r) => r.id);
+  const plans = ids.length === 0 ? [] : await many(
+    sb().from('restaurants').select('id, plan, billing_interval, subscription_status').in('id', ids),
+    'planos dos restaurantes'
+  );
+  const planById = new Map(plans.map((p) => [p.id, p]));
+  for (const r of restaurants) {
+    const p = planById.get(r.id) || {};
+    r.plan = p.plan || 'trial';
+    r.billing_interval = p.billing_interval || null;
+    r.subscription_status = p.subscription_status || null;
+  }
+
   res.render('admin/dashboard', {
     metrics: {
       restaurants: num(metrics && metrics.restaurants),

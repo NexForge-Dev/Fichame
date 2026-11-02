@@ -36,7 +36,9 @@ drop function if exists set_application_status(jsonb);
 drop function if exists submit_interest(jsonb);
 drop function if exists submit_application(jsonb);
 drop function if exists register_restaurant(jsonb);
+drop function if exists claim_founders_seat(jsonb);
 
+drop table if exists stripe_events cascade;
 drop table if exists email_changes cascade;
 drop table if exists password_help_requests cascade;
 drop table if exists terms_acceptances cascade;

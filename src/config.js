@@ -45,6 +45,21 @@ const maxCvMb = parseInt(process.env.MAX_CV_MB || '4', 10);
  * histórico, §28) e SUPABASE_SECRET_KEY (nome novo no painel do Supabase). */
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || '';
 
+/* Stripe (cobrança da assinatura, Checkout alojado). A chave publicável não
+ * é precisa: o pagamento acontece todo em checkout.stripe.com.
+ *
+ * A cobrança só fica ligada com a chave secreta E o segredo do webhook: sem
+ * o webhook o pagamento entrava na Stripe e o painel nunca sabia.
+ *
+ * Em produção uma chave sk_test_ é recusada (cobrança desligada) salvo com
+ * STRIPE_ALLOW_TEST=1 — protege contra copiar o .env de testes para a
+ * Vercel. Os valores nunca são impressos. */
+const stripeSecretKey = String(process.env.STRIPE_SECRET_KEY || '').trim();
+const stripeWebhookSecret = String(process.env.STRIPE_WEBHOOK_SECRET || '').trim();
+const stripeTestKey = stripeSecretKey.startsWith('sk_test_') || stripeSecretKey.startsWith('rk_test_');
+const stripeTestRefused = process.env.VERCEL_ENV === 'production' && stripeTestKey &&
+  process.env.STRIPE_ALLOW_TEST !== '1';
+
 const config = {
   port,
   appUrl: (process.env.APP_URL || vercelUrl || `http://localhost:${port}`).replace(/\/+$/, ''),
@@ -84,6 +99,18 @@ const config = {
     ingestKey: (process.env.NEXFORGE_INGEST_KEY || '').trim(),
     pseudonymSecret: process.env.NEXFORGE_PSEUDONYM_SECRET || ''
   },
+
+  stripe: {
+    secretKey: stripeTestRefused ? '' : stripeSecretKey,
+    webhookSecret: stripeWebhookSecret,
+    testMode: stripeTestKey,
+    testRefused: stripeTestRefused,
+    /* 1 = Stripe Tax calcula o IVA (exige registo do IVA espanhol no
+     * painel da Stripe). 0 = taxa fixa STRIPE_TAX_RATE_ID, se houver. */
+    automaticTax: process.env.STRIPE_AUTOMATIC_TAX === '1',
+    taxRateId: String(process.env.STRIPE_TAX_RATE_ID || '').trim()
+  },
+  billingEnabled: Boolean(stripeSecretKey && stripeWebhookSecret && !stripeTestRefused),
 
   smtp: {
     host: process.env.SMTP_HOST || '',
@@ -158,6 +185,17 @@ function assertConfig() {
   const googleProblem = require('./lib/google').configProblem();
   if (googleProblem) {
     console.warn(`[config] Login com Google desativado: ${googleProblem}.`);
+  }
+  /* Stripe: um único aviso, sem nunca mostrar a chave. */
+  if (config.stripe.testRefused) {
+    console.warn('[config] Cobrança desativada: STRIPE_SECRET_KEY é uma chave de teste em produção (define STRIPE_ALLOW_TEST=1 para a aceitar).');
+  } else if (config.billingEnabled && config.stripe.testMode && process.env.VERCEL_ENV === 'production') {
+    console.warn('[config] Stripe em modo de teste em produção (STRIPE_ALLOW_TEST=1): nenhum pagamento é real.');
+  } else if (Boolean(stripeSecretKey) !== Boolean(stripeWebhookSecret)) {
+    console.warn('[config] Cobrança desativada: definir STRIPE_SECRET_KEY e STRIPE_WEBHOOK_SECRET (as duas).');
+  }
+  if (config.billingEnabled && !config.stripe.automaticTax && !config.stripe.taxRateId) {
+    console.warn('[config] Sem STRIPE_AUTOMATIC_TAX=1 nem STRIPE_TAX_RATE_ID: o Checkout cobra os preços sem IVA.');
   }
   if (onVercel && maxCvMb > VERCEL_MAX_UPLOAD_MB) {
     console.warn(`[config] MAX_CV_MB=${maxCvMb} acima do limite de pedidos da Vercel (4,5 MB): usa-se ${VERCEL_MAX_UPLOAD_MB}.`);

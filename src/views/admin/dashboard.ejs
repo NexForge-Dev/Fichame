@@ -56,7 +56,7 @@
           <thead>
             <tr>
               <th>Establecimiento</th><th>Slug</th><th>Responsable</th>
-              <th>Candidaturas</th><th>Owners</th><th>Estado</th><th></th>
+              <th>Candidaturas</th><th>Owners</th><th>Plan</th><th>Estado</th><th></th>
             </tr>
           </thead>
           <tbody>
@@ -75,6 +75,14 @@
                 </td>
                 <td><%= r.apps %></td>
                 <td><%= r.owners %></td>
+                <td class="nowrap small">
+                  <%# Plano (0014). O estado da assinatura vem do webhook da Stripe. %>
+                  <% var planLabel = { trial: 'Prueba', founders: 'Fundadores', pro: 'Profesional' }[r.plan] || r.plan; %>
+                  <strong><%= planLabel %></strong><% if (r.billing_interval) { %> <span class="dim tiny"><%= r.billing_interval === 'year' ? 'anual' : 'mensual' %></span><% } %>
+                  <% if (r.subscription_status) { %>
+                    <div><span class="badge <%= ['active', 'trialing'].indexOf(r.subscription_status) !== -1 ? 'green' : (['past_due', 'unpaid', 'incomplete'].indexOf(r.subscription_status) !== -1 ? 'amber' : 'slate') %>"><%= r.subscription_status %></span></div>
+                  <% } %>
+                </td>
                 <td class="nowrap">
                   <span class="badge <%= r.active ? 'green' : 'red' %>"><%= r.active ? 'Activo' : 'Desactivado' %></span>
                   <% if (r.hiring_status === 'paused') { %>

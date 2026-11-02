@@ -9,15 +9,17 @@
  * Todos os preços são em euros e NÃO incluem IVA (o texto mostra sempre
  * «IVA no incluido»).
  *
- * Ainda não há cobrança: não existe checkout, assinatura nem fornecedor de
- * pagamentos ligado (a integração Stripe é uma fase posterior). Nada aqui
- * cobra, bloqueia ou simula pagamentos.
+ * A cobrança (Stripe, src/lib/billing.js) lê os valores daqui: cada preço
+ * da Stripe tem uma lookup_key com o valor em cêntimos, e o Checkout só abre
+ * se o preço da Stripe for igual ao daqui. Ao mudar um valor, correr
+ * `npm run stripe:setup`. Nada aqui cobra ou bloqueia: o fim da prova só
+ * mostra avisos.
  */
 
 const CURRENCY = 'EUR';
 
 /* Prova grátis: por negócio, contada desde o registo. Ao terminar NÃO se
- * bloqueia nada enquanto não houver cobrança real. */
+ * bloqueia nada (decisão do dono do produto, por agora). */
 const TRIAL_DAYS = 30;
 
 const PLANS = Object.freeze({

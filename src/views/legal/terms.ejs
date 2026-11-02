@@ -65,19 +65,22 @@
     <h2>6. Prueba gratuita, planes y precio</h2>
     <p>Todos los precios se indican en euros y <strong>no incluyen el IVA</strong> (IVA no incluido), que se añadirá según la normativa aplicable.</p>
     <ul>
-      <li><strong>Prueba gratuita:</strong> cada negocio puede usar Fíchame gratis (<%= eur(PL.trial.monthly) %>) durante los primeros <strong><%= pricing.TRIAL_DAYS %> días</strong> desde su registro, sin tarjeta. Al terminar la prueba la cuenta no se bloquea por ello mientras no exista la opción de contratar un plan.</li>
+      <li><strong>Prueba gratuita:</strong> cada negocio puede usar Fíchame gratis (<%= eur(PL.trial.monthly) %>) durante los primeros <strong><%= pricing.TRIAL_DAYS %> días</strong> desde su registro, sin tarjeta. Si contrata un plan durante la prueba, el primer cobro se hace al terminar la prueba (salvo que falten menos de 48 horas, en cuyo caso se cobra al contratar), de modo que el periodo gratuito nunca se cobra. Hoy, al terminar la prueba, la cuenta no se bloquea por no haber contratado un plan.</li>
       <li><strong>Plan Fundadores:</strong> <%= eur(PL.founders.monthly) %>/mes (IVA no incluido), disponible solo para los <strong>primeros <%= PL.founders.maxCustomers %> negocios</strong> que se unan durante el lanzamiento. Ese precio se mantiene durante <strong><%= PL.founders.lockMonths %> meses</strong> desde la fecha de adhesión; después, el negocio podrá pasar al precio público vigente en ese momento, del que se le avisará con antelación.</li>
       <li><strong>Plan Profesional:</strong> <%= eur(PL.pro.monthly) %>/mes o <%= eur(PL.pro.yearly) %>/año (IVA no incluido en ambos casos). No hay cargos adicionales por candidatura recibida ni por vacante creada.</li>
-      <li>Antes de que termine la prueba, el negocio podrá elegir un plan de pago desde su panel. Para cobrar cualquier importe:
+      <li><strong>Contratación:</strong> el negocio elige su plan en el panel (<em>Plan y facturación</em>). Para cobrar cualquier importe:
         <ul>
-          <li>Fíchame avisará con al menos <strong>30 días de antelación</strong>, por email y en el panel, indicando el precio y las condiciones;</li>
-          <li><strong>no cobrará nada sin que el negocio lo acepte de forma expresa</strong>, ni de forma automática ni con carácter retroactivo: el uso durante la prueba gratuita nunca se cobrará;</li>
-          <li>los planes mensuales no tienen permanencia y pueden cancelarse en cualquier momento, sin coste;</li>
-          <li>el negocio que no acepte un plan podrá darse de baja sin coste y obtener o suprimir sus datos según el apartado 10.</li>
+          <li><strong>Fíchame no cobra nada sin que el negocio lo acepte de forma expresa</strong>, marcando una casilla que indica el precio, el IVA y la periodicidad del cobro; nunca de forma automática ni con carácter retroactivo: el uso durante la prueba gratuita nunca se cobrará;</li>
+          <li>los precios se muestran sin IVA (<strong>+ IVA</strong>); el IVA aplicable se añade en el pago y figura en la factura;</li>
+          <li>la <strong>suscripción se renueva automáticamente</strong> al final de cada periodo (mensual o anual) por el mismo periodo y se cobra por adelantado, hasta que el negocio la cancele;</li>
+          <li>el negocio puede <strong>cancelar en cualquier momento</strong> desde el portal de cliente (<em>Plan y facturación → Gestionar suscripción</em>), sin coste ni permanencia. La cancelación tiene efecto <strong>al final del periodo ya pagado</strong>: hasta entonces se mantiene el plan y no se cobran más periodos. Los periodos ya pagados no se reembolsan, salvo obligación legal;</li>
+          <li>desde el mismo portal el negocio puede cambiar entre el pago mensual y el anual del plan Profesional, actualizar su método de pago y descargar sus facturas;</li>
+          <li>si un cobro falla, Fíchame lo avisará en el panel y el sistema de pagos lo reintentará; hoy un pago fallido no bloquea el uso de la cuenta;</li>
+          <li>el negocio que no quiera contratar un plan podrá darse de baja sin coste y obtener o suprimir sus datos según el apartado 10.</li>
         </ul>
       </li>
       <li>Fíchame puede añadir, cambiar o retirar funcionalidades durante el lanzamiento. Un cambio de precio para quien ya tenga un plan se avisará con al menos 30 días de antelación y nunca se aplicará de forma retroactiva.</li>
-      <li><strong>Datos de pago:</strong> hoy Fíchame todavía no recoge datos de pago. Cuando se activen los pagos, los tratará un proveedor de pagos externo y se actualizarán estos términos y la <a href="/privacidad">política de privacidad</a> antes de cobrar nada.</li>
+      <li><strong>Pagos y datos de pago:</strong> los pagos se procesan a través de <strong>Stripe Payments Europe, Ltd.</strong> (Irlanda), en sus páginas seguras de pago (checkout.stripe.com y billing.stripe.com). Fíchame nunca ve ni guarda los números de tarjeta; solo recibe de Stripe el estado de la suscripción y los datos de facturación necesarios. Ver la <a href="/privacidad#subencargados">política de privacidad</a>.</li>
       <li>Los <strong>candidatos nunca pagan</strong> por usar Fíchame.</li>
     </ul>
   </div>

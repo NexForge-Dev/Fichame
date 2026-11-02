@@ -36,6 +36,17 @@ async function main() {
     process.exit(1);
   }
 
+  /* Assinatura Stripe em vigor (0014): apagar o negócio não a cancela, e a
+   * Stripe continuaria a cobrar. Cancelar primeiro no painel da Stripe (ou
+   * pelo portal do cliente) e só depois fechar a conta. */
+  const { sb, one } = require('./index');
+  const sub = await one(sb().from('restaurants').select('subscription_status').eq('id', id), 'assinatura');
+  if (sub && require('../lib/billing').isLive(sub.subscription_status) && !args.includes('--forzar')) {
+    console.error(`\n  Recusado: o negócio tem uma assinatura Stripe em vigor (${sub.subscription_status}).` +
+      '\n  Cancela-a primeiro na Stripe (Customers → assinatura → Cancel) ou usa --forzar.\n');
+    process.exit(1);
+  }
+
   const res = await rpc('delete_restaurant_account', { restaurant_id: id, confirm_slug: slug, dry_run: !apply });
   if (!res.ok) {
     console.error(`\n  Recusado: ${res.reason}${res.held ? ` (${res.held} candidatura(s) com bloqueio legal)` : ''}\n`);

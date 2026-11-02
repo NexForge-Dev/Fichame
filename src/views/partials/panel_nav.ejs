@@ -16,6 +16,8 @@ var navItems = [
   /* Derechos e Privacidad usam-se pouco: ficam só em Ajustes (e nos avisos,
    * quando chega um pedido de direitos). */
   { href: '/panel/configuracion',   icon: 'cog',    label: tr('Configuración'), short: tr('Ajustes'), also: ['/panel/derechos', '/panel/privacidad'] },
+  /* No telemóvel chega-se pelo aviso da prova e por Ajustes (6 separadores no máximo). */
+  { href: '/panel/plan',            icon: 'card',   label: tr('Plan y facturación'), short: tr('Plan'), sideOnly: true },
   { href: '/panel/reportar',        icon: 'chat',   label: tr('Reportar un problema'), short: tr('Reportar'), sideOnly: true }
 ];
 

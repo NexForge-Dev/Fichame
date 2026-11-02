@@ -4,8 +4,9 @@
  * src/lib/conoce.js. Os valores vêm sempre de src/lib/pricing.js — nada de
  * preços escritos à mão aqui.
  *
- * Sem checkout nem botões de pagamento: ainda não há cobrança. O único CTA
- * leva ao registo (prova grátis).
+ * Sem checkout nem botões de pagamento aqui: quem não tem sessão vai sempre
+ * para o registo (prova grátis). O pagamento (Stripe) só existe dentro do
+ * painel, em /panel/plan, depois de registado e com aceitação expressa.
  *
  * p = { id, kicker, title, lead, cards: [{ name, badge, price, per, vat,
  *       alt, text, featured }], includesTitle, includes: [], cta, fine: [] }

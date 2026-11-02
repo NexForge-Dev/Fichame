@@ -7,15 +7,18 @@
 > `session_context.restaurant_created_at`. Then `npm run check` must end with
 > "Tudo pronto." and only then deploy/promote.
 
+> **Stripe billing (migration 0014):** same rule — `npm run migrate` (0014) and
+> `npm run check` **before** deploying the billing code. See [§6 Stripe](#6-stripe).
+
 Owner checklist to bring production back up (it currently answers **HTTP 500**
 on every route). Nothing here has been applied: run each step yourself.
 Never paste secret values into chats, issues or commits.
 
-- Vercel project: **`fichame`**, team **`nex-forge4`** (the old `ezcv` project is not used).
-- Production URL today: **`https://fichame-roan.vercel.app`** (alias of the production
+- Vercel project: **`fichame`**, team **`nex-forge5`** (the old `ezcv` project is not used).
+- Production URL today: **`https://fichame-ten.vercel.app`** (alias of the production
   deployment). `fichame.vercel.app` belongs to **another** Vercel account — do not use it.
-- `fichame-nex-forge4.vercel.app` and `fichame-git-main-…` are behind Vercel
-  Authentication (SSO); the public uses `fichame-roan.vercel.app` or a custom domain.
+- `fichame-nex-forge5.vercel.app` and `fichame-git-main-…` are behind Vercel
+  Authentication (SSO); the public uses `fichame-ten.vercel.app` or a custom domain.
 
 ## Why production is down
 
@@ -38,7 +41,7 @@ Variables currently set (Production **and** Preview): `PORT`, `APP_URL`,
 `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
 
 Use the dashboard (Settings → Environment Variables) or the CLI from the repo
-folder (`npx vercel link --project fichame --scope nex-forge4` first; decline
+folder (`npx vercel link --project fichame --scope nex-forge5` first; decline
 the env pull so `.env.local` is not overwritten). The commands below read
 secret values from stdin so they are never echoed.
 
@@ -46,7 +49,7 @@ secret values from stdin so they are never echoed.
 
 | Variable | Action | Why |
 |---|---|---|
-| `APP_URL` | Production: set to `https://fichame-roan.vercel.app` (later: the custom domain, **before** printing QR codes). Preview: delete | Must be https in production; the fallback for Preview is `VERCEL_PROJECT_PRODUCTION_URL` (https) |
+| `APP_URL` | Production: set to `https://fichame-ten.vercel.app` (later: the custom domain, **before** printing QR codes). Preview: delete | Must be https in production; the fallback for Preview is `VERCEL_PROJECT_PRODUCTION_URL` (https) |
 | `COOKIE_SECURE` | Delete (or set `1`) | On Vercel it defaults to `1`; a copied `0` breaks `__Host-` cookies and HSTS |
 | `TRUST_PROXY` | Delete (or set `1`) | Defaults to `1` on Vercel; `0` breaks HTTPS detection and rate-limit IPs |
 | `MAX_CV_MB` | `4` or delete | Vercel rejects bodies > 4.5 MB; values above 4 are clamped with a warning |
@@ -102,7 +105,7 @@ npx vercel env rm APP_URL production --yes
 npx vercel env rm APP_URL preview --yes
 
 # set
-printf %s "https://fichame-roan.vercel.app" | npx vercel env add APP_URL production
+printf %s "https://fichame-ten.vercel.app" | npx vercel env add APP_URL production
 node -e "process.stdout.write(require('crypto').randomBytes(32).toString('hex'))" | npx vercel env add CRON_SECRET production
 node -e "process.stdout.write(require('crypto').randomBytes(32).toString('hex'))" | npx vercel env add LOG_HMAC_SECRET production
 npx vercel env add OPERATOR_LEGAL_NAME production   # prompts for the value
@@ -184,10 +187,10 @@ value (`node-version-file: package.json`).
 ## 5. After deploying
 
 ```bash
-curl -s https://fichame-roan.vercel.app/api/health
+curl -s https://fichame-ten.vercel.app/api/health
 # expect 200 {"config":true,"db":true,"migrations":true,"ok":true}
-curl -sI https://fichame-roan.vercel.app/ | grep -iE "strict-transport|content-security"
-curl -s -o /dev/null -w '%{http_code}\n' https://fichame-roan.vercel.app/internal/cleanup   # 404
+curl -sI https://fichame-ten.vercel.app/ | grep -iE "strict-transport|content-security"
+curl -s -o /dev/null -w '%{http_code}\n' https://fichame-ten.vercel.app/internal/cleanup   # 404
 ```
 
 - Runtime Logs: no `[config] Arranque recusado`, `Páginas legais com marcadores`,
@@ -196,3 +199,43 @@ curl -s -o /dev/null -w '%{http_code}\n' https://fichame-roan.vercel.app/interna
 - Point an uptime monitor at `/api/health` (503 = something is wrong; the body
   only has booleans).
 - Continue with the smoke test in [`LANCAMENTO.md` §5](../LANCAMENTO.md).
+
+## 6. Stripe
+
+Production: Vercel project **`fichame`**, team **`nex-forge5`**,
+**https://fichame-ten.vercel.app**. Start with test keys (`sk_test_…`).
+
+1. **Order:** `npm run migrate` (applies `0014_billing.sql`) → `npm run check`
+   ("Tudo pronto.") → set the env vars → deploy.
+2. **Env vars (Vercel → Settings → Environment Variables → Production):**
+
+   | Variable | Value |
+   |---|---|
+   | `STRIPE_SECRET_KEY` | `sk_test_…` first, `sk_live_…` at launch (secret) |
+   | `STRIPE_WEBHOOK_SECRET` | `whsec_…` of the endpoint below (secret) |
+   | `STRIPE_AUTOMATIC_TAX` | `1` = Stripe Tax computes IVA; `0` (default) = fixed rate |
+   | `STRIPE_TAX_RATE_ID` | optional `txr_…` (21 % exclusive), used only when automatic tax is off |
+   | `STRIPE_ALLOW_TEST` | `1` only while using an `sk_test_` key in production; delete at launch |
+
+   No publishable key: Checkout and the portal are hosted by Stripe. Billing is
+   enabled only when both the secret key and the webhook secret are set.
+3. **Prices:** locally, with `STRIPE_SECRET_KEY` in `.env`, run
+   `npm run stripe:setup` (idempotent; creates product "Fíchame" and the prices
+   `fichame_founders_monthly_990`, `fichame_pro_monthly_1490`,
+   `fichame_pro_yearly_14900` from `src/lib/pricing.js`). Repeat with the live key.
+4. **Webhook:** Developers → Webhooks → Add endpoint
+   `https://fichame-ten.vercel.app/webhooks/stripe`, events:
+   `checkout.session.completed`, `customer.subscription.created`,
+   `customer.subscription.updated`, `customer.subscription.deleted`,
+   `invoice.paid`, `invoice.payment_failed`. Copy the signing secret into
+   `STRIPE_WEBHOOK_SECRET`. If you move to a custom domain, update the endpoint URL.
+5. **Customer Portal:** Settings → Billing → Customer portal: enable; cancel **at
+   period end**; allow switching between Profesional monthly and yearly (only
+   those two prices); allow payment-method updates and invoice history.
+6. **IVA:** if `STRIPE_AUTOMATIC_TAX=1`, register Spain in Stripe Tax (Settings →
+   Tax → Registrations) before the first live charge.
+7. **Check:** `curl -s https://fichame-ten.vercel.app/api/health` → `migrations:true`;
+   `curl -sI https://fichame-ten.vercel.app/ | grep -i content-security` shows
+   `form-action 'self' https://checkout.stripe.com https://billing.stripe.com`.
+   Buy a plan with card `4242 4242 4242 4242`; Stripe → Webhooks shows `200`
+   responses; `/admin` shows the business's plan and status.

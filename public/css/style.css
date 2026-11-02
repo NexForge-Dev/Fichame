@@ -3310,3 +3310,18 @@ tr:target td { box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--brand) 8%
 
 /* «Siguiente candidato» no fim da ficha: largo e fácil de acertar. */
 .next-bar { margin-top: 20px; }
+
+/* ===========================================================================
+   Plan y facturación (/panel/plan — views/panel/plan.ejs)
+   ---------------------------------------------------------------------------
+   Reutiliza os cartões de preços (.pr-card); no painel são dois, lado a lado
+   a partir de 900px.
+   =========================================================================== */
+.plan-cards { margin-top: 16px; }
+@media (min-width: 900px) {
+  .plan-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.plan-seats { margin: 12px 0 0; font-size: .9rem; font-weight: 700; color: var(--brand-ink); }
+.plan-form { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.plan-form .check { margin-bottom: 10px; }
+.plan-option { margin: 0 0 8px; font-weight: 700; }

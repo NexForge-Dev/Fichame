@@ -226,6 +226,60 @@ function main() {
     check('session_context expõe restaurant_created_at',
       q("select count(*) from information_schema.columns where table_name='session_context' and column_name='restaurant_created_at'") === '1');
 
+    console.log('\n— Cobrança Stripe e vagas Fundadores (0014) —');
+    check('restaurants.plan por omissão é trial',
+      q(`select plan || '|' || coalesce(subscription_status, '-') from restaurants where id=${ra}`) === 'trial|-');
+    check('plan só aceita trial/founders/pro',
+      !psql(`update restaurants set plan='advanced' where id=${ra}`).ok);
+    check('billing_interval só aceita month/year',
+      !psql(`update restaurants set billing_interval='week' where id=${ra}`).ok);
+    const F = [1, 2, 3].map((i) => rpc('register_restaurant', {
+      slug_base: `fund-${i}`, name: `F${i}`, owner_name: 'Fé', email: `f${i}@f.es`, password_hash: 'x'
+    }).restaurant_id);
+    const seat = (rid, extra = {}) => rpc('claim_founders_seat', {
+      restaurant_id: rid, max_customers: 2, lock_months: 12,
+      stripe_customer_id: `cus_${rid}`, stripe_subscription_id: `sub_${rid}`,
+      subscription_status: 'active', billing_interval: 'month', current_period_end: '2027-01-01T00:00:00Z', ...extra
+    });
+    const s1 = seat(F[0]);
+    check('1.ª vaga Fundadores atribuída', s1.ok === true && s1.already === false && s1.taken === 1);
+    check('Fundador: plano, ids, estado e garantia de 12 meses gravados',
+      q(`select plan || '|' || stripe_subscription_id || '|' || subscription_status || '|' ||
+           (founders_price_locked_until = plan_started_at + interval '12 months') from restaurants where id=${F[0]}`) ===
+      `founders|sub_${F[0]}|active|true`);
+    check('2.ª vaga Fundadores atribuída (limite 2)', seat(F[1]).ok === true);
+    const full = seat(F[2]);
+    check('com o limite atingido, a 3.ª é recusada', full.ok === false && full.reason === 'full' && full.taken === 2);
+    check('negócio recusado não muda de plano',
+      q(`select plan || '|' || coalesce(stripe_subscription_id, '-') from restaurants where id=${F[2]}`) === 'trial|-');
+    const lockBefore = q(`select founders_price_locked_until from restaurants where id=${F[0]}`);
+    const again = seat(F[0], { subscription_status: 'past_due' });
+    check('repetir para quem já é Fundador é idempotente (mantém a garantia)', again.ok === true && again.already === true &&
+      q(`select founders_price_locked_until from restaurants where id=${F[0]}`) === lockBefore &&
+      q(`select subscription_status from restaurants where id=${F[0]}`) === 'past_due');
+    check('past_due continua a ocupar vaga', seat(F[2]).reason === 'full');
+    q(`update restaurants set plan='trial', subscription_status='canceled' where id=${F[1]}`);
+    check('vaga libertada por cancelamento volta a estar disponível', seat(F[2]).ok === true);
+    check('o limite vem do parâmetro (max_customers), não do SQL',
+      seat(F[1], { stripe_customer_id: 'cus_outro', stripe_subscription_id: 'sub_outro', max_customers: 3 }).ok === true);
+    check('parâmetros inválidos recusados', rpc('claim_founders_seat', { restaurant_id: F[0] }).reason === 'bad_params');
+    check('stripe_customer_id é único',
+      !psql(`update restaurants set stripe_customer_id='cus_${F[0]}' where id=${F[2]}`).ok);
+    check('stripe_subscription_id é único',
+      !psql(`update restaurants set stripe_subscription_id='sub_${F[0]}' where id=${F[2]}`).ok);
+    q("insert into stripe_events (id, type) values ('evt_1', 'invoice.paid')");
+    check('stripe_events: mesmo evento não entra duas vezes',
+      !psql("insert into stripe_events (id, type) values ('evt_1', 'invoice.paid')").ok);
+    check('stripe_events com RLS ativo',
+      q("select relrowsecurity from pg_class where relname='stripe_events' and relnamespace='public'::regnamespace") === 't');
+    check('anon não lê stripe_events', !psql('set role anon; select * from stripe_events').ok);
+    check('authenticated não escreve em stripe_events',
+      !psql("set role authenticated; insert into stripe_events (id, type) values ('evt_x', 'x')").ok);
+    check('anon não executa claim_founders_seat',
+      !psql(`set role anon; select claim_founders_seat('{}'::jsonb)`).ok);
+    /* Limpa as linhas de teste para o resto do ficheiro (fecho de conta etc.). */
+    q(`update restaurants set plan='trial', subscription_status=null, stripe_customer_id=null, stripe_subscription_id=null where id in (${F.join(',')})`);
+
     console.log('\n— Isolamento entre tenants na BD —');
     check('B não muda estado de candidatura de A',
       rpc('set_application_status', { application_id: a1.application_id, restaurant_id: rb, status: 'revisado' }).reason === 'not_found');

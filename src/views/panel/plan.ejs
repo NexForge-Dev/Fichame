@@ -1,0 +1,156 @@
+<%- include('../partials/head', { title: tr('Plan y facturación') }) %>
+<%- include('../partials/panel_nav') %>
+<%
+/* Plano e faturação. Preços SEMPRE de src/lib/pricing.js; o estado vem do
+ * webhook da Stripe (0014). Nada aqui bloqueia o uso do painel.
+ * Sem pagamento online (billingEnabled=false) mostram-se os planos sem
+ * botões. Com assinatura em vigor, tudo se gere no portal da Stripe. */
+var PL = pricing.PLANS;
+var fp = function (n) { return pricing.formatPrice(n, lang); };
+var perMonth = tr('al mes');
+var perYear = tr('al año');
+var STATUS = {
+  active:             { label: tr('Activa'), cls: 'green' },
+  trialing:           { label: tr('Activa'), cls: 'green' },
+  past_due:           { label: tr('Pago pendiente'), cls: 'amber' },
+  unpaid:             { label: tr('Pago pendiente'), cls: 'amber' },
+  incomplete:         { label: tr('Pago sin completar'), cls: 'amber' },
+  incomplete_expired: { label: tr('Pago sin completar'), cls: 'slate' },
+  paused:             { label: tr('En pausa'), cls: 'slate' },
+  canceled:           { label: tr('Cancelada'), cls: 'slate' }
+};
+var planNames = { trial: tr('Prueba gratis'), founders: tr('Plan Fundadores'), pro: tr('Plan Profesional') };
+var currentName = live ? (planNames[r.plan] || planNames.trial) : planNames.trial;
+var st = r.subscription_status ? STATUS[r.subscription_status] : null;
+var showForms = billingEnabled && !termsPendingHere && !live;
+var foundersOpen = seatsLeft > 0;
+var accept = function (price, per) {
+  return tr('Acepto los Términos y que se cobre {price} + IVA {periodicidad}. Puedo cancelar cuando quiera.', { price: price, periodicidad: per });
+};
+%>
+
+<main class="container">
+  <div class="page-title">
+    <h1><%= tr('Plan y facturación') %></h1>
+    <a class="btn ghost small" href="/panel">← <%= tr('Inicio') %></a>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <div class="card narrow-card">
+    <h2><%= tr('Tu plan') %></h2>
+    <p class="flat">
+      <strong><%= currentName %></strong>
+      <% if (st) { %> <span class="badge <%= st.cls %>"><%= st.label %></span><% } %>
+    </p>
+
+    <% if (live) { %>
+      <% if (r.billing_interval) { %>
+        <p class="muted small"><%= r.billing_interval === 'year' ? tr('Pago anual') : tr('Pago mensual') %><% if (r.current_period_end) { %> · <%= r.subscription_status === 'trialing' ? tr('primer cobro el {date}', { date: fmtDate(r.current_period_end) }) : tr('próxima renovación el {date}', { date: fmtDate(r.current_period_end) }) %><% } %></p>
+      <% } %>
+      <% if (r.plan === 'founders' && r.founders_price_locked_until) { %>
+        <p class="muted small"><%= tr('Precio Fundadores garantizado hasta el {date}.', { date: fmtDate(r.founders_price_locked_until) }) %></p>
+      <% } %>
+    <% } else if (trialInfo) { %>
+      <p class="muted small"><%= trialInfo.active
+        ? tr('Tu prueba gratis termina el {date}.', { date: fmtDate(trialInfo.endsAt) })
+        : tr('Tu prueba gratis terminó el {date}. Puedes seguir usando Fíchame mientras eliges un plan.', { date: fmtDate(trialInfo.endsAt) }) %></p>
+    <% } %>
+
+    <% if (['past_due', 'unpaid', 'incomplete'].indexOf(r.subscription_status) !== -1) { %>
+      <div class="notice-box">
+        <strong><%= tr('No hemos podido cobrar tu suscripción.') %></strong>
+        <p><%= tr('Revisa o cambia tu tarjeta en el portal de pagos. Mientras tanto puedes seguir usando Fíchame con normalidad.') %></p>
+      </div>
+    <% } %>
+
+    <% if (billingEnabled && r.stripe_customer_id) { %>
+      <form action="/panel/plan/portal" method="post" class="spaced-sm">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn secondary small" type="submit"><%= tr('Gestionar suscripción y facturas') %></button>
+      </form>
+      <p class="help"><%= tr('En el portal de Stripe puedes cambiar entre pago mensual y anual, actualizar la tarjeta, descargar tus facturas o cancelar. La cancelación se aplica al final del periodo ya pagado.') %></p>
+    <% } %>
+  </div>
+
+  <% if (!live) { %>
+  <div class="card">
+    <h2><%= tr('Elige tu plan') %></h2>
+
+    <% if (!billingEnabled) { %>
+      <p class="muted"><%= tr('El pago online se activará pronto. Mientras tanto puedes seguir usando Fíchame sin coste.') %></p>
+    <% } else if (termsPendingHere) { %>
+      <div class="notice-box">
+        <span><%= tr('Antes de contratar un plan, revisa y acepta los nuevos términos de uso.') %> <a href="/panel/terminos"><%= tr('Revisa los cambios y acéptalos') %></a>.</span>
+      </div>
+    <% } else if (firstChargeAt) { %>
+      <p class="muted"><%= tr('Si eliges un plan ahora, no pagarás nada hasta el {date}, cuando termina tu prueba gratis.', { date: fmtDate(new Date(firstChargeAt * 1000)) }) %></p>
+    <% } else { %>
+      <p class="muted"><%= tr('El primer cobro se hace al confirmar el pago.') %></p>
+    <% } %>
+
+    <ul class="pr-cards plan-cards">
+      <li class="pr-card<%= foundersOpen ? ' is-featured' : '' %>">
+        <span class="pr-badge"><%= tr('Lanzamiento') %></span>
+        <h3 class="pr-name"><%= tr('Plan Fundadores') %></h3>
+        <p class="pr-price"><span class="pr-amount"><%= fp(PL.founders.monthly) %></span><span class="pr-per"><%= tr('/mes') %></span></p>
+        <p class="pr-vat"><%= tr('IVA no incluido') %></p>
+        <p class="pr-text"><%= tr('Para los primeros {n} negocios que se unan durante el lanzamiento. Precio garantizado durante {months} meses desde que te unes.', { n: PL.founders.maxCustomers, months: PL.founders.lockMonths }) %></p>
+        <% if (foundersOpen) { %>
+          <p class="plan-seats"><%= seatsLeft === 1 ? tr('Queda {n} plaza.', { n: seatsLeft }) : tr('Quedan {n} plazas.', { n: seatsLeft }) %></p>
+        <% } else { %>
+          <p class="plan-seats"><%= tr('Las plazas del plan Fundadores se han agotado.') %></p>
+        <% } %>
+        <% if (showForms && foundersOpen) { %>
+          <form action="/panel/plan/checkout" method="post" class="plan-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="plan" value="founders">
+            <input type="hidden" name="interval" value="month">
+            <label class="check">
+              <input type="checkbox" name="acepto" value="1" required>
+              <span><%= accept(fp(PL.founders.monthly), perMonth) %></span>
+            </label>
+            <button class="btn block" type="submit"><%= tr('Elegir Fundadores') %></button>
+          </form>
+        <% } %>
+      </li>
+
+      <li class="pr-card<%= foundersOpen ? '' : ' is-featured' %>">
+        <h3 class="pr-name"><%= tr('Plan Profesional') %></h3>
+        <p class="pr-price"><span class="pr-amount"><%= fp(PL.pro.monthly) %></span><span class="pr-per"><%= tr('/mes') %></span></p>
+        <p class="pr-vat"><%= tr('IVA no incluido') %></p>
+        <p class="pr-alt"><%= tr('O {price}/año (IVA no incluido): unos {monthly}/mes, como {months} meses gratis.', { price: fp(PL.pro.yearly), monthly: fp(pricing.yearlyMonthlyEquivalent()), months: pricing.yearlyMonthsFree() }) %></p>
+        <p class="pr-text"><%= tr('Para cualquier negocio, con pago mensual o anual.') %></p>
+        <% if (showForms) { %>
+          <form action="/panel/plan/checkout" method="post" class="plan-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="plan" value="pro">
+            <input type="hidden" name="interval" value="month">
+            <p class="plan-option"><%= tr('Mensual') %> · <%= fp(PL.pro.monthly) %><%= tr('/mes') %></p>
+            <label class="check">
+              <input type="checkbox" name="acepto" value="1" required>
+              <span><%= accept(fp(PL.pro.monthly), perMonth) %></span>
+            </label>
+            <button class="btn block secondary" type="submit"><%= tr('Elegir Profesional mensual') %></button>
+          </form>
+          <form action="/panel/plan/checkout" method="post" class="plan-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="plan" value="pro">
+            <input type="hidden" name="interval" value="year">
+            <p class="plan-option"><%= tr('Anual') %> · <%= fp(PL.pro.yearly) %><%= tr('/año') %></p>
+            <label class="check">
+              <input type="checkbox" name="acepto" value="1" required>
+              <span><%= accept(fp(PL.pro.yearly), perYear) %></span>
+            </label>
+            <button class="btn block secondary" type="submit"><%= tr('Elegir Profesional anual') %></button>
+          </form>
+        <% } %>
+      </li>
+    </ul>
+
+    <p class="help"><%= tr('Precios en euros, IVA no incluido: el IVA se añade en el pago.') %> <% if (billingEnabled) { %><%= tr('El pago se hace en Stripe; Fíchame nunca ve ni guarda los datos de tu tarjeta.') %> <% } %><a href="/terminos" target="_blank" rel="noopener"><%= tr('Leer los Términos') %></a>.</p>
+  </div>
+  <% } %>
+</main>
+
+<%- include('../partials/foot') %>

@@ -3,18 +3,38 @@
     <span><strong><%= tr('Demostración con datos ficticios.') %></strong> <%= tr('Ningún candidato ni negocio de esta cuenta es real y los cambios no se guardan.') %> <a href="/registro"><%= tr('Empieza tus {days} días gratis', { days: pricing.TRIAL_DAYS }) %></a>.</span>
   </div>
 <% } %>
-<%# Prova grátis (res.locals.trial, só nas páginas do dono). Só informa: não bloqueia nada. %>
-<% if (!(typeof isDemo !== 'undefined' && isDemo) && typeof trial !== 'undefined' && trial) { %>
+<%# Prova grátis (res.locals.trial, só nas páginas do dono e sem assinatura em
+    vigor). Só informa: não bloqueia nada. Com o pagamento online ligado
+    (billingEnabled) convida a escolher já o plano em /panel/plan. %>
+<% if (!(typeof isDemo !== 'undefined' && isDemo) && typeof trial !== 'undefined' && trial) {
+  var payOnline = typeof billingEnabled !== 'undefined' && billingEnabled; %>
   <div class="flash trial">
     <% if (trial.active) {
       var trialVars = { n: trial.daysLeft, price: pricing.formatPrice(pricing.PLANS.founders.monthly, lang) }; %>
+      <% if (payOnline) { %>
+      <span><%= trial.daysLeft === 1
+        ? tr('Te queda {n} día de prueba gratis. Si eliges ya tu plan (Fundadores desde {price}/mes, IVA no incluido), no pagarás nada hasta que termine la prueba.', trialVars)
+        : tr('Te quedan {n} días de prueba gratis. Si eliges ya tu plan (Fundadores desde {price}/mes, IVA no incluido), no pagarás nada hasta que termine la prueba.', trialVars) %>
+        <% if (path !== '/panel/plan') { %><a href="/panel/plan"><%= tr('Elegir plan') %></a><% } %></span>
+      <% } else { %>
       <span><%= trial.daysLeft === 1
         ? tr('Te queda {n} día de prueba gratis. Después podrás elegir el plan Fundadores ({price}/mes, IVA no incluido) o Profesional.', trialVars)
         : tr('Te quedan {n} días de prueba gratis. Después podrás elegir el plan Fundadores ({price}/mes, IVA no incluido) o Profesional.', trialVars) %>
-        <a href="/conoce#precio"><%= tr('Ver precios') %></a></span>
+        <% if (path !== '/panel/plan') { %><a href="/panel/plan"><%= tr('Ver planes') %></a><% } %></span>
+      <% } %>
+    <% } else if (payOnline) { %>
+      <span><%= tr('Tu prueba gratuita ha terminado. Puedes seguir usando Fíchame; activa tu plan cuando quieras.') %>
+        <% if (path !== '/panel/plan') { %><a href="/panel/plan"><%= tr('Elegir plan') %></a><% } %></span>
     <% } else { %>
-      <span><%= tr('Tu prueba gratuita ha terminado. Pronto podrás activar tu plan desde aquí; mientras tanto puedes seguir usando Fíchame.') %></span>
+      <span><%= tr('Tu prueba gratuita ha terminado. Pronto podrás activar tu plan desde aquí; mientras tanto puedes seguir usando Fíchame.') %>
+        <% if (path !== '/panel/plan') { %><a href="/panel/plan"><%= tr('Ver planes') %></a><% } %></span>
     <% } %>
+  </div>
+<% } %>
+<%# Pagamento da assinatura em atraso: só aviso, o uso continua. %>
+<% if (!(typeof isDemo !== 'undefined' && isDemo) && typeof paymentProblem !== 'undefined' && paymentProblem && path !== '/panel/plan') { %>
+  <div class="flash err">
+    <span><%= tr('No hemos podido cobrar tu suscripción.') %> <a href="/panel/plan"><%= tr('Revisa tu método de pago') %></a>.</span>
   </div>
 <% } %>
 <% if (!(typeof isDemo !== 'undefined' && isDemo) && typeof termsPending !== 'undefined' && termsPending && path !== '/panel/terminos') { %>

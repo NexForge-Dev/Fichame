@@ -19,6 +19,8 @@ const { isValidEmail } = require('../lib/privacy');
 const { autoRetentionEnabled } = require('../lib/retention');
 const { sendEmailChangeConfirmation } = require('../lib/mailer');
 const pricing = require('../lib/pricing');
+const billing = require('../lib/billing');
+const { newRef, recordError } = require('../lib/errors');
 const storage = require('../lib/storage');
 const { QR_OPTIONS } = require('../lib/qr');
 const { background } = require('../lib/background');
@@ -47,13 +49,21 @@ router.use('/panel', async (req, res, next) => {
         .eq('status', 'unread'),
       'notificações não lidas'
     ),
+    /* Termos aceites e estado da assinatura (0014) na mesma ida à BD. */
     one(
-      sb().from('restaurants').select('terms_version, dpa_version').eq('id', req.user.restaurant_id),
+      sb().from('restaurants')
+        .select('terms_version, dpa_version, plan, subscription_status')
+        .eq('id', req.user.restaurant_id),
       'versão dos termos aceite'
     )
   ]);
   res.locals.unreadCount = unread.status === 'fulfilled' ? unread.value : 0;
   res.locals.termsPending = legal.status === 'fulfilled' && termsPending(legal.value);
+  /* Só para avisos (nunca bloqueia): assinatura em vigor esconde o aviso da
+   * prova; pagamento em atraso mostra um aviso para atualizar o cartão. */
+  const sub = legal.status === 'fulfilled' && legal.value ? legal.value : {};
+  res.locals.subscriptionLive = billing.isLive(sub.subscription_status);
+  res.locals.paymentProblem = ['past_due', 'unpaid'].includes(sub.subscription_status);
   next();
 });
 
@@ -65,7 +75,7 @@ router.use('/panel', (req, res, next) => {
   /* Prova grátis (src/lib/pricing.js): só informativa, nunca bloqueia nada.
    * Só para donos reais — requireOwner já deixou de fora o admin, e a demo
    * não tem prova. */
-  res.locals.trial = res.locals.isDemo || req.user.role !== 'owner'
+  res.locals.trial = res.locals.isDemo || req.user.role !== 'owner' || res.locals.subscriptionLive
     ? null
     : pricing.trialStatus(req.user.restaurant_created_at);
   if (!res.locals.isDemo || ['GET', 'HEAD'].includes(req.method)) return next();
@@ -1261,6 +1271,142 @@ router.post('/panel/privacidad/conservacion', async (req, res) => {
     req.ip, { userId: req.user.id, restaurantId: restaurantId(req) });
 
   res.redirect('/panel/privacidad?ok=' + encodeURIComponent('Plazos guardados y aplicados a las candidaturas existentes.'));
+});
+
+/* ================================================================== *
+ * Plano e faturação (Stripe Checkout e Customer Portal alojados).
+ *
+ * Nada aqui bloqueia o uso: sem plano, com a prova terminada ou com um
+ * pagamento falhado o painel funciona igual (só há avisos). O plano do
+ * negócio só muda pelo webhook (src/routes/webhooks.js), nunca pelo
+ * regresso do Checkout — o URL de sucesso não prova que se pagou.
+ * ================================================================== */
+const PLAN_COLUMNS =
+  'id, name, legal_name, email, created_at, plan, billing_interval, stripe_customer_id, stripe_subscription_id, ' +
+  'subscription_status, current_period_end, plan_started_at, founders_price_locked_until, terms_version, dpa_version';
+
+const planLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, max: 20, name: 'plano-stripe', key: (req) => String(req.user && req.user.id)
+});
+
+function planBack(res, msg) {
+  return res.redirect(303, '/panel/plan?err=' + encodeURIComponent(msg));
+}
+
+async function foundersSeatsLeft() {
+  const taken = await billing.defaultStore().foundersSeatsTaken();
+  return Math.max(0, pricing.PLANS.founders.maxCustomers - taken);
+}
+
+/* Chamada à Stripe com erro legível: preço desalinhado com pricing.js ou
+ * falha da API ficam em error_events (com código) e o dono volta à página
+ * com uma mensagem, em vez de um 500. Outros erros seguem para o handler. */
+async function withStripe(req, res, fn) {
+  try {
+    return await fn();
+  } catch (err) {
+    const stripeError = err instanceof billing.BillingConfigError || /^Stripe/.test(String((err && err.type) || ''));
+    if (!stripeError) throw err;
+    const ref = newRef();
+    console.error(`[stripe] ${req.path}: ${err.message} (ref ${ref})`);
+    background(recordError(err, req, ref), 'error-events');
+    planBack(res, 'No podemos conectar con el sistema de pago en este momento. Inténtalo más tarde.');
+    return null;
+  }
+}
+
+async function redirectToPortal(req, res, customerId) {
+  const session = await withStripe(req, res, () => billing.getStripe().billingPortal.sessions.create({
+    customer: customerId,
+    return_url: `${config.appUrl}/panel/plan`,
+    locale: ['es', 'en', 'pt'].includes(req.lang) ? req.lang : 'es'
+  }));
+  if (!session) return null;
+  logSecurity('plan_portal_aberto', `rid=${restaurantId(req)}`, req.ip, { userId: req.user.id, restaurantId: restaurantId(req) });
+  return res.redirect(303, session.url);
+}
+
+router.get('/panel/plan', async (req, res) => {
+  const [r, seatsLeft] = await Promise.all([
+    one(sb().from('restaurants').select(PLAN_COLUMNS).eq('id', restaurantId(req)), 'plano do negócio'),
+    foundersSeatsLeft()
+  ]);
+  if (!r) return notFound(res);
+  const live = billing.isLive(r.subscription_status);
+  res.render('panel/plan', {
+    r,
+    live,
+    trialInfo: res.locals.isDemo ? null : pricing.trialStatus(r.created_at),
+    /* Data do primeiro cobro se contratar agora durante a prova (null = hoje). */
+    firstChargeAt: billing.checkoutTrialEnd(r.created_at),
+    seatsLeft,
+    termsPendingHere: termsPending(r),
+    query: req.query
+  });
+});
+
+router.post('/panel/plan/checkout', planLimiter, async (req, res) => {
+  if (!verifyCsrf(req)) return invalidSession(res);
+  if (!config.billingEnabled) return planBack(res, 'El pago online todavía no está disponible.');
+
+  const plan = String(req.body.plan || '');
+  const interval = plan === 'founders' ? 'month' : String(req.body.interval || '');
+  if (!['founders', 'pro'].includes(plan) || !billing.lookupKey(plan, interval)) {
+    return planBack(res, 'Plan no válido.');
+  }
+  /* Aceitação expressa (termos §6): a casilla nomeia o preço e a periodicidade. */
+  if (req.body.acepto !== '1') return planBack(res, 'Marca la casilla para aceptar los términos y el cobro.');
+
+  const rid = restaurantId(req);
+  const r = await one(sb().from('restaurants').select(PLAN_COLUMNS).eq('id', rid), 'plano do negócio');
+  if (!r) return notFound(res);
+  if (termsPending(r)) return planBack(res, 'Antes de contratar un plan, revisa y acepta los nuevos términos de uso.');
+
+  /* Já há assinatura em vigor: mudar de periodicidade, cancelar ou trocar o
+   * cartão faz-se no portal (evita duas assinaturas para o mesmo negócio). */
+  if (billing.isLive(r.subscription_status) && r.stripe_customer_id) {
+    return redirectToPortal(req, res, r.stripe_customer_id);
+  }
+
+  /* Só verifica aqui; a vaga é atribuída de forma atómica no webhook. */
+  if (plan === 'founders' && r.plan !== 'founders' && await foundersSeatsLeft() <= 0) {
+    return planBack(res, 'Ya no quedan plazas del plan Fundadores. Puedes elegir el plan Profesional.');
+  }
+
+  const session = await withStripe(req, res, async () => {
+    const price = await billing.resolvePrice(plan, interval);
+    const customerId = await billing.ensureCustomer(r, { lang: req.lang, fallbackEmail: req.user.email });
+    const params = billing.checkoutSessionParams({
+      restaurant: r, plan, interval, priceId: price.id, customerId, lang: req.lang
+    });
+    const created = await billing.getStripe().checkout.sessions.create(params);
+    /* Prova da aceitação expressa: quem, quando, que preço e que versão dos termos. */
+    logSecurity('plan_checkout_iniciado', `rid=${rid} plan=${plan}/${interval}`, req.ip, {
+      userId: req.user.id,
+      restaurantId: rid,
+      userAgent: req.headers['user-agent'],
+      metadata: {
+        plan,
+        interval,
+        unit_amount: price.unit_amount,
+        currency: price.currency,
+        terms_version: TERMS_VERSION,
+        trial_end: params.subscription_data.trial_end || null
+      }
+    });
+    return created;
+  });
+  if (!session) return null;
+  return res.redirect(303, session.url);
+});
+
+router.post('/panel/plan/portal', planLimiter, async (req, res) => {
+  if (!verifyCsrf(req)) return invalidSession(res);
+  if (!config.billingEnabled) return planBack(res, 'El pago online todavía no está disponible.');
+  const r = await one(sb().from('restaurants').select('stripe_customer_id').eq('id', restaurantId(req)), 'cliente Stripe');
+  if (!r) return notFound(res);
+  if (!r.stripe_customer_id) return planBack(res, 'Todavía no tienes ninguna suscripción.');
+  return redirectToPortal(req, res, r.stripe_customer_id);
 });
 
 /* ================================================================== *

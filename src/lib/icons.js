@@ -98,7 +98,13 @@ const PATHS = {
 
   phone:
     '<rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/>' +
-    '<path d="M11 18.5h2"/>'
+    '<path d="M11 18.5h2"/>',
+
+  /* Plan y facturación (/panel/plan) */
+  card:
+    '<rect x="2.5" y="5.5" width="19" height="13" rx="2"/>' +
+    '<path d="M2.5 10h19"/>' +
+    '<path d="M6.5 15h4"/>'
 };
 
 function icon(name) {

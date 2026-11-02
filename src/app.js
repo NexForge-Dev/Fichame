@@ -125,11 +125,17 @@ function createApp() {
     res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
     /* CSP sem 'unsafe-inline' nem domínios externos: não há scripts, estilos,
      * fontes, analytics nem pixels de terceiros (ver /cookies). img data: é
-     * usado por ícones em CSS. */
+     * usado por ícones em CSS.
+     *
+     * form-action inclui o Checkout e o portal da Stripe: os formulários de
+     * /panel/plan respondem com um 303 para lá, e o browser aplica o
+     * form-action também ao redirecionamento. Não se carrega o Stripe.js
+     * (script-src continua só 'self'). */
     res.setHeader('Content-Security-Policy',
       "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; " +
       "font-src 'self'; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; " +
-      "base-uri 'self'; form-action 'self'" + (config.cookieSecure ? '; upgrade-insecure-requests' : ''));
+      "base-uri 'self'; form-action 'self' https://checkout.stripe.com https://billing.stripe.com" +
+      (config.cookieSecure ? '; upgrade-insecure-requests' : ''));
     if (config.cookieSecure) {
       /* Só com HTTPS confirmado: HSTS num ambiente sem TLS bloquearia o site. */
       res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
@@ -180,6 +186,11 @@ function createApp() {
     next();
   });
 
+  /* Webhook da Stripe: corpo cru (a assinatura é sobre os bytes exatos), sem
+   * sessão, sem CSRF e fora do limite global. Tem de ficar antes dos
+   * parsers urlencoded/json. */
+  app.use('/', require('./routes/webhooks'));
+
   /* Retenção automática (Vercel Cron ou outro agendador). Antes da sessão: não
    * usa cookies. Desativada sem CRON_SECRET. */
   app.use('/', require('./routes/internal'));
@@ -193,6 +204,8 @@ function createApp() {
     /* Preços (fonte única: src/lib/pricing.js) e email de suporte, para
      * qualquer view. */
     res.locals.pricing = pricing;
+    /* Pagamento online (Stripe) ligado: muda os textos do aviso da prova. */
+    res.locals.billingEnabled = config.billingEnabled;
     res.locals.supportEmail = config.contactEmail;
     next();
   });

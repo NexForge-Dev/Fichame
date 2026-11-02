@@ -17,16 +17,18 @@
 const { sb, run } = require('../db');
 const { PLANS, TRIAL_DAYS, formatPrice } = require('./pricing');
 
-const TERMS_VERSION = '2026-11-02-precios';
+const TERMS_VERSION = '2026-11-02-pagos';
 const DPA_VERSION = '2026-10-borrador';
-const COOKIES_VERSION = '2026-10';
+const COOKIES_VERSION = '2026-11';
 
 /* O que mudou na versão atual, em frases curtas para o negócio. */
 const TERMS_CHANGES = [
   /* Construído a partir de src/lib/pricing.js para não escrever preços à mão. */
   `Precios de lanzamiento (IVA no incluido): ${TRIAL_DAYS} días de prueba gratis desde el registro, sin tarjeta; plan Fundadores a ${formatPrice(PLANS.founders.monthly)}/mes para los primeros ${PLANS.founders.maxCustomers} negocios, con el precio garantizado ${PLANS.founders.lockMonths} meses; plan Profesional a ${formatPrice(PLANS.pro.monthly)}/mes o ${formatPrice(PLANS.pro.yearly)}/año.`,
-  'No se cobra nada sin tu aceptación expresa, nunca con carácter retroactivo, y te avisaremos con al menos 30 días de antelación. Los planes mensuales se pueden cancelar en cualquier momento.',
-  'Hoy no se recogen datos de pago. Cuando se activen los pagos, los tratará un proveedor de pagos y se actualizarán estos términos y la política de privacidad.',
+  'Pago online del plan desde el panel (Plan y facturación). Los pagos los procesa Stripe Payments Europe, Ltd.; Fíchame nunca ve ni guarda los números de tarjeta.',
+  'No se cobra nada sin tu aceptación expresa: una casilla indica el precio + IVA y la periodicidad. Si contratas durante la prueba gratis, el primer cobro se hace cuando termina.',
+  'La suscripción se renueva automáticamente cada mes o cada año hasta que la canceles. Puedes cancelar cuando quieras desde el portal de cliente; la cancelación tiene efecto al final del periodo ya pagado.',
+  'Los precios se muestran sin IVA (+ IVA); el IVA se añade en el pago y figura en la factura. Un cambio de precio para quien ya tenga un plan se avisará con al menos 30 días de antelación.',
   'Fíchame se usa mediante código QR o enlace a la página de tu negocio.',
   'Se detalla la responsabilidad de cada parte: Fíchame no responde de tus decisiones de contratación ni de los contenidos que publicas, y tú respondes si usas la plataforma incumpliendo la ley.',
   'Se explica cómo darte de baja, cuándo puede suspenderse una cuenta y cómo se te avisará de futuros cambios.',
