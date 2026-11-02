@@ -92,8 +92,20 @@ function main() {
     if (r.status !== 0) throw new Error(`initdb falhou: ${r.stderr}`);
     /* stdio 'ignore': o postmaster herda os descritores; com pipes o
      * spawnSync ficaria à espera dele para sempre. */
-    r = spawnSync(pgctl, ['-D', data, '-o', `-p ${port} -c listen_addresses=127.0.0.1`, '-l', path.join(dir, 'log.txt'), '-w', 'start'], { stdio: 'ignore' });
-    if (r.status !== 0) throw new Error(`pg_ctl start falhou (ver ${path.join(dir, 'log.txt')})`);
+    /* Socket Unix na pasta temporária: os pacotes Debian/Ubuntu (o runner
+     * ubuntu-24.04 do CI) compilam o PostgreSQL com o socket em
+     * /var/run/postgresql, onde só o utilizador postgres escreve, e o
+     * postmaster morria com «could not create lock file ... Permission denied».
+     * O psql liga por TCP (127.0.0.1), por isso o socket só tem de ser criável.
+     * No Windows não se mexe (sem sockets Unix por omissão; o caminho tem espaços). */
+    const socketOpt = process.platform === 'win32' ? '' : ` -c unix_socket_directories=${dir}`;
+    const logFile = path.join(dir, 'log.txt');
+    r = spawnSync(pgctl, ['-D', data, '-o', `-p ${port} -c listen_addresses=127.0.0.1${socketOpt}`, '-l', logFile, '-w', 'start'], { stdio: 'ignore' });
+    if (r.status !== 0) {
+      let tail = '';
+      try { tail = fs.readFileSync(logFile, 'utf8').trim().split(/\r?\n/).slice(-5).join('\n'); } catch { /* sem log */ }
+      throw new Error(`pg_ctl start falhou. Fim do log do PostgreSQL:\n${tail}`);
+    }
     started = true;
 
     /* Simulação mínima do Supabase. */
