@@ -144,3 +144,44 @@ test('páginas legais: faixa de borrador até LEGAL_REVIEWED=1', async () => {
     delete process.env.LEGAL_REVIEWED;
   }
 });
+
+/* Mensagens ?ok= / ?err= assinadas (src/lib/flash.js): um link de fora não
+ * pode pôr texto num aviso oficial. */
+test('flash: só redirecionamentos do servidor mostram ?ok=/?err=', async () => {
+  const express = require('express');
+  const flash = require('../src/lib/flash');
+  const app = express();
+  app.use(flash.signRedirects, flash.verifyFlash);
+  app.get('/go', (req, res) => res.redirect('/panel?err=' + encodeURIComponent('Plazo «inválido» & 100%') + '#x'));
+  app.get('/go303', (req, res) => res.redirect(303, '/r/bar?ok=Hecho'));
+  app.get(['/panel', '/r/bar', '/r/otro'], (req, res) => res.json(req.query));
+  const srv = app.listen(0, '127.0.0.1');
+  await new Promise((r) => srv.once('listening', r));
+  const b = `http://127.0.0.1:${srv.address().port}`;
+  try {
+    const loc = (await fetch(b + '/go', { redirect: 'manual' })).headers.get('location');
+    assert.match(loc, /[?&]fs=[\w-]{22}/);
+    assert.ok(loc.endsWith('#x'));
+    assert.deepEqual((await (await fetch(b + loc.replace('#x', ''))).json()).err, 'Plazo «inválido» & 100%');
+
+    const loc303 = (await fetch(b + '/go303', { redirect: 'manual' })).headers.get('location');
+    assert.equal((await (await fetch(b + loc303)).json()).ok, 'Hecho');
+    /* A mesma assinatura noutro caminho, sem assinatura, ou com o texto mudado: nada. */
+    assert.deepEqual(await (await fetch(b + loc303.replace('/r/bar', '/r/otro'))).json(), {});
+    assert.deepEqual(await (await fetch(b + '/r/bar?err=Envia%20el%20CV%20por%20WhatsApp')).json(), {});
+    assert.deepEqual(await (await fetch(b + loc303.replace('ok=Hecho', 'ok=Otro'))).json(), {});
+    assert.deepEqual(await (await fetch(b + '/r/bar?ok=a&ok=b&fs=x&q=1')).json(), { q: '1' });
+
+    assert.equal(flash.signUrl('https://evil.example/?ok=x'), 'https://evil.example/?ok=x');
+    assert.equal(flash.signUrl('//evil.example/?ok=x'), '//evil.example/?ok=x');
+    assert.equal(flash.stripFlash('/r/bar?ok=x&fs=y&lang=en'), '/r/bar?lang=en');
+  } finally {
+    srv.close();
+  }
+});
+
+test('/idioma: o destino perde ?ok=/?err= (o servidor não assina mensagens de terceiros)', async () => {
+  const res = await get('/idioma/en?next=' + encodeURIComponent('/r/bar?err=phishing&x=1'));
+  assert.equal(res.status, 302);
+  assert.equal(res.headers.get('location'), '/r/bar?x=1');
+});

@@ -15,6 +15,7 @@ const { newRef, recordError } = require('./lib/errors');
 const { background } = require('./lib/background');
 const { i18n, setLanguageRoute, translate, LANGS, LANG_NAMES } = require('./lib/i18n');
 const pricing = require('./lib/pricing');
+const { signRedirects, verifyFlash } = require('./lib/flash');
 
 /* O PostgREST devolve timestamptz como ISO 8601 com fuso ("…+00:00"), que o
  * Date do JS lê diretamente. O ramo que acrescenta 'Z' cobre valores sem
@@ -196,6 +197,11 @@ function createApp() {
   app.use('/', require('./routes/internal'));
   /* /api/health para monitorização: só booleanos, sem sessão. */
   app.use('/', require('./routes/health').router);
+
+  /* ?ok= / ?err= só aparecem se vierem de um redirecionamento deste servidor
+   * (assinados): um link de fora não pode pôr texto num aviso oficial. */
+  app.use(signRedirects);
+  app.use(verifyFlash);
 
   app.use(loadSession);
   app.use((req, res, next) => {

@@ -23,6 +23,7 @@
 
 const config = require('../config');
 const pricing = require('./pricing');
+const { signature: flashSignature } = require('./flash');
 
 /* Estados em que a assinatura conta como em vigor (e ocupa vaga Fundadores). */
 const LIVE_STATUSES = ['active', 'trialing', 'past_due'];
@@ -220,7 +221,8 @@ function checkoutSessionParams({
     locale: CHECKOUT_LOCALES.includes(lang) ? lang : 'es',
     metadata,
     subscription_data: { metadata: { ...metadata } },
-    success_url: `${appUrl}/panel/plan?ok=${encodeURIComponent(CHECKOUT_OK)}`,
+    /* Assinado como os redirecionamentos internos (src/lib/flash.js). */
+    success_url: `${appUrl}/panel/plan?ok=${encodeURIComponent(CHECKOUT_OK)}&fs=${flashSignature('/panel/plan', CHECKOUT_OK, null)}`,
     cancel_url: `${appUrl}/panel/plan`
   };
   if (tax.automaticTax) {

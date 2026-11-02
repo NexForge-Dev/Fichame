@@ -20,6 +20,7 @@ const path = require('path');
 
 const config = require('../config');
 const statuses = require('./statuses');
+const { stripFlash } = require('./flash');
 
 const LANGS = ['es', 'en', 'pt'];
 const LANG_NAMES = { es: 'Español', en: 'English', pt: 'Português' };
@@ -108,7 +109,9 @@ function setLanguageRoute(req, res) {
     maxAge: 365 * 24 * 60 * 60 * 1000
   });
   const next = String(req.query.next || '/');
-  res.redirect(/^\/(?![/\\])[^\s]*$/.test(next) ? next : '/');
+  /* Sem ok/err: o servidor assinaria uma mensagem escolhida por quem fez o
+   * link (ver src/lib/flash.js). */
+  res.redirect(/^\/(?![/\\])[^\s]*$/.test(next) ? stripFlash(next) : '/');
 }
 
 module.exports = { LANGS, LANG_NAMES, COOKIE, translate, resolveLang, i18n, setLanguageRoute };
