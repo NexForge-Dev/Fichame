@@ -575,3 +575,110 @@ test('config: chave real recusada em preview/development salvo STRIPE_ALLOW_LIVE
   assert.equal(run({ VERCEL_ENV: 'preview', STRIPE_ALLOW_LIVE: '1' }), true);
   assert.equal(run({ VERCEL_ENV: 'production', APP_URL: 'https://exemplo.es' }), true);
 });
+
+/* ------------------------------------------------------------------ *
+ * Painel NexForge: eventos de plano (docs/EVENTS.md do painel)
+ * ------------------------------------------------------------------ */
+function fakeAnalytics() {
+  const sent = [];
+  return { sent, plan(rid, event, properties, once) { sent.push({ rid, event, properties, once: once && once.join('|') }); } };
+}
+
+test('painel: códigos e valores dos planos (EUR, cêntimos, sem IVA)', () => {
+  assert.equal(billing.panelPlan('founders', 'month'), 'fundadores');
+  assert.equal(billing.panelPlan('pro', 'month'), 'pro_mensal');
+  assert.equal(billing.panelPlan('pro', 'year'), 'pro_anual');
+  assert.equal(billing.panelPlan('trial', null), null, 'prova_gratis é só estado: nunca é enviado');
+  assert.equal(billing.panelAmountCents('founders', 'month'), 990);
+  assert.equal(billing.panelAmountCents('pro', 'month'), 1490);
+  assert.equal(billing.panelAmountCents('pro', 'year'), 14900);
+});
+
+test('painel: Fundadores em prova → trial_started (plano pago) e, ao pagar, plan_activated uma vez', async () => {
+  const store = memStore([{ id: 1, stripe_customer_id: 'cus_1' }]);
+  const s = { ...sub({ plan: 'founders', status: 'trialing' }), trial_start: 1893456000 - 20 * 86400, trial_end: 1893456000 };
+  const stripe = mockStripe({ sub_1: s });
+  const analytics = fakeAnalytics();
+  const deps = { stripe, store, analytics };
+  await billing.processEvent(evt('checkout.session.completed', { mode: 'subscription', subscription: 'sub_1', metadata: { restaurant_id: '1' } }), deps);
+  await billing.processEvent(evt('customer.subscription.created', { id: 'sub_1' }), deps);
+  const trials = analytics.sent.filter((e) => e.event === 'trial_started');
+  assert.equal(trials.length, 2, 'dois eventos da Stripe...');
+  assert.equal(new Set(trials.map((e) => e.once)).size, 1, '...com o mesmo id fixo: o painel conta um');
+  assert.deepEqual(trials[0].properties, { plan: 'fundadores', trial_days: 20 });
+  assert.equal(trials[0].rid, 1);
+
+  /* Fatura da prova (0 €): ainda não é ativação. */
+  await billing.processEvent(evt('invoice.paid', { id: 'in_0', amount_paid: 0, subscription: 'sub_1' }), deps);
+  assert.equal(analytics.sent.filter((e) => e.event === 'plan_activated').length, 0);
+
+  s.status = 'active';
+  await billing.processEvent(evt('invoice.paid', { id: 'in_1', amount_paid: 1198, subscription: 'sub_1' }), deps);
+  await billing.processEvent(evt('invoice.paid', { id: 'in_2', amount_paid: 1198, subscription: 'sub_1' }), deps);
+  const acts = analytics.sent.filter((e) => e.event === 'plan_activated');
+  assert.deepEqual(acts[0].properties, { plan: 'fundadores', billing_period: 'month', amount_cents: 990, currency: 'EUR' });
+  assert.equal(new Set(acts.map((e) => e.once)).size, 1, 'renovação não volta a contar como ativação');
+
+  /* Reenvio do MESMO evento: já tratado, nada sai. */
+  const n = analytics.sent.length;
+  const again = evt('invoice.paid', { id: 'in_1', amount_paid: 1198, subscription: 'sub_1' }, 'evt_repetido');
+  await billing.processEvent(again, deps);
+  await billing.processEvent(again, deps);
+  assert.equal(analytics.sent.length, n + 1);
+});
+
+test('painel: troca mensal→anual, cancelamento e pagamento falhado', async () => {
+  const store = memStore([{ id: 4, plan: 'pro', billing_interval: 'month', stripe_customer_id: 'cus_4', stripe_subscription_id: 's4', subscription_status: 'active' }]);
+  const s = sub({ id: 's4', customer: 'cus_4', rid: '4', plan: 'pro', interval: 'year' });
+  const stripe = mockStripe({ s4: s });
+  const analytics = fakeAnalytics();
+  const deps = { stripe, store, analytics };
+  await billing.processEvent(evt('customer.subscription.updated', { id: 's4' }), deps);
+  const changed = analytics.sent.find((e) => e.event === 'plan_changed');
+  assert.deepEqual(changed.properties, { from_plan: 'pro_mensal', to_plan: 'pro_anual', billing_period: 'year', amount_cents: 14900 });
+
+  s.status = 'past_due';
+  await billing.processEvent(evt('invoice.payment_failed', { id: 'in_f', subscription: 's4' }), deps);
+  assert.deepEqual(analytics.sent.find((e) => e.event === 'payment_failed').properties, { plan: 'pro_anual' });
+
+  s.status = 'canceled';
+  s.cancellation_details = { reason: 'payment_failed' };
+  await billing.processEvent(evt('customer.subscription.deleted', { id: 's4' }), deps);
+  assert.deepEqual(analytics.sent.find((e) => e.event === 'plan_canceled').properties, { plan: 'pro_anual', reason: 'payment_failed' });
+  assert.equal(store.rows.get(4).plan, 'trial');
+  assert.ok(analytics.sent.every((e) => e.rid === 4 && e.once));
+});
+
+test('painel: outro produto e Fundadores sem vaga não enviam eventos de plano', async () => {
+  const analytics = fakeAnalytics();
+  const store = memStore([{ id: 1 }, { id: 2, plan: 'founders', subscription_status: 'active', stripe_customer_id: 'cus_2' }], { maxFounders: 1 });
+  const foreign = { id: 'sub_cv', customer: 'cus_cv', status: 'active', metadata: {}, items: { data: [{ price: { lookup_key: 'cvmatch_pro', recurring: { interval: 'month' } } }] } };
+  const stripe = mockStripe({ sub_cv: foreign, s1: sub({ id: 's1', plan: 'founders' }) });
+  await billing.processEvent(evt('invoice.paid', { id: 'in_x', amount_paid: 2990, subscription: 'sub_cv' }), { stripe, store, analytics });
+  assert.equal(await billing.processEvent(evt('invoice.paid', { id: 'in_y', amount_paid: 1198, subscription: 's1' }), { stripe, store, analytics }), 'founders_full');
+  assert.deepEqual(analytics.sent, []);
+});
+
+test('painel: signup_started com id fixo por email (reenvios não inflacionam o funil)', () => {
+  const analytics = require('../src/lib/analytics');
+  const tracked = [];
+  const crypto = require('node:crypto');
+  analytics.setClient({
+    enabled: true,
+    onceId: (...p) => crypto.createHash('sha256').update(p.join('|')).digest('hex').slice(0, 32),
+    track: (event, data) => tracked.push({ event, ...data }),
+    flush: async () => {},
+    link: () => {}
+  });
+  try {
+    analytics.signupStarted('Ana@Example.com', 'email');
+    analytics.signupStarted('ana@example.com ', 'email');
+    analytics.signupStarted('outra@example.com', 'email');
+    const ids = tracked.filter((t) => t.event === 'signup_started').map((t) => t.eventId);
+    assert.equal(ids.length, 3);
+    assert.ok(ids[0] && ids[0] === ids[1], 'mesmo email → mesmo id');
+    assert.notEqual(ids[0], ids[2]);
+  } finally {
+    analytics.setClient({ enabled: false, onceId: () => '', track() {}, flush: async () => {}, link() {} });
+  }
+});

@@ -1394,6 +1394,9 @@ router.post('/panel/plan/checkout', planLimiter, async (req, res) => {
       restaurant: r, plan, interval, priceId: price.id, customerId, lang: req.lang
     });
     const created = await billing.getStripe().checkout.sessions.create(params);
+    /* Painel NexForge: id fixo por sessão de Checkout. */
+    analytics.plan(metricsId(req, res), 'checkout_started',
+      { plan: billing.panelPlan(plan, interval), billing_period: interval }, ['checkout_started', created.id]);
     /* Prova da aceitação expressa: quem, quando, que preço e que versão dos termos. */
     logSecurity('plan_checkout_iniciado', `rid=${rid} plan=${plan}/${interval}`, req.ip, {
       userId: req.user.id,

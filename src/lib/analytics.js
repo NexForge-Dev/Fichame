@@ -15,7 +15,7 @@ const { createNexforge } = require('./nexforge-client.cjs');
 const config = require('../config');
 const { background } = require('./background');
 
-const nf = createNexforge({
+let nf = createNexforge({
   endpoint: config.analytics.endpoint,
   ingestKey: config.analytics.ingestKey,
   pseudonymSecret: config.analytics.pseudonymSecret,
@@ -24,6 +24,11 @@ const nf = createNexforge({
   retries: 1,
   onError: (err) => console.warn('[nexforge]', err && err.message)
 });
+
+/* Só para testes: cliente simulado. */
+function setClient(client) {
+  nf = client;
+}
 
 function send(event, actor, properties, eventId) {
   if (!nf.enabled || !actor) return;
@@ -37,10 +42,14 @@ function send(event, actor, properties, eventId) {
 const signupKey = (email) => `signup:${String(email).trim().toLowerCase()}`;
 
 const analytics = {
-  enabled: nf.enabled,
+  get enabled() { return nf.enabled; },
+  setClient,
 
+  /* Um por email (docs/EVENTS.md do painel): reenviar o formulário com um
+   * erro de validação não pode inflacionar o funil. */
   signupStarted(email, method) {
-    send('signup_started', signupKey(email), { method });
+    const key = signupKey(email);
+    send('signup_started', key, { method }, nf.onceId('signup_started', key));
   },
 
   signupCompleted(restaurantId, email, method) {
@@ -66,6 +75,12 @@ const analytics = {
 
   feature(restaurantId, feature, quantity) {
     send('feature_used', restaurantId, quantity ? { feature, quantity } : { feature });
+  },
+
+  /* Eventos de plano (cobrança Stripe). `onceParts` dá um id fixo: os
+   * reenvios do webhook da Stripe não contam duas vezes. */
+  plan(restaurantId, event, properties, onceParts) {
+    send(event, restaurantId, properties, onceParts ? nf.onceId(...onceParts) : undefined);
   },
 
   /* Usado pelo script de eliminação (processo sem pedido HTTP): espera o envio. */

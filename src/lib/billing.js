@@ -359,7 +359,94 @@ function planChange(state, restaurant, now = new Date()) {
   };
 }
 
-async function syncSubscription(subscriptionId, { stripe, store, hintRestaurantId = null, now = new Date() }) {
+/* ------------------------------------------------------------------ *
+ * Métricas do Painel NexForge (docs/EVENTS.md do painel)
+ * ------------------------------------------------------------------ */
+
+/* Código do plano no painel: trial → prova_gratis (só estado, nunca
+ * enviado), founders → fundadores, pro → pro_mensal / pro_anual. */
+function panelPlan(plan, interval) {
+  if (plan === 'founders') return 'fundadores';
+  if (plan === 'pro') return interval === 'year' ? 'pro_anual' : 'pro_mensal';
+  return null;
+}
+
+/* Valor em cêntimos de euro, sem IVA (990 / 1490 / 14900), de pricing.js. */
+function panelAmountCents(plan, interval) {
+  const amount = planAmount(plan, plan === 'founders' ? 'month' : interval);
+  return amount == null ? null : toCents(amount);
+}
+
+const CANCEL_REASONS = {
+  too_expensive: 'price',
+  missing_features: 'missing_feature',
+  unused: 'not_using',
+  switched_service: 'switched_competitor',
+  low_quality: 'technical_issue',
+  customer_service: 'other',
+  too_complex: 'other',
+  other: 'other'
+};
+
+/* Eventos de plano a enviar depois de um evento da Stripe já aplicado ao
+ * negócio. Puro. Cada um leva `once` (partes de um id fixo): os reenvios
+ * da Stripe e a mesma situação vista por vários eventos contam uma vez.
+ *   before  o negócio ANTES da escrita;  state/sub  a assinatura relida. */
+function planEvents({ eventType, obj = {}, before = {}, state, sub = {} }) {
+  const code = panelPlan(state.plan, state.interval);
+  if (!code) return [];
+  const period = state.plan === 'founders' ? 'month' : state.interval;
+  const subId = state.subscriptionId;
+  const out = [];
+
+  if (['checkout.session.completed', 'customer.subscription.created', 'customer.subscription.updated'].includes(eventType) &&
+      state.status === 'trialing' && sub.trial_end) {
+    const days = sub.trial_start ? Math.max(1, Math.round((sub.trial_end - sub.trial_start) / 86400)) : pricing.TRIAL_DAYS;
+    out.push({ event: 'trial_started', properties: { plan: code, trial_days: days }, once: ['trial_started', subId] });
+  }
+
+  if (eventType === 'invoice.paid' && Number(obj.amount_paid) > 0) {
+    out.push({
+      event: 'plan_activated',
+      properties: { plan: code, billing_period: period, amount_cents: panelAmountCents(state.plan, period), currency: pricing.CURRENCY },
+      once: ['plan_activated', subId]
+    });
+  }
+
+  const beforeCode = before.stripe_subscription_id === subId && isLive(before.subscription_status)
+    ? panelPlan(before.plan, before.billing_interval) : null;
+  if (eventType === 'customer.subscription.updated' && beforeCode && beforeCode !== code && isLive(state.status)) {
+    out.push({
+      event: 'plan_changed',
+      properties: { from_plan: beforeCode, to_plan: code, billing_period: period, amount_cents: panelAmountCents(state.plan, period) },
+      once: ['plan_changed', subId, beforeCode, code]
+    });
+  }
+
+  if (state.status === 'canceled' && ['customer.subscription.deleted', 'customer.subscription.updated'].includes(eventType)) {
+    const details = sub.cancellation_details || {};
+    const reason = details.reason === 'payment_failed' ? 'payment_failed' : CANCEL_REASONS[details.feedback];
+    out.push({ event: 'plan_canceled', properties: reason ? { plan: code, reason } : { plan: code }, once: ['plan_canceled', subId] });
+  }
+
+  if (eventType === 'invoice.payment_failed') {
+    out.push({ event: 'payment_failed', properties: { plan: code }, once: ['payment_failed', obj.id || subId] });
+  }
+  return out;
+}
+
+function emitPlanEvents(analytics, restaurantId, ctx) {
+  if (!analytics || !ctx || !ctx.eventType) return;
+  for (const e of planEvents(ctx)) {
+    try {
+      analytics.plan(restaurantId, e.event, e.properties, e.once);
+    } catch (err) {
+      console.warn('[nexforge] evento de plano:', err && err.message);
+    }
+  }
+}
+
+async function syncSubscription(subscriptionId, { stripe, store, hintRestaurantId = null, now = new Date(), analytics = null, event = null }) {
   const sub = await stripe.subscriptions.retrieve(subscriptionId);
   const state = subscriptionState(sub);
 
@@ -387,6 +474,8 @@ async function syncSubscription(subscriptionId, { stripe, store, hintRestaurantI
     return 'ignored_customer_mismatch';
   }
 
+  /* Cópia: o negócio como estava antes de qualquer escrita (métricas). */
+  const before = { ...restaurant };
   const change = planChange(state, restaurant, now);
   if (change.action === 'ignore') return `ignored_${change.reason}`;
 
@@ -401,7 +490,10 @@ async function syncSubscription(subscriptionId, { stripe, store, hintRestaurantI
 
   if (change.action === 'claim') {
     const r = await store.claimFoundersSeat(restaurant.id, change.fields);
-    if (r && r.ok) return r.already ? 'founders_synced' : 'founders_claimed';
+    if (r && r.ok) {
+      emitPlanEvents(analytics, restaurant.id, event && { ...event, before, state, sub });
+      return r.already ? 'founders_synced' : 'founders_claimed';
+    }
     if (r && r.reason === 'full') {
       /* Sem vaga entre o Checkout e o webhook: a assinatura fica (a Stripe
        * já cobrou ou vai cobrar), ligada ao negócio, e o admin decide
@@ -424,24 +516,26 @@ async function syncSubscription(subscriptionId, { stripe, store, hintRestaurantI
   }
 
   await store.updateRestaurant(restaurant.id, change.fields);
+  emitPlanEvents(analytics, restaurant.id, event && { ...event, before, state, sub });
   return 'subscription_synced';
 }
 
 /* Trata um evento já verificado. Devolve uma etiqueta curta para o log. */
-async function handleEvent(event, { stripe, store, now = new Date() }) {
+async function handleEvent(event, { stripe, store, now = new Date(), analytics = null }) {
   const obj = (event.data && event.data.object) || {};
+  const ctx = { analytics, event: { eventType: event.type, obj } };
   switch (event.type) {
     case 'checkout.session.completed': {
       if (obj.mode !== 'subscription' || !obj.subscription) return 'ignored_not_subscription';
       return syncSubscription(idOf(obj.subscription), {
-        stripe, store, now,
+        stripe, store, now, ...ctx,
         hintRestaurantId: (obj.metadata && obj.metadata.restaurant_id) || obj.client_reference_id
       });
     }
     case 'customer.subscription.created':
     case 'customer.subscription.updated':
     case 'customer.subscription.deleted':
-      return syncSubscription(obj.id, { stripe, store, now });
+      return syncSubscription(obj.id, { stripe, store, now, ...ctx });
     case 'invoice.paid':
     case 'invoice.payment_failed': {
       /* Desde a API 2025-03-31 a assinatura da fatura está em
@@ -449,7 +543,7 @@ async function handleEvent(event, { stripe, store, now = new Date() }) {
       const details = obj.parent && obj.parent.subscription_details;
       const subId = idOf(details && details.subscription) || idOf(obj.subscription);
       if (!subId) return 'ignored_no_subscription';
-      const outcome = await syncSubscription(subId, { stripe, store, now });
+      const outcome = await syncSubscription(subId, { stripe, store, now, ...ctx });
       if (event.type === 'invoice.payment_failed') {
         const meta = (details && details.metadata) || {};
         store.notice('stripe_pago_fallido', `sub=${subId} invoice=${obj.id}`, meta.restaurant_id);
@@ -548,7 +642,7 @@ function defaultStore() {
 }
 
 function deps() {
-  return { stripe: getStripe(), store: defaultStore() };
+  return { stripe: getStripe(), store: defaultStore(), analytics: require('./analytics') };
 }
 
 module.exports = {
@@ -579,6 +673,9 @@ module.exports = {
   subscriptionState,
   planChange,
   syncSubscription,
+  panelPlan,
+  panelAmountCents,
+  planEvents,
   handleEvent,
   processEvent,
   supabaseStore
