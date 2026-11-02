@@ -129,6 +129,7 @@ npm run migrate
 12. `migrations/0012_review_fixes.sql`
 13. `migrations/0013_launch_fixes.sql`
 14. `migrations/0014_billing.sql` (Stripe billing)
+15. `migrations/0015_retention_lock.sql` (automatic retention never deletes an application put under legal hold mid-run; optional for the code, apply anyway)
 
 Migrations are idempotent. `0000_reset.sql` is **destructive** (drops the schema) and only runs with `npm run migrate -- --reset`.
 
