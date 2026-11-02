@@ -44,6 +44,13 @@ var accept = function (price, per) {
       <% if (st) { %> <span class="badge <%= st.cls %>"><%= st.label %></span><% } %>
     </p>
 
+    <% if (live && r.plan === 'trial') { %>
+      <%# Assinatura em vigor sem plano atribuído (ex.: Fundadores sem vaga
+          no momento do pagamento): o admin já foi avisado e resolve à mão. %>
+      <div class="notice-box">
+        <span><%= tr('Hemos recibido tu suscripción y estamos revisando tu plan. Te escribiremos en breve; si tienes dudas, contacta con {email}.', { email: supportEmail }) %></span>
+      </div>
+    <% } %>
     <% if (live) { %>
       <% if (r.billing_interval) { %>
         <p class="muted small"><%= r.billing_interval === 'year' ? tr('Pago anual') : tr('Pago mensual') %><% if (r.current_period_end) { %> · <%= r.subscription_status === 'trialing' ? tr('primer cobro el {date}', { date: fmtDate(r.current_period_end) }) : tr('próxima renovación el {date}', { date: fmtDate(r.current_period_end) }) %><% } %></p>
@@ -65,7 +72,7 @@ var accept = function (price, per) {
     <% } %>
 
     <% if (billingEnabled && r.stripe_customer_id) { %>
-      <form action="/panel/plan/portal" method="post" class="spaced-sm">
+      <form action="/panel/plan/portal" method="post" class="spaced-sm" data-busy="<%= tr('Abriendo el portal…') %>">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <button class="btn secondary small" type="submit"><%= tr('Gestionar suscripción y facturas') %></button>
       </form>
@@ -102,7 +109,7 @@ var accept = function (price, per) {
           <p class="plan-seats"><%= tr('Las plazas del plan Fundadores se han agotado.') %></p>
         <% } %>
         <% if (showForms && foundersOpen) { %>
-          <form action="/panel/plan/checkout" method="post" class="plan-form">
+          <form action="/panel/plan/checkout" method="post" class="plan-form" data-busy="<%= tr('Redirigiendo al pago…') %>">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="plan" value="founders">
             <input type="hidden" name="interval" value="month">
@@ -122,7 +129,7 @@ var accept = function (price, per) {
         <p class="pr-alt"><%= tr('O {price}/año (IVA no incluido): unos {monthly}/mes, como {months} meses gratis.', { price: fp(PL.pro.yearly), monthly: fp(pricing.yearlyMonthlyEquivalent()), months: pricing.yearlyMonthsFree() }) %></p>
         <p class="pr-text"><%= tr('Para cualquier negocio, con pago mensual o anual.') %></p>
         <% if (showForms) { %>
-          <form action="/panel/plan/checkout" method="post" class="plan-form">
+          <form action="/panel/plan/checkout" method="post" class="plan-form" data-busy="<%= tr('Redirigiendo al pago…') %>">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="plan" value="pro">
             <input type="hidden" name="interval" value="month">
@@ -133,7 +140,7 @@ var accept = function (price, per) {
             </label>
             <button class="btn block secondary" type="submit"><%= tr('Elegir Profesional mensual') %></button>
           </form>
-          <form action="/panel/plan/checkout" method="post" class="plan-form">
+          <form action="/panel/plan/checkout" method="post" class="plan-form" data-busy="<%= tr('Redirigiendo al pago…') %>">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="plan" value="pro">
             <input type="hidden" name="interval" value="year">

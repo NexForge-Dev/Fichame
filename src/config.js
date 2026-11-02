@@ -59,6 +59,13 @@ const stripeWebhookSecret = String(process.env.STRIPE_WEBHOOK_SECRET || '').trim
 const stripeTestKey = stripeSecretKey.startsWith('sk_test_') || stripeSecretKey.startsWith('rk_test_');
 const stripeTestRefused = process.env.VERCEL_ENV === 'production' && stripeTestKey &&
   process.env.STRIPE_ALLOW_TEST !== '1';
+/* O inverso: uma chave real (sk_live_) num deploy de pré-visualização ou de
+ * desenvolvimento da Vercel cobraria dinheiro a sério a partir de código
+ * ainda não publicado. Recusada salvo STRIPE_ALLOW_LIVE=1. */
+const stripeLiveKey = stripeSecretKey.startsWith('sk_live_') || stripeSecretKey.startsWith('rk_live_');
+const stripeLiveRefused = ['preview', 'development'].includes(process.env.VERCEL_ENV) && stripeLiveKey &&
+  process.env.STRIPE_ALLOW_LIVE !== '1';
+const stripeRefused = stripeTestRefused || stripeLiveRefused;
 
 const config = {
   port,
@@ -101,16 +108,19 @@ const config = {
   },
 
   stripe: {
-    secretKey: stripeTestRefused ? '' : stripeSecretKey,
+    secretKey: stripeRefused ? '' : stripeSecretKey,
     webhookSecret: stripeWebhookSecret,
     testMode: stripeTestKey,
     testRefused: stripeTestRefused,
+    liveRefused: stripeLiveRefused,
+    /* Configuração do Customer Portal só do Fíchame (bpc_…), opcional. */
+    portalConfigurationId: String(process.env.STRIPE_PORTAL_CONFIGURATION_ID || '').trim(),
     /* 1 = Stripe Tax calcula o IVA (exige registo do IVA espanhol no
      * painel da Stripe). 0 = taxa fixa STRIPE_TAX_RATE_ID, se houver. */
     automaticTax: process.env.STRIPE_AUTOMATIC_TAX === '1',
     taxRateId: String(process.env.STRIPE_TAX_RATE_ID || '').trim()
   },
-  billingEnabled: Boolean(stripeSecretKey && stripeWebhookSecret && !stripeTestRefused),
+  billingEnabled: Boolean(stripeSecretKey && stripeWebhookSecret && !stripeRefused),
 
   smtp: {
     host: process.env.SMTP_HOST || '',
@@ -189,6 +199,8 @@ function assertConfig() {
   /* Stripe: um único aviso, sem nunca mostrar a chave. */
   if (config.stripe.testRefused) {
     console.warn('[config] Cobrança desativada: STRIPE_SECRET_KEY é uma chave de teste em produção (define STRIPE_ALLOW_TEST=1 para a aceitar).');
+  } else if (config.stripe.liveRefused) {
+    console.warn('[config] Cobrança desativada: STRIPE_SECRET_KEY é uma chave real fora de produção (define STRIPE_ALLOW_LIVE=1 para a aceitar).');
   } else if (config.billingEnabled && config.stripe.testMode && process.env.VERCEL_ENV === 'production') {
     console.warn('[config] Stripe em modo de teste em produção (STRIPE_ALLOW_TEST=1): nenhum pagamento é real.');
   } else if (Boolean(stripeSecretKey) !== Boolean(stripeWebhookSecret)) {

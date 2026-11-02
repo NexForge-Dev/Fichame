@@ -30,6 +30,8 @@ const LIVE_STATUSES = ['active', 'trialing', 'past_due'];
 const ENDED_STATUSES = ['canceled', 'incomplete_expired'];
 
 const LOOKUP_PREFIX = 'fichame_';
+/* Id do produto na Stripe (criado por `npm run stripe:setup`). */
+const PRODUCT_ID = 'fichame';
 const INTERVAL_WORD = { month: 'monthly', year: 'yearly' };
 /* A Stripe exige trial_end pelo menos 48 h no futuro no Checkout. */
 const TRIAL_END_MIN_MS = 48 * 60 * 60 * 1000;
@@ -245,6 +247,29 @@ async function ensureCustomer(restaurant, { stripe = getStripe(), store = defaul
   return store.saveCustomerId(restaurant.id, customer.id);
 }
 
+/* Assinatura do Fíchame já em vigor para este cliente, ou null. O estado
+ * em restaurants só muda pelo webhook: um Checkout acabado há segundos
+ * (outra aba, duplo clique) ainda não está lá, por isso pergunta-se também
+ * à Stripe antes de abrir outro — senão o negócio pagava duas assinaturas. */
+async function liveSubscriptionFor(customerId, { stripe = getStripe() } = {}) {
+  if (!customerId) return null;
+  const list = await stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 20 });
+  return ((list && list.data) || []).find((s) => isLive(s.status) && subscriptionState(s).plan) || null;
+}
+
+/* Parâmetros do Customer Portal. STRIPE_PORTAL_CONFIGURATION_ID escolhe uma
+ * configuração só do Fíchame: a configuração por omissão é da CONTA, que é
+ * partilhada com outros produtos (e podia oferecer trocar para preços deles). */
+function portalSessionParams({ customerId, lang = 'es', appUrl = config.appUrl, configuration = config.stripe.portalConfigurationId }) {
+  const params = {
+    customer: customerId,
+    return_url: `${appUrl}/panel/plan`,
+    locale: CHECKOUT_LOCALES.includes(lang) ? lang : 'es'
+  };
+  if (configuration) params.configuration = configuration;
+  return params;
+}
+
 /* ------------------------------------------------------------------ *
  * Webhook: assinatura → plano do negócio
  * ------------------------------------------------------------------ */
@@ -256,7 +281,12 @@ function subscriptionState(sub) {
   const item = sub && sub.items && sub.items.data && sub.items.data[0];
   const price = item && item.price;
   const meta = (sub && sub.metadata) || {};
-  const fromMeta = ['founders', 'pro'].includes(meta.plan)
+  /* Os metadados só servem de recurso para um preço do PRÓPRIO produto
+   * Fíchame (ex.: um preço criado à mão sem lookup_key). A conta Stripe é
+   * partilhada: outro produto pode ter metadata.plan = 'pro' e um
+   * client_reference_id numérico, e nunca pode tocar num negócio. */
+  const ownProduct = Boolean(price) && idOf(price.product) === PRODUCT_ID;
+  const fromMeta = ownProduct && ['founders', 'pro'].includes(meta.plan)
     ? { plan: meta.plan, interval: meta.interval === 'year' ? 'year' : 'month' }
     : null;
   const mapped = planFromLookupKey(price && price.lookup_key) || fromMeta;
@@ -358,16 +388,34 @@ async function syncSubscription(subscriptionId, { stripe, store, hintRestaurantI
   const change = planChange(state, restaurant, now);
   if (change.action === 'ignore') return `ignored_${change.reason}`;
 
+  /* Duas assinaturas em vigor para o mesmo negócio (dois Checkouts abertos
+   * em paralelo): a Stripe cobraria as duas. O negócio fica com a mais
+   * recente e o admin é avisado para cancelar/reembolsar a outra. */
+  if (restaurant.stripe_subscription_id && restaurant.stripe_subscription_id !== state.subscriptionId &&
+      isLive(restaurant.subscription_status) && isLive(state.status)) {
+    await store.alert('duplicate_subscription', restaurant.id,
+      `Stripe: o negócio ${restaurant.id} tem duas assinaturas em vigor (${restaurant.stripe_subscription_id} e ${state.subscriptionId}). Cancelar e reembolsar uma delas.`);
+  }
+
   if (change.action === 'claim') {
     const r = await store.claimFoundersSeat(restaurant.id, change.fields);
     if (r && r.ok) return r.already ? 'founders_synced' : 'founders_claimed';
     if (r && r.reason === 'full') {
       /* Sem vaga entre o Checkout e o webhook: a assinatura fica (a Stripe
        * já cobrou ou vai cobrar), ligada ao negócio, e o admin decide
-       * (reembolso, mudar para Profesional ou abrir uma vaga). */
-      await store.updateRestaurant(restaurant.id, change.fields);
-      await store.alert('founders_full', restaurant.id,
-        `Stripe: o negócio ${restaurant.id} pagou o plano Fundadores (assinatura ${state.subscriptionId}) mas já não havia vagas (${r.taken}/${pricing.PLANS.founders.maxCustomers}). Resolver à mão.`);
+       * (reembolso, mudar para Profesional ou abrir uma vaga).
+       *
+       * O plano fica 'trial' mesmo que já fosse 'founders' (um Fundador
+       * cuja assinatura ficou em impago e perdeu a vaga): de outro modo a
+       * contagem passava das 50 vagas. */
+      const alreadyFlagged = restaurant.stripe_subscription_id === state.subscriptionId &&
+        restaurant.plan !== 'founders' && isLive(restaurant.subscription_status);
+      await store.updateRestaurant(restaurant.id, { ...change.fields, plan: 'trial' });
+      /* Um aviso por situação, não um por cada evento seguinte da mesma assinatura. */
+      if (!alreadyFlagged) {
+        await store.alert('founders_full', restaurant.id,
+          `Stripe: o negócio ${restaurant.id} pagou o plano Fundadores (assinatura ${state.subscriptionId}) mas já não havia vagas (${r.taken}/${pricing.PLANS.founders.maxCustomers}). Resolver à mão.`);
+      }
       return 'founders_full';
     }
     throw new Error(`claim_founders_seat recusou: ${(r && r.reason) || 'sem resposta'}`);
@@ -411,18 +459,18 @@ async function handleEvent(event, { stripe, store, now = new Date() }) {
   }
 }
 
-/* Idempotência: o evento é reservado em stripe_events ANTES de ser tratado
- * (duas entregas simultâneas não o tratam duas vezes). Se falhar, a reserva
- * é desfeita e o webhook responde 500, para a Stripe tentar de novo. */
+/* Idempotência: um evento já registado em stripe_events não volta a ser
+ * tratado. O registo faz-se só DEPOIS de tratado com sucesso: reservar antes
+ * e desfazer em caso de erro perdia o evento para sempre quando a função era
+ * terminada a meio (tempo limite da Vercel) — a reserva ficava e as novas
+ * tentativas da Stripe davam «duplicate». Duas entregas simultâneas podem
+ * correr as duas, o que não faz mal: o tratamento relê a assinatura na
+ * Stripe e a vaga Fundadores é atribuída de forma atómica. */
 async function processEvent(event, deps) {
-  const fresh = await deps.store.claimEvent(event.id, event.type);
-  if (!fresh) return 'duplicate';
-  try {
-    return await handleEvent(event, deps);
-  } catch (err) {
-    await deps.store.releaseEvent(event.id).catch(() => {});
-    throw err;
-  }
+  if (await deps.store.eventSeen(event.id)) return 'duplicate';
+  const outcome = await handleEvent(event, deps);
+  await deps.store.recordEvent(event.id, event.type);
+  return outcome;
 }
 
 /* ------------------------------------------------------------------ *
@@ -438,16 +486,15 @@ function supabaseStore() {
   const webhookReq = { method: 'POST', path: '/webhooks/stripe', headers: {} };
 
   return {
-    async claimEvent(id, type) {
+    async eventSeen(id) {
+      return Boolean(await one(sb().from('stripe_events').select('id').eq('id', String(id).slice(0, 255)), 'evento Stripe'));
+    },
+    /* Outra entrega do mesmo evento pode ter acabado primeiro (23505): ok. */
+    async recordEvent(id, type) {
       const { error } = await sb().from('stripe_events').insert({
         id: String(id).slice(0, 255), type: String(type || '').slice(0, 120)
       });
-      if (!error) return true;
-      if (error.code === '23505') return false;
-      throw new Error(`Supabase: stripe_events — ${error.message}`);
-    },
-    async releaseEvent(id) {
-      await run(sb().from('stripe_events').delete().eq('id', String(id)), 'libertar evento Stripe');
+      if (error && error.code !== '23505') throw new Error(`Supabase: stripe_events — ${error.message}`);
     },
     getRestaurant(id) {
       return one(sb().from('restaurants').select(RESTAURANT_BILLING_COLUMNS).eq('id', id), 'negócio (Stripe)');
@@ -523,6 +570,9 @@ module.exports = {
   resolvePrice,
   checkoutTrialEnd,
   checkoutSessionParams,
+  portalSessionParams,
+  liveSubscriptionFor,
+  PRODUCT_ID,
   ensureCustomer,
   subscriptionState,
   planChange,

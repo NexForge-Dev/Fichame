@@ -38,8 +38,8 @@ function memStore(restaurants = [], { maxFounders = pricing.PLANS.founders.maxCu
     .filter((r) => r.id !== exceptId && r.plan === 'founders' && billing.isLive(r.subscription_status)).length;
   return {
     rows, calls, events,
-    async claimEvent(id) { if (events.has(id)) return false; events.add(id); return true; },
-    async releaseEvent(id) { events.delete(id); },
+    async eventSeen(id) { return events.has(id); },
+    async recordEvent(id) { events.add(id); },
     async getRestaurant(id) { return rows.get(Number(id)) || null; },
     async restaurantByCustomer(c) { return [...rows.values()].find((r) => r.stripe_customer_id === c) || null; },
     async updateRestaurant(id, fields) { calls.updates.push({ id, fields }); Object.assign(rows.get(id), fields); },
@@ -84,11 +84,15 @@ function sub({ id = 'sub_1', customer = 'cus_1', status = 'active', plan = 'pro'
 }
 
 function mockStripe(subs = {}) {
-  const calls = { retrieve: [], list: [] };
+  const calls = { retrieve: [], list: [], subList: [] };
   return {
     calls,
     webhooks: realStripe.webhooks,
     subscriptions: {
+      async list(params) {
+        calls.subList.push(params);
+        return { data: Object.values(subs).filter((s) => s && s.customer === params.customer) };
+      },
       async retrieve(id) {
         calls.retrieve.push(id);
         if (!subs[id]) throw Object.assign(new Error('No such subscription'), { type: 'StripeInvalidRequestError' });
@@ -333,7 +337,7 @@ test('webhook: cancelada volta a trial; cliente diferente é ignorado; fatura fa
   assert.equal(await billing.processEvent(evt('customer.created', {}), deps), 'ignored');
 });
 
-test('webhook: idempotente (evento repetido não volta a correr) e liberta o evento se falhar', async () => {
+test('webhook: idempotente (evento repetido não volta a correr) e só fica registado depois de tratado', async () => {
   const store = memStore([{ id: 1, stripe_customer_id: 'cus_1' }]);
   const stripe = mockStripe({ sub_1: sub() });
   const e = evt('customer.subscription.updated', { id: 'sub_1' }, 'evt_fixo');
@@ -475,4 +479,99 @@ test('webhook: assinatura de outro produto (mesma conta Stripe) é ignorada em q
     assert.equal(out, 'ignored_not_fichame', status);
     assert.equal(JSON.stringify(store.rows.get(1)), before, `negócio intacto (${status})`);
   }
+});
+
+/* ------------------------------------------------------------------ *
+ * Auditoria 2026-11-02
+ * ------------------------------------------------------------------ */
+test('subscriptionState: metadados só contam para um preço do produto Fíchame', () => {
+  const foreign = {
+    id: 'sub_f', customer: 'cus_f', status: 'active', metadata: { plan: 'pro', interval: 'month', restaurant_id: '1' },
+    items: { data: [{ price: { id: 'price_o', product: 'prod_outro', lookup_key: null, recurring: { interval: 'month' } } }] }
+  };
+  assert.equal(billing.subscriptionState(foreign).plan, null, 'outro produto com metadata.plan=pro');
+  const own = { ...foreign, items: { data: [{ price: { id: 'price_m', product: billing.PRODUCT_ID, lookup_key: null, recurring: { interval: 'month' } } }] } };
+  assert.equal(billing.subscriptionState(own).plan, 'pro', 'preço do Fíchame sem lookup_key');
+});
+
+test('webhook: outro produto com metadata.plan e client_reference_id numérico não toca num negócio novo', async () => {
+  const store = memStore([{ id: 1 }]);
+  const foreign = {
+    id: 'sub_cv', customer: 'cus_cv', status: 'active', metadata: { plan: 'pro' },
+    items: { data: [{ price: { id: 'price_cv', product: 'prod_cv', recurring: { interval: 'month' } } }] }
+  };
+  const out = await billing.processEvent(evt('checkout.session.completed', {
+    mode: 'subscription', subscription: 'sub_cv', client_reference_id: '1', metadata: {}
+  }), { stripe: mockStripe({ sub_cv: foreign }), store });
+  assert.equal(out, 'ignored_not_fichame');
+  assert.equal(store.rows.get(1).plan, 'trial');
+  assert.equal(store.calls.updates.length, 0);
+});
+
+test('webhook: evento que falha não fica registado e uma nova tentativa trata-o', async () => {
+  const store = memStore([{ id: 1, stripe_customer_id: 'cus_1' }]);
+  const subs = {};
+  const stripe = mockStripe(subs);
+  const e = evt('customer.subscription.updated', { id: 'sub_1' }, 'evt_retry');
+  await assert.rejects(billing.processEvent(e, { stripe, store }));
+  assert.equal(store.events.has('evt_retry'), false);
+  subs.sub_1 = sub();
+  assert.equal(await billing.processEvent(e, { stripe, store }), 'subscription_synced');
+  assert.equal(store.events.has('evt_retry'), true);
+});
+
+test('webhook: segunda assinatura em vigor para o mesmo negócio avisa o admin', async () => {
+  const store = memStore([{ id: 1, plan: 'pro', stripe_customer_id: 'cus_1', stripe_subscription_id: 'sub_a', subscription_status: 'active' }]);
+  const stripe = mockStripe({ sub_b: sub({ id: 'sub_b' }) });
+  assert.equal(await billing.processEvent(evt('customer.subscription.created', { id: 'sub_b' }), { stripe, store }), 'subscription_synced');
+  assert.equal(store.calls.alerts.length, 1);
+  assert.equal(store.calls.alerts[0].kind, 'duplicate_subscription');
+});
+
+test('webhook: Fundador que perdeu a vaga (impago) e volta a pagar sem vagas não passa das 50', async () => {
+  const store = memStore([
+    { id: 1, plan: 'founders', stripe_customer_id: 'cus_1', stripe_subscription_id: 's1', subscription_status: 'unpaid' },
+    { id: 2, plan: 'founders', stripe_customer_id: 'cus_2', stripe_subscription_id: 's2', subscription_status: 'active' }
+  ], { maxFounders: 1 });
+  const stripe = mockStripe({ s1: sub({ id: 's1', customer: 'cus_1', rid: '1', plan: 'founders' }) });
+  const deps = { stripe, store };
+  assert.equal(await billing.processEvent(evt('customer.subscription.updated', { id: 's1' }), deps), 'founders_full');
+  assert.equal(store.rows.get(1).plan, 'trial');
+  assert.equal(await store.foundersSeatsTaken(), 1);
+  assert.equal(store.calls.alerts.filter((a) => a.kind === 'founders_full').length, 1);
+  /* Eventos seguintes da mesma assinatura não repetem o aviso. */
+  assert.equal(await billing.processEvent(evt('invoice.paid', { id: 'in_9', subscription: 's1' }), deps), 'founders_full');
+  assert.equal(store.calls.alerts.filter((a) => a.kind === 'founders_full').length, 1);
+});
+
+test('Checkout: assinatura do Fíchame já em vigor na Stripe é detetada (outra aba)', async () => {
+  const stripe = mockStripe({
+    s_live: sub({ id: 's_live', customer: 'cus_9' }),
+    s_old: sub({ id: 's_old', customer: 'cus_8', status: 'canceled' })
+  });
+  assert.equal((await billing.liveSubscriptionFor('cus_9', { stripe })).id, 's_live');
+  assert.equal(await billing.liveSubscriptionFor('cus_8', { stripe }), null);
+  assert.equal(await billing.liveSubscriptionFor('', { stripe }), null);
+});
+
+test('portal: configuração própria do Fíchame quando definida', () => {
+  const base = billing.portalSessionParams({ customerId: 'cus_1', lang: 'pt', appUrl: 'https://x.es', configuration: '' });
+  assert.deepEqual(base, { customer: 'cus_1', return_url: 'https://x.es/panel/plan', locale: 'pt' });
+  const own = billing.portalSessionParams({ customerId: 'cus_1', lang: 'xx', appUrl: 'https://x.es', configuration: 'bpc_1' });
+  assert.equal(own.configuration, 'bpc_1');
+  assert.equal(own.locale, 'es');
+});
+
+test('config: chave real recusada em preview/development salvo STRIPE_ALLOW_LIVE=1', () => {
+  const { execFileSync } = require('node:child_process');
+  const run = (env) => JSON.parse(execFileSync(process.execPath, ['-e',
+    "const c=require('./src/config');c.assertConfig();console.log(JSON.stringify(c.billingEnabled))"], {
+    cwd: require('node:path').join(__dirname, '..'),
+    env: { ...process.env, STRIPE_SECRET_KEY: 'sk_live_unit_nao_e_real', STRIPE_ALLOW_LIVE: '', ...env },
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe']
+  }).trim().split('\n').pop());
+  assert.equal(run({ VERCEL_ENV: 'preview' }), false);
+  assert.equal(run({ VERCEL_ENV: 'preview', STRIPE_ALLOW_LIVE: '1' }), true);
+  assert.equal(run({ VERCEL_ENV: 'production', APP_URL: 'https://exemplo.es' }), true);
 });

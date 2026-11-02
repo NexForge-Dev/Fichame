@@ -1316,11 +1316,9 @@ async function withStripe(req, res, fn) {
 }
 
 async function redirectToPortal(req, res, customerId) {
-  const session = await withStripe(req, res, () => billing.getStripe().billingPortal.sessions.create({
-    customer: customerId,
-    return_url: `${config.appUrl}/panel/plan`,
-    locale: ['es', 'en', 'pt'].includes(req.lang) ? req.lang : 'es'
-  }));
+  const session = await withStripe(req, res, () => billing.getStripe().billingPortal.sessions.create(
+    billing.portalSessionParams({ customerId, lang: req.lang })
+  ));
   if (!session) return null;
   logSecurity('plan_portal_aberto', `rid=${restaurantId(req)}`, req.ip, { userId: req.user.id, restaurantId: restaurantId(req) });
   return res.redirect(303, session.url);
@@ -1373,8 +1371,15 @@ router.post('/panel/plan/checkout', planLimiter, async (req, res) => {
     return planBack(res, 'Ya no quedan plazas del plan Fundadores. Puedes elegir el plan Profesional.');
   }
 
+  let alreadySubscribed = false;
   const session = await withStripe(req, res, async () => {
     const price = await billing.resolvePrice(plan, interval);
+    /* Assinatura acabada de criar noutra aba e ainda sem webhook: vai para
+     * o portal em vez de abrir um segundo Checkout (duas cobranças). */
+    if (r.stripe_customer_id && await billing.liveSubscriptionFor(r.stripe_customer_id)) {
+      alreadySubscribed = true;
+      return null;
+    }
     const customerId = await billing.ensureCustomer(r, { lang: req.lang, fallbackEmail: req.user.email });
     const params = billing.checkoutSessionParams({
       restaurant: r, plan, interval, priceId: price.id, customerId, lang: req.lang
@@ -1396,6 +1401,7 @@ router.post('/panel/plan/checkout', planLimiter, async (req, res) => {
     });
     return created;
   });
+  if (alreadySubscribed) return redirectToPortal(req, res, r.stripe_customer_id);
   if (!session) return null;
   return res.redirect(303, session.url);
 });

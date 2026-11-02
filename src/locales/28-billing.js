@@ -133,5 +133,11 @@ module.exports = {
   'Todavía no tienes ninguna suscripción.': {
     en: 'You don’t have a subscription yet.',
     pt: 'Ainda não tens nenhuma subscrição.'
+  },
+  'Redirigiendo al pago…': { en: 'Redirecting to payment…', pt: 'A redirecionar para o pagamento…' },
+  'Abriendo el portal…': { en: 'Opening the portal…', pt: 'A abrir o portal…' },
+  'Hemos recibido tu suscripción y estamos revisando tu plan. Te escribiremos en breve; si tienes dudas, contacta con {email}.': {
+    en: 'We have received your subscription and are reviewing your plan. We will write to you shortly; if you have any questions, contact {email}.',
+    pt: 'Recebemos a tua subscrição e estamos a rever o teu plano. Vamos escrever-te em breve; se tiveres dúvidas, contacta {email}.'
   }
 };

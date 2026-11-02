@@ -19,7 +19,7 @@
 const config = require('../config');
 const billing = require('../lib/billing');
 
-const PRODUCT_ID = 'fichame';
+const PRODUCT_ID = billing.PRODUCT_ID;
 const PRODUCT_NAME = 'Fíchame';
 
 async function findOrCreateProduct(stripe) {
@@ -67,6 +67,39 @@ async function ensurePrice(stripe, spec) {
   return { price, created: true };
 }
 
+/* Configuração do Customer Portal só do Fíchame (a por omissão é da conta,
+ * partilhada com outros produtos): cancelar no fim do período, trocar só
+ * entre Profesional mensal e anual, cartão, faturas, morada e NIF.
+ * Reconhecida pelos metadados app=fichame; atualizada se já existir. */
+async function ensurePortalConfiguration(stripe, proPriceIds, appUrl) {
+  const fields = {
+    business_profile: {
+      privacy_policy_url: `${appUrl}/privacidad`,
+      terms_of_service_url: `${appUrl}/terminos`
+    },
+    default_return_url: `${appUrl}/panel/plan`,
+    features: {
+      customer_update: { enabled: true, allowed_updates: ['address', 'name', 'tax_id'] },
+      invoice_history: { enabled: true },
+      payment_method_update: { enabled: true },
+      subscription_cancel: { enabled: true, mode: 'at_period_end' },
+      subscription_update: {
+        enabled: true,
+        default_allowed_updates: ['price'],
+        proration_behavior: 'create_prorations',
+        products: [{ product: PRODUCT_ID, prices: proPriceIds }]
+      }
+    },
+    metadata: { app: 'fichame' }
+  };
+  const { data } = await stripe.billingPortal.configurations.list({ active: true, limit: 100 });
+  const existing = (data || []).find((c) => c.metadata && c.metadata.app === 'fichame');
+  if (existing) {
+    return { portal: await stripe.billingPortal.configurations.update(existing.id, fields), created: false };
+  }
+  return { portal: await stripe.billingPortal.configurations.create(fields), created: true };
+}
+
 async function main() {
   console.log('');
   console.log('  Fíchame — preços na Stripe');
@@ -98,9 +131,11 @@ async function main() {
   const { created } = await findOrCreateProduct(stripe);
   console.log(`  ✓ produto «${PRODUCT_NAME}» (${PRODUCT_ID})${created ? ' criado' : ''}`);
 
+  const proPrices = [];
   for (const spec of billing.priceSpecs()) {
     try {
       const { price, created: isNew } = await ensurePrice(stripe, spec);
+      if (spec.plan === 'pro') proPrices.push(price.id);
       const every = spec.interval === 'year' ? 'ano' : 'mês';
       console.log(`  ✓ ${spec.lookupKey}: ${(spec.unitAmount / 100).toFixed(2)} ${spec.currency.toUpperCase()}/${every} + IVA → ${price.id}${isNew ? ' (novo)' : ''}`);
     } catch (err) {
@@ -110,6 +145,16 @@ async function main() {
   }
 
   const appUrl = config.appUrl;
+  if (proPrices.length === 2) {
+    try {
+      const { portal, created: portalNew } = await ensurePortalConfiguration(stripe, proPrices, appUrl);
+      console.log(`  ✓ portal de cliente do Fíchame → ${portal.id}${portalNew ? ' (novo)' : ''}`);
+      console.log(`    Define STRIPE_PORTAL_CONFIGURATION_ID=${portal.id} na Vercel.`);
+    } catch (err) {
+      console.error(`  ✗ portal de cliente: ${err.message}`);
+      process.exitCode = 1;
+    }
+  }
   console.log('');
   console.log('  Falta fazer no painel da Stripe (Developers → Webhooks → Add endpoint):');
   console.log(`    URL: ${appUrl}/webhooks/stripe`);
@@ -117,8 +162,6 @@ async function main() {
   for (const e of billing.WEBHOOK_EVENTS) console.log(`      - ${e}`);
   console.log('    Copia o «Signing secret» (whsec_…) para STRIPE_WEBHOOK_SECRET na Vercel.');
   console.log('');
-  console.log('  E ainda (Settings → Billing → Customer portal): ativar o portal, cancelar no');
-  console.log('  fim do período e permitir trocar entre Profesional mensal e anual.');
   if (config.stripe.automaticTax) {
     console.log('  STRIPE_AUTOMATIC_TAX=1: regista o IVA espanhol em Stripe Tax (Settings → Tax → Registrations).');
   } else if (!config.stripe.taxRateId) {
@@ -134,4 +177,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { ensurePrice, findOrCreateProduct, PRODUCT_ID };
+module.exports = { ensurePrice, findOrCreateProduct, ensurePortalConfiguration, PRODUCT_ID };
