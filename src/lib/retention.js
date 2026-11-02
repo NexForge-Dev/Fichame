@@ -44,6 +44,9 @@ const RIGHTS_REQUEST_DAYS = envDays('RIGHTS_REQUEST_DAYS', 1095);
  * suporte, sem razão para ficarem mais tempo. */
 const ERROR_EVENT_DAYS = envDays('ERROR_EVENT_DAYS', 90);
 const REPORT_DAYS = envDays('REPORT_DAYS', 365);
+/* Ids de eventos da Stripe já tratados (0014). A Stripe só reenvia durante
+ * 3 dias; 90 chega com folga e a tabela não cresce para sempre. */
+const STRIPE_EVENT_DAYS = 90;
 
 /* O .in() do PostgREST vai na query string do GET: com 1000 caminhos o URL
  * passava os ~66 KB e o gateway recusava-o. Em blocos de 100 fica < 8 KB. */
@@ -146,6 +149,7 @@ async function runCleanup({ apply = false, log = () => {} } = {}, report = { app
 
   report.emailChanges = await purgeEmailChanges(apply);
   report.errorEvents = await purgeOlderThan('error_events', ERROR_EVENT_DAYS, apply);
+  report.stripeEvents = await purgeOlderThan('stripe_events', STRIPE_EVENT_DAYS, apply);
   report.problemReports = await purgeOlderThan('problem_reports', REPORT_DAYS, apply,
     (q) => q.eq('status', 'resuelto'), 'updated_at');
   log(`erros do servidor > ${ERROR_EVENT_DAYS} d: ${report.errorEvents} · reportes resolvidos > ${REPORT_DAYS} d: ${report.problemReports}`);
