@@ -331,7 +331,12 @@ async function syncSubscription(subscriptionId, { stripe, store, hintRestaurantI
   const sub = await stripe.subscriptions.retrieve(subscriptionId);
   const state = subscriptionState(sub);
 
-  const rid = state.restaurantId || (/^\d{1,18}$/.test(String(hintRestaurantId || '')) ? String(hintRestaurantId) : null);
+  /* A conta Stripe é partilhada com outros produtos (CV Match, AutoManager…):
+   * todos os webhooks recebem todos os eventos. Uma assinatura que não é de
+   * um preço do Fíchame nunca toca num negócio, seja qual for o estado. */
+  if (!state.plan) return 'ignored_not_fichame';
+
+  const rid =state.restaurantId || (/^\d{1,18}$/.test(String(hintRestaurantId || '')) ? String(hintRestaurantId) : null);
   let restaurant = rid ? await store.getRestaurant(Number(rid)) : null;
   if (!restaurant && state.customerId) restaurant = await store.restaurantByCustomer(state.customerId);
   if (!restaurant) return 'ignored_unknown_restaurant';

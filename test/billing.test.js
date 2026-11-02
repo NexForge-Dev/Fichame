@@ -457,3 +457,22 @@ test('config: nenhuma chave aparece nos avisos', () => {
   assert.match(all, /chave de teste em produção/);
   assert.ok(!all.includes(process.env.STRIPE_SECRET_KEY) && !all.includes(process.env.STRIPE_WEBHOOK_SECRET));
 });
+
+/* A conta Stripe é partilhada com outros produtos: os seus eventos chegam
+ * também a este webhook e nunca podem tocar num negócio do Fíchame. */
+test('webhook: assinatura de outro produto (mesma conta Stripe) é ignorada em qualquer estado', async () => {
+  for (const status of ['canceled', 'past_due', 'active']) {
+    const store = memStore([{ id: 1, plan: 'pro', stripe_customer_id: 'cus_1', stripe_subscription_id: 'sub_1', subscription_status: 'active' }]);
+    const before = JSON.stringify(store.rows.get(1));
+    const foreign = {
+      id: 'sub_cvmatch', customer: 'cus_other', status, metadata: {},
+      items: { data: [{ current_period_end: 1893456000, price: { id: 'price_x', lookup_key: 'cvmatch_pro_monthly', unit_amount: 2990, currency: 'brl', recurring: { interval: 'month' } } }] }
+    };
+    const stripe = mockStripe({ sub_cvmatch: foreign });
+    const out = await billing.processEvent(evt('checkout.session.completed', {
+      mode: 'subscription', subscription: 'sub_cvmatch', customer: 'cus_other', client_reference_id: '1', metadata: {}
+    }), { stripe, store });
+    assert.equal(out, 'ignored_not_fichame', status);
+    assert.equal(JSON.stringify(store.rows.get(1)), before, `negócio intacto (${status})`);
+  }
+});
