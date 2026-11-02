@@ -9,7 +9,7 @@ module.exports = {
   'Candidaturas': { en: 'Applications', pt: 'Candidaturas' },
   'Candidatos': { en: 'Candidates', pt: 'Candidatos' },
   'Vacantes': { en: 'Openings', pt: 'Vagas' },
-  'Avisos': { en: 'Notifications', pt: 'Avisos' },
+  'Avisos': { en: 'Alerts', pt: 'Avisos' },
   'Derechos RGPD': { en: 'GDPR rights', pt: 'Direitos RGPD' },
   'Derechos': { en: 'Rights', pt: 'Direitos' },
   'Mi negocio': { en: 'My business', pt: 'O meu negócio' },

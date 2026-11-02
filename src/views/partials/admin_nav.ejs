@@ -18,7 +18,7 @@ var adminItems = [
     <nav class="appnav">
       <% adminItems.forEach(function(item) { %>
         <a class="<%= (item.exact ? path === item.href : path.indexOf(item.href) === 0) ? 'active' : '' %>"
-           href="<%= item.href %>">
+           href="<%= item.href %>" title="<%= item.label %>" aria-label="<%= item.label %>">
           <%- icon(item.icon) %>
           <span><%= item.label %></span>
         </a>
