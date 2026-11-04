@@ -230,7 +230,7 @@
         <h2><%= tr('Conservación de datos') %></h2>
         <% if (a.legal_hold) { %>
           <p class="small"><span class="badge amber"><%= tr('Bloqueo activo') %></span> <%= a.legal_hold_reason %></p>
-          <p class="help"><%= tr('Mientras esté activo, la candidatura no se borrará automáticamente ni se podrá eliminar.') %></p>
+          <p class="help"><%= autoRetention ? tr('Mientras esté activo, la candidatura no se borrará automáticamente ni se podrá eliminar.') : tr('Mientras esté activo, la candidatura no se podrá eliminar.') %></p>
           <form action="/panel/candidaturas/<%= a.id %>/bloqueo" method="post">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="accion" value="retirar">
@@ -238,7 +238,7 @@
           </form>
         <% } else { %>
           <p class="small">
-            <% if (a.retention_until) { %><%= tr('Se borrará automáticamente a partir del') %> <strong><%= fmtDate(a.retention_until) %></strong><% } else { %><%= tr('Sin fecha de borrado calculada') %><% } %>.
+            <% if (a.retention_until && autoRetention) { %><%= tr('Se borrará automáticamente a partir del') %> <strong><%= fmtDate(a.retention_until) %></strong><% } else if (a.retention_until) { %><%= tr('Plazo de conservación hasta el') %> <strong><%= fmtDate(a.retention_until) %></strong>. <%= tr('Al vencer, elimínala desde esta página: el borrado automático no está activado') %><% } else { %><%= tr('Sin fecha de borrado calculada') %><% } %>.
           </p>
           <details>
             <summary class="small"><%= tr('Bloquear el borrado (obligación legal o reclamación)…') %></summary>

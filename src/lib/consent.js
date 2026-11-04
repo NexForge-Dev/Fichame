@@ -22,7 +22,7 @@
  */
 
 /* Aviso informativo (1.ª camada no formulário + /r/:slug/privacidad). */
-const PRIVACY_NOTICE_VERSION = '2026-10';
+const PRIVACY_NOTICE_VERSION = '2026-11';
 
 /* Texto do consentimento de futuras oportunidades. */
 const CONSENT_VERSION = 'v3-2026-10';

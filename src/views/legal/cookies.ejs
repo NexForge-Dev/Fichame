@@ -3,13 +3,13 @@
 
 <main class="container-narrow public-main legal">
   <h1>Política de cookies</h1>
-  <p class="dim small">Versión <%= version %></p>
+  <p class="dim small">Versión <%= version %> · Última actualización: <%= legalUpdated %></p>
 
   <%- include('draft_banner') %>
 
   <div class="card">
     <h2>Qué usamos</h2>
-    <p>Fíchame usa <strong>cookies técnicas</strong>, estrictamente necesarias (la de sesión y, solo si entras con Google, dos de corta duración), y otra de <strong>preferencia de idioma</strong> que solo se instala si eliges un idioma. No usamos cookies de analítica, publicidad, redes sociales ni de terceros, ni otras tecnologías de seguimiento (píxeles, huella digital del navegador, almacenamiento local con fines de seguimiento).</p>
+    <p>Fíchame usa <strong>cookies técnicas</strong>, estrictamente necesarias (la de sesión y, solo si entras con Google, dos de corta duración), y otra de <strong>preferencia de idioma</strong> que solo se instala si eliges un idioma. No usamos cookies de analítica, publicidad, redes sociales ni de terceros, ni otras tecnologías de seguimiento (píxeles, huella digital del navegador, almacenamiento local con fines de seguimiento). Las métricas internas del producto se envían desde nuestro servidor, sin cookies ni scripts en tu navegador (ver la <a href="/privacidad#metricas">política de privacidad</a>).</p>
     <div class="table-wrap">
       <table class="table">
         <thead><tr><th>Nombre</th><th>Titular</th><th>Finalidad</th><th>Duración</th></tr></thead>
@@ -17,7 +17,7 @@
           <tr>
             <td><code><%= cookieName %></code></td>
             <td>Fíchame (propia)</td>
-            <td>Mantener la sesión segura: protege los formularios contra peticiones falsificadas (CSRF) y, si inicias sesión como negocio, te mantiene identificado. Contiene un identificador aleatorio, sin datos personales.</td>
+            <td>Mantener la sesión segura: protege los formularios contra peticiones falsificadas (CSRF) y, si inicias sesión como negocio, te mantiene identificado. Contiene un identificador aleatorio, no tu nombre ni tu email.</td>
             <td>Visitantes y candidatos: <%= anonHours %> horas. Cuentas de negocio: hasta <%= sessionDays %> días o hasta cerrar sesión.</td>
           </tr>
           <tr>
@@ -43,10 +43,12 @@
     </div>
   </div>
 
+  <% if (billingEnabled) { %>
   <div class="card">
     <h2>Pagos con Stripe</h2>
     <p>Cuando un negocio contrata o gestiona su plan, el pago se hace en las páginas de Stripe (checkout.stripe.com y billing.stripe.com), fuera de Fíchame. Fíchame no carga scripts de Stripe, por lo que <strong>Stripe no instala cookies en nuestro dominio</strong>; las que use en sus propias páginas se rigen por la <a href="https://stripe.com/es/cookie-settings" target="_blank" rel="noopener">política de cookies de Stripe</a>.</p>
   </div>
+  <% } %>
 
   <div class="card">
     <h2>¿Por qué no te pedimos consentimiento?</h2>

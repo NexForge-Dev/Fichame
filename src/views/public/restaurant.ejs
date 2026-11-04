@@ -201,7 +201,7 @@
       <%# A informação de privacidade e o consentimento ficam em espanhol (versão oficial). %>
       <% if (lang !== 'es') { %><p class="help"><%= tr('Los textos legales (privacidad, términos y consentimientos) se muestran en español, que es su versión oficial.') %></p><% } %>
 
-      <%- include('privacy_layer', { purpose: 'gestionar tu candidatura en este proceso de selección', basis: 'La aplicación, a petición tuya, de medidas precontractuales: tú nos envías la candidatura para optar a un empleo (art. 6.1.b RGPD). No necesitas dar ningún consentimiento para candidatarte.', keep: 'Mientras el proceso siga abierto y, como máximo, ' + retention.inactive + ' sin actividad. Cuando el proceso termine, se borran en ' + retention.closed + ', salvo que marques la casilla de abajo.' }) %>
+      <%- include('privacy_layer', { purpose: 'gestionar tu candidatura en este proceso de selección', basis: 'La aplicación, a petición tuya, de medidas precontractuales: tú nos envías la candidatura para optar a un empleo (art. 6.1.b RGPD). No necesitas dar ningún consentimiento para candidatarte.', keep: autoRetention ? 'Mientras el proceso siga abierto y, como máximo, ' + retention.inactive + ' sin actividad. Cuando el proceso termine, se borran en ' + retention.closed + ', salvo que marques la casilla de abajo.' : 'Mientras el proceso siga abierto, con un plazo de ' + retention.inactive + ' sin actividad. Cuando el proceso termine, el plazo es de ' + retention.closed + ', salvo que marques la casilla de abajo. Al vencer, el establecimiento debe eliminarlos desde su panel.' }) %>
 
       <label class="check">
         <input type="checkbox" name="consentimiento_futuro" value="1" <%= form.consent_futuro ? 'checked' : '' %>>

@@ -18,8 +18,8 @@
         <% if (path !== '/panel/plan') { %><a href="/panel/plan"><%= tr('Elegir plan') %></a><% } %></span>
       <% } else { %>
       <span><%= trial.daysLeft === 1
-        ? tr('Te queda {n} día de prueba gratis. Después podrás elegir el plan Fundadores ({price}/mes, IVA no incluido) o Profesional.', trialVars)
-        : tr('Te quedan {n} días de prueba gratis. Después podrás elegir el plan Fundadores ({price}/mes, IVA no incluido) o Profesional.', trialVars) %>
+        ? tr('Te queda {n} día de prueba gratis. El pago online aún no está activo: no se te cobrará nada.', trialVars)
+        : tr('Te quedan {n} días de prueba gratis. El pago online aún no está activo: no se te cobrará nada.', trialVars) %>
         <% if (path !== '/panel/plan') { %><a href="/panel/plan"><%= tr('Ver planes') %></a><% } %></span>
       <% } %>
     <% } else if (payOnline) { %>

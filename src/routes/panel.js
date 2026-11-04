@@ -25,7 +25,7 @@ const storage = require('../lib/storage');
 const { QR_OPTIONS } = require('../lib/qr');
 const { background } = require('../lib/background');
 const analytics = require('../lib/analytics');
-const { TERMS_VERSION, TERMS_CHANGES, operator, termsPending, recordAcceptance } = require('../lib/legal');
+const { TERMS_VERSION, TERMS_CHANGES, privacyContact, termsPending, recordAcceptance } = require('../lib/legal');
 const {
   STATUSES, STATUS_KEYS, STATUS_GROUPS, AVAILABILITIES, ESTABLISHMENT_TYPES,
   CONTRACT_TYPES, WORK_SCHEDULES, statusLabel
@@ -62,8 +62,10 @@ router.use('/panel', async (req, res, next) => {
   /* Só para avisos (nunca bloqueia): assinatura em vigor esconde o aviso da
    * prova; pagamento em atraso mostra um aviso para atualizar o cartão. */
   const sub = legal.status === 'fulfilled' && legal.value ? legal.value : {};
-  res.locals.subscriptionLive = billing.isLive(sub.subscription_status);
-  res.locals.paymentProblem = ['past_due', 'unpaid'].includes(sub.subscription_status);
+  /* Pagamento online desligado: não se mostra plano pago, cobrança nem falha
+   * de pagamento, mesmo que reste uma assinatura de testes na BD. */
+  res.locals.subscriptionLive = config.billingEnabled && billing.isLive(sub.subscription_status);
+  res.locals.paymentProblem = config.billingEnabled && ['past_due', 'unpaid'].includes(sub.subscription_status);
   next();
 });
 
@@ -1339,7 +1341,7 @@ router.get('/panel/plan', async (req, res) => {
     foundersSeatsLeft()
   ]);
   if (!r) return notFound(res);
-  const live = billing.isLive(r.subscription_status);
+  const live = config.billingEnabled && billing.isLive(r.subscription_status);
   res.render('panel/plan', {
     r,
     live,
@@ -1441,7 +1443,7 @@ router.get('/panel/terminos', async (req, res) => {
   );
   if (!r) return notFound(res);
   res.render('panel/terms', {
-    r, pending: termsPending(r), version: TERMS_VERSION, changes: TERMS_CHANGES, operator, query: req.query
+    r, pending: termsPending(r), version: TERMS_VERSION, changes: TERMS_CHANGES, privacyContact: privacyContact(), query: req.query
   });
 });
 

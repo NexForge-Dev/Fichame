@@ -1,4 +1,4 @@
-<%- include('../partials/head', { title: tr('Plan y facturación') }) %>
+<%- include('../partials/head', { title: billingEnabled ? tr('Plan y facturación') : tr('Plan') }) %>
 <%- include('../partials/panel_nav') %>
 <%
 /* Plano e faturação. Preços SEMPRE de src/lib/pricing.js; o estado vem do
@@ -21,7 +21,7 @@ var STATUS = {
 };
 var planNames = { trial: tr('Prueba gratis'), founders: tr('Plan Fundadores'), pro: tr('Plan Profesional') };
 var currentName = live ? (planNames[r.plan] || planNames.trial) : planNames.trial;
-var st = r.subscription_status ? STATUS[r.subscription_status] : null;
+var st = billingEnabled && r.subscription_status ? STATUS[r.subscription_status] : null;
 var showForms = billingEnabled && !termsPendingHere && !live;
 var foundersOpen = seatsLeft > 0;
 var accept = function (price, per) {
@@ -31,7 +31,7 @@ var accept = function (price, per) {
 
 <main class="container">
   <div class="page-title">
-    <h1><%= tr('Plan y facturación') %></h1>
+    <h1><%= billingEnabled ? tr('Plan y facturación') : tr('Plan') %></h1>
   </div>
 
   <%- include('../partials/flash') %>
@@ -60,10 +60,12 @@ var accept = function (price, per) {
     <% } else if (trialInfo) { %>
       <p class="muted small spaced-sm"><%= trialInfo.active
         ? tr('Tu prueba gratis termina el {date}.', { date: fmtDate(trialInfo.endsAt) })
-        : tr('Tu prueba gratis terminó el {date}. Puedes seguir usando Fíchame mientras eliges un plan.', { date: fmtDate(trialInfo.endsAt) }) %></p>
+        : billingEnabled
+          ? tr('Tu prueba gratis terminó el {date}. Puedes seguir usando Fíchame mientras eliges un plan.', { date: fmtDate(trialInfo.endsAt) })
+          : tr('Tu prueba gratis terminó el {date}. Puedes seguir usando Fíchame sin coste.', { date: fmtDate(trialInfo.endsAt) }) %></p>
     <% } %>
 
-    <% if (['past_due', 'unpaid', 'incomplete'].indexOf(r.subscription_status) !== -1) { %>
+    <% if (billingEnabled && ['past_due', 'unpaid', 'incomplete'].indexOf(r.subscription_status) !== -1) { %>
       <div class="notice-box">
         <strong><%= tr('No hemos podido cobrar tu suscripción.') %></strong>
         <p><%= tr('Revisa o cambia tu tarjeta en el portal de pagos. Mientras tanto puedes seguir usando Fíchame con normalidad.') %></p>
@@ -81,10 +83,10 @@ var accept = function (price, per) {
 
   <% if (!live) { %>
   <div class="card">
-    <h2><%= tr('Elige tu plan') %></h2>
+    <h2><%= billingEnabled ? tr('Elige tu plan') : tr('Planes previstos') %></h2>
 
     <% if (!billingEnabled) { %>
-      <p class="muted"><%= tr('El pago online se activará pronto. Mientras tanto puedes seguir usando Fíchame sin coste.') %></p>
+      <p class="muted"><%= tr('El pago online se activará pronto. Mientras tanto puedes seguir usando Fíchame sin coste.') %> <%= tr('Hoy no se puede contratar ningún plan ni se te cobrará nada.') %></p>
     <% } else if (termsPendingHere) { %>
       <div class="notice-box">
         <span><%= tr('Antes de contratar un plan, revisa y acepta los nuevos términos de uso.') %> <a href="/panel/terminos"><%= tr('Revisa los cambios y acéptalos') %></a>.</span>
@@ -97,12 +99,13 @@ var accept = function (price, per) {
 
     <ul class="pr-cards plan-cards">
       <li class="pr-card<%= foundersOpen ? ' is-featured' : '' %>">
-        <span class="pr-badge"><%= tr('Lanzamiento') %></span>
+        <span class="pr-badge"><%= billingEnabled ? tr('Lanzamiento') : tr('Próximamente') %></span>
         <h3 class="pr-name"><%= tr('Plan Fundadores') %></h3>
         <p class="pr-price"><span class="pr-amount"><%= fp(PL.founders.monthly) %></span><span class="pr-per"><%= tr('/mes') %></span></p>
         <p class="pr-vat"><%= tr('IVA no incluido') %></p>
         <p class="pr-text"><%= tr('Para los primeros {n} negocios que se unan durante el lanzamiento. Precio garantizado durante {months} meses desde que te unes.', { n: PL.founders.maxCustomers, months: PL.founders.lockMonths }) %></p>
-        <% if (foundersOpen) { %>
+        <% if (!billingEnabled) { %>
+        <% } else if (foundersOpen) { %>
           <p class="plan-seats"><%= seatsLeft === 1 ? tr('Queda {n} plaza.', { n: seatsLeft }) : tr('Quedan {n} plazas.', { n: seatsLeft }) %></p>
         <% } else { %>
           <p class="plan-seats"><%= tr('Las plazas del plan Fundadores se han agotado.') %></p>
@@ -154,7 +157,7 @@ var accept = function (price, per) {
       </li>
     </ul>
 
-    <p class="help"><%= tr('Precios en euros, IVA no incluido: el IVA se añade en el pago.') %> <% if (billingEnabled) { %><%= tr('El pago se hace en Stripe; Fíchame nunca ve ni guarda los datos de tu tarjeta.') %> <% } %><a href="/terminos" target="_blank" rel="noopener"><%= tr('Leer los Términos') %></a>.</p>
+    <p class="help"><%= billingEnabled ? tr('Precios en euros, IVA no incluido: el IVA se añade en el pago.') : tr('Precios en euros, IVA no incluido.') %> <% if (billingEnabled) { %><%= tr('El pago se hace en Stripe; Fíchame nunca ve ni guarda los datos de tu tarjeta.') %> <% } %><a href="/terminos" target="_blank" rel="noopener"><%= tr('Leer los Términos') %></a>.</p>
   </div>
   <% } %>
 </main>

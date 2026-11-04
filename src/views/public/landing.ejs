@@ -340,24 +340,28 @@
       id: 'precios',
       kicker: tr('Precios'),
       title: tr('Una cuota mensual sencilla y previsible.'),
-      lead: tr('Pensado para pequeños negocios en España: pagas una cuota fija al mes, sin cargos por candidatura recibida ni por vacante creada.'),
+      lead: billingEnabled
+        ? tr('Pensado para pequeños negocios en España: pagas una cuota fija al mes, sin cargos por candidatura recibida ni por vacante creada.')
+        : tr('Durante el lanzamiento solo está disponible la prueba gratis: {days} días, sin tarjeta y sin ningún cobro. Los planes de abajo son los precios previstos para cuando se active el pago online.', { days: pricing.TRIAL_DAYS }),
       cards: [
         {
           name: tr('{days} días gratis', { days: pricing.TRIAL_DAYS }),
           price: fp(PL.trial.monthly),
-          text: tr('Prueba Fíchame con tu negocio durante los primeros {days} días desde el registro. Sin tarjeta.', { days: pricing.TRIAL_DAYS })
+          text: tr('Prueba Fíchame con tu negocio durante los primeros {days} días desde el registro. Sin tarjeta.', { days: pricing.TRIAL_DAYS }),
+          featured: !billingEnabled
         },
         {
           name: tr('Plan Fundadores'),
-          badge: tr('Lanzamiento'),
+          badge: billingEnabled ? tr('Lanzamiento') : tr('Próximamente'),
           price: fp(PL.founders.monthly),
           per: tr('/mes'),
           vat: tr('IVA no incluido'),
           text: tr('Para los primeros {n} negocios que se unan durante el lanzamiento. Precio garantizado durante {months} meses desde que te unes.', { n: PL.founders.maxCustomers, months: PL.founders.lockMonths }),
-          featured: true
+          featured: billingEnabled
         },
         {
           name: tr('Plan Profesional'),
+          badge: billingEnabled ? '' : tr('Próximamente'),
           price: fp(PL.pro.monthly),
           per: tr('/mes'),
           vat: tr('IVA no incluido'),
@@ -378,9 +382,11 @@
         tr('Sin coste extra por candidato recibido ni por vacante creada')
       ],
       cta: tr('Empieza tus {days} días gratis', { days: pricing.TRIAL_DAYS }),
-      fine: [
+      fine: billingEnabled ? [
         tr('Antes de que termine la prueba podrás elegir un plan de pago desde tu panel. No se cobra nada sin tu aceptación expresa.'),
         tr('Los planes mensuales no tienen permanencia: puedes cancelarlos cuando quieras.')
+      ] : [
+        tr('El pago online aún no está activo: hoy no se puede contratar ningún plan y no se cobra nada. Cuando se active, nada se cobrará sin tu aceptación expresa.')
       ]
     };
   %>
@@ -401,7 +407,7 @@
         </details>
         <details>
           <summary><%= tr('¿Hace falta tarjeta para probarlo?') %></summary>
-          <p><%= tr('{days} días gratis desde el registro. Sin tarjeta.', { days: pricing.TRIAL_DAYS }) %> <%= tr('Antes de que termine la prueba podrás elegir un plan de pago desde tu panel. No se cobra nada sin tu aceptación expresa.') %></p>
+          <p><%= tr('{days} días gratis desde el registro. Sin tarjeta.', { days: pricing.TRIAL_DAYS }) %> <%= billingEnabled ? tr('Antes de que termine la prueba podrás elegir un plan de pago desde tu panel. No se cobra nada sin tu aceptación expresa.') : tr('El pago online aún no está activo: hoy no se puede contratar ningún plan y no se cobra nada. Cuando se active, nada se cobrará sin tu aceptación expresa.') %></p>
         </details>
         <details>
           <summary><%= tr('¿Qué pasa si dejo de contratar?') %></summary>

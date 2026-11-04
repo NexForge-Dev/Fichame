@@ -46,4 +46,4 @@ Ver la matriz final en el [informe de auditoría](../security/production-complia
 2. Los negocios clientes son empleadores que seleccionan personal **para sí mismos**.
 3. Fíchame no cobra a candidatos ni les ofrece servicios (verificado en el código: no hay cuentas de candidato).
 4. No hay otros entornos (producción en Vercel) con datos distintos de los observados; la base Supabase conectada contiene datos de prueba y al menos un negocio real.
-5. No existen hoy facturación, marketing, analítica ni IA (verificado en el código).
+5. Actualización 2026-11-04: no existen marketing ni IA. Sí existen métricas internas pseudónimas (panel NexForge, `/privacidad#metricas`) y facturación con Stripe, que solo funciona con las claves configuradas; el lanzamiento es solo con prueba gratuita y la facturación desactivada.

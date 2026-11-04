@@ -145,6 +145,129 @@ test('páginas legais: faixa de borrador até LEGAL_REVIEWED=1', async () => {
   }
 });
 
+/* Com a chave falsa não há rede: só muda o que as views mostram. */
+async function withBilling(fn) {
+  const config = require('../src/config');
+  config.billingEnabled = true;
+  try {
+    await fn();
+  } finally {
+    config.billingEnabled = false;
+  }
+}
+
+async function withRetention(fn) {
+  process.env.RETENTION_AUTO = '1';
+  try {
+    await fn();
+  } finally {
+    delete process.env.RETENTION_AUTO;
+  }
+}
+
+const body = async (path) => (await get(path)).text();
+
+test('/privacidad: proveedor genérico, métricas NexForge e art. 13 cobertos', async () => {
+  const html = await body('/privacidad');
+  assert.doesNotMatch(html, /\[PROVEEDOR/);
+  assert.match(html, /Proveedor de envío de correo electrónico/);
+  assert.doesNotMatch(html, /No usamos herramientas de analítica,/);
+  for (const event of ['signup_started', 'identity_linked', 'feature_used', 'candidatura_recebida', 'account_deleted']) {
+    assert.ok(html.includes(event), event);
+  }
+  for (const part of ['Agencia Española de Protección de Datos', 'menores de 14 años', 'Transferencias internacionales',
+    'Decisiones automatizadas', 'Última actualización: 04/11/2026', 'eu-west-1', 'nexforge.d4v29@gmail.com']) {
+    assert.ok(html.includes(part), part);
+  }
+  assert.match(html, /BORRADOR — REQUIERE REVISIÓN JURÍDICA/);
+  assert.match(await body('/terminos'), /está en análisis jurídico/);
+});
+
+test('retenção: nenhuma página promete supressão automática sem RETENTION_AUTO=1', async () => {
+  const dpaOff = await body('/encargo');
+  assert.match(dpaOff, /La supresión automática no está activada/);
+  assert.doesNotMatch(dpaOff, /La supresión automática está activada/);
+  assert.match(await body('/privacidad'), /La supresión automática no está activada/);
+  assert.match(await body('/terminos'), /la supresión automática no está activada/);
+
+  await withRetention(async () => {
+    const dpaOn = await body('/encargo');
+    assert.match(dpaOn, /La supresión automática está activada/);
+    assert.doesNotMatch(dpaOn, /no está activada/);
+    assert.doesNotMatch(await body('/privacidad'), /supresión automática no está activada/);
+  });
+});
+
+test('registos técnicos: sem CRON_SECRET os prazos são só previstos', async () => {
+  const secret = process.env.CRON_SECRET;
+  assert.doesNotMatch(await body('/privacidad'), /plazo previsto/);
+  delete process.env.CRON_SECRET;
+  try {
+    assert.match(await body('/privacidad'), /plazo previsto/);
+  } finally {
+    process.env.CRON_SECRET = secret;
+  }
+});
+
+test('pagamento online desligado: nenhum texto público sugere um checkout', async () => {
+  const terms = await body('/terminos');
+  assert.match(terms, /El pago online no está activado/);
+  assert.doesNotMatch(terms, /Stripe|checkout|se renueva automáticamente/i);
+  assert.doesNotMatch(await body('/privacidad'), /Stripe/);
+  assert.doesNotMatch(await body('/cookies'), /Stripe/);
+  for (const path of ['/', '/conoce']) {
+    const html = await body(path);
+    assert.match(html, /El pago online aún no está activo/, path);
+    assert.doesNotMatch(html, /podrás elegir un plan|cancela cuando quieras|puedes cancelarlos/, path);
+  }
+});
+
+test('pagamento online ligado: as condições de contratação voltam a aparecer', async () => {
+  await withBilling(async () => {
+    const terms = await body('/terminos');
+    assert.match(terms, /Stripe Payments Europe/);
+    assert.match(terms, /se renueva automáticamente/);
+    assert.doesNotMatch(terms, /El pago online no está activado/);
+    assert.match(await body('/privacidad'), /Stripe Payments Europe/);
+    assert.match(await body('/cookies'), /Pagos con Stripe/);
+    assert.match(await body('/'), /podrás elegir un plan de pago/);
+  });
+});
+
+test('dados do operador: basta definir OPERATOR_* para os marcadores desaparecerem', () => {
+  const { execFileSync } = require('node:child_process');
+  const script = `
+    const { createApp } = require('./src/app');
+    const server = createApp().listen(0, '127.0.0.1', async () => {
+      const base = 'http://127.0.0.1:' + server.address().port;
+      const out = [];
+      for (const p of ['/terminos', '/privacidad', '/encargo']) {
+        out.push(await (await fetch(base + p)).text());
+      }
+      server.close();
+      console.log(JSON.stringify(out));
+      process.exit(0);
+    });`;
+  const out = execFileSync(process.execPath, ['-e', script], {
+    env: {
+      ...process.env,
+      OPERATOR_LEGAL_NAME: 'Titular de Prueba',
+      OPERATOR_NIF: 'NIF-DE-PRUEBA',
+      OPERATOR_ADDRESS: 'Dirección de prueba',
+      OPERATOR_PRIVACY_EMAIL: 'privacidad@example.com',
+      OPERATOR_REGISTRY: 'Registro de prueba'
+    },
+    encoding: 'utf8'
+  });
+  const pages = JSON.parse(out.trim().split('\n').pop());
+  for (const html of pages) {
+    assert.doesNotMatch(html, /\[(RAZÓN SOCIAL|NIF|DOMICILIO|EMAIL DE PRIVACIDAD|DATOS REGISTRALES)/);
+    assert.match(html, /BORRADOR — REQUIERE REVISIÓN JURÍDICA/);
+  }
+  assert.match(pages[0], /Titular de Prueba/);
+  assert.match(pages[1], /privacidad@example\.com/);
+});
+
 /* Mensagens ?ok= / ?err= assinadas (src/lib/flash.js): um link de fora não
  * pode pôr texto num aviso oficial. */
 test('flash: só redirecionamentos do servidor mostram ?ok=/?err=', async () => {

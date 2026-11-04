@@ -3,7 +3,7 @@
 
 <main class="container-narrow public-main legal">
   <h1>Acuerdo de encargo del tratamiento</h1>
-  <p class="dim small">Versión <%= version %> · art. 28 RGPD</p>
+  <p class="dim small">Versión <%= version %> · art. 28 RGPD · Última actualización: <%= legalUpdated %></p>
 
   <%- include('draft_banner') %>
 
@@ -16,7 +16,8 @@
 
   <div class="card">
     <h2>1. Objeto, naturaleza y finalidad</h2>
-    <p>Prestación de la plataforma Fíchame: alojamiento de la página de candidaturas, recepción, almacenamiento y organización de candidaturas y CV, notificaciones, herramientas de atención de derechos y supresión automática según los plazos configurados. El encargado no trata los datos para fines propios.</p>
+    <p>Prestación de la plataforma Fíchame: alojamiento de la página de candidaturas, recepción, almacenamiento y organización de candidaturas y CV, notificaciones, herramientas de atención de derechos y herramientas de supresión (ver la cláusula 12). El encargado no trata los datos para fines propios.</p>
+    <p>El encargado envía a su panel interno NexForge métricas de uso del servicio, por ejemplo que el negocio ha recibido una candidatura o ha abierto un CV. Se refieren al negocio, usan un identificador pseudónimo y no contienen datos de candidatos. El detalle está en la <a href="/privacidad#metricas">política de privacidad</a>.</p>
   </div>
 
   <div class="card">
@@ -27,7 +28,7 @@
   <div class="card">
     <h2>3. Interesados y datos</h2>
     <p><strong>Interesados:</strong> personas que se candidatan o dejan sus datos para futuras oportunidades; personas que ejercen derechos.<br>
-       <strong>Datos:</strong> identificativos y de contacto (nombre, apellidos, email, teléfono), profesionales (puesto, disponibilidad, experiencia, observaciones, CV), notas y estados del proceso, registros de consentimiento. El formulario no solicita categorías especiales de datos (art. 9 RGPD); pueden aparecer si el candidato las incluye en su CV.</p>
+       <strong>Datos:</strong> identificativos y de contacto (nombre, apellidos, email, teléfono), profesionales (puesto, disponibilidad, experiencia, observaciones, CV), notas y estados del proceso, registros de consentimiento. El formulario no solicita categorías especiales de datos (art. 9 RGPD); pueden aparecer si el candidato las incluye en su CV o en un campo de texto libre.</p>
   </div>
 
   <div class="card">
@@ -37,12 +38,12 @@
 
   <div class="card">
     <h2>5. Confidencialidad</h2>
-    <p>Las personas autorizadas por el encargado están sujetas a deber de confidencialidad. La administración de la plataforma no accede por defecto a candidaturas ni CV; cualquier acceso excepcional (p. ej., investigación de un incidente) se limita a lo imprescindible y queda registrado.</p>
+    <p>Las personas autorizadas por el encargado están sujetas a deber de confidencialidad. El panel de administración de la plataforma no tiene ninguna función para ver candidaturas ni CV; cualquier acceso excepcional (p. ej., investigación de un incidente) se limita a lo imprescindible.</p>
   </div>
 
   <div class="card">
     <h2>6. Seguridad (art. 32 RGPD)</h2>
-    <p>Separación de datos por negocio en aplicación y base de datos; almacenamiento privado de CV sin enlaces públicos; cifrado en tránsito; contraseñas con hash; control de acceso en servidor; registro de accesos a CV y de acciones relevantes; limitación de intentos; copias de seguridad del proveedor de base de datos. Detalle disponible para el responsable bajo petición.</p>
+    <p>Separación de datos por negocio en aplicación y base de datos; almacenamiento privado de CV sin enlaces públicos; cifrado en tránsito; contraseñas con hash; control de acceso en servidor; registro de accesos a CV y de acciones relevantes; limitación de intentos. Detalle disponible para el responsable bajo petición.</p>
   </div>
 
   <div class="card">
@@ -67,7 +68,17 @@
 
   <div class="card">
     <h2>11. Fin del encargo: devolución o supresión</h2>
-    <p>Al terminar el servicio, el responsable puede exportar los datos de sus candidatos durante <em>[PLAZO — PENDIENTE]</em>. Después, el encargado suprimirá los datos y los CV de sus sistemas activos; las copias de seguridad del proveedor se eliminan al expirar su ciclo de retención. Solo se conservará lo que exija una obligación legal, bloqueado.</p>
+    <p>Al terminar el servicio, el responsable puede exportar los datos de sus candidatos durante <em>[PLAZO — PENDIENTE]</em>. Después, el encargado suprimirá los datos y los CV de sus sistemas activos; las copias de seguridad que pueda conservar el proveedor se eliminan al expirar su ciclo de retención. Solo se conservará lo que exija una obligación legal, bloqueado.</p>
+  </div>
+
+  <div class="card" id="conservacion">
+    <h2>12. Conservación y supresión durante el servicio</h2>
+    <p>El responsable fija en su panel los plazos de conservación de cada candidatura y es quien responde de ellos. Los valores por defecto (180 días sin actividad en un proceso abierto, 90 días tras cerrarlo y 365 días con consentimiento para futuras oportunidades) son técnicos y provisionales, pendientes de revisión jurídica.</p>
+    <% if (autoRetention) { %>
+    <p>La supresión automática está activada: un proceso programado suprime las candidaturas vencidas, con su CV, notas e historial, salvo las que el responsable haya bloqueado por una obligación legal o una reclamación.</p>
+    <% } else { %>
+    <p><strong>La supresión automática no está activada.</strong> La plataforma calcula y muestra la fecha de vencimiento, pero no borra los datos cuando llega. El responsable debe eliminar las candidaturas vencidas desde su panel, salvo que deba conservarlas bloqueadas. Este acuerdo se actualizará si la supresión automática se activa.</p>
+    <% } %>
   </div>
 
   <div class="actions-row center-row spaced">

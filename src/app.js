@@ -15,6 +15,7 @@ const { newRef, recordError } = require('./lib/errors');
 const { background } = require('./lib/background');
 const { i18n, setLanguageRoute, translate, LANGS, LANG_NAMES } = require('./lib/i18n');
 const pricing = require('./lib/pricing');
+const { autoRetentionEnabled } = require('./lib/retention');
 const { signRedirects, verifyFlash } = require('./lib/flash');
 
 /* O PostgREST devolve timestamptz como ISO 8601 com fuso ("…+00:00"), que o
@@ -212,6 +213,8 @@ function createApp() {
     res.locals.pricing = pricing;
     /* Pagamento online (Stripe) ligado: muda os textos do aviso da prova. */
     res.locals.billingEnabled = config.billingEnabled;
+    /* Supressão automática a correr de verdade: sem ela nenhum texto a promete. */
+    res.locals.autoRetention = autoRetentionEnabled();
     res.locals.supportEmail = config.contactEmail;
     next();
   });

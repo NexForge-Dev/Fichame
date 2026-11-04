@@ -291,9 +291,9 @@ module.exports = {
   },
   'Tienes aceptada la versión vigente de los': { en: 'You have accepted the current version of the', pt: 'Tens aceite a versão em vigor dos' },
   'desde el {date}': { en: 'since {date}', pt: 'desde {date}' },
-  'Si los cambiamos, te avisaremos aquí y por email con al menos 30 días de antelación.': {
-    en: 'If we change them, we will let you know here and by email at least 30 days in advance.',
-    pt: 'Se os mudarmos, avisamos-te aqui e por email com pelo menos 30 dias de antecedência.'
+  'Si los cambiamos, te avisaremos aquí con al menos 30 días de antelación y, si el envío de correo está disponible, también por email.': {
+    en: 'If we change them, we will let you know here at least 30 days in advance and, if email sending is available, by email too.',
+    pt: 'Se os alterarmos, avisamos-te aqui com pelo menos 30 dias de antecedência e, se o envio de email estiver disponível, também por email.'
   },
 
   // Reportar um problema

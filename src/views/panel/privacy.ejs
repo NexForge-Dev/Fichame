@@ -26,7 +26,7 @@
       <li><strong><%= tr('Úsalos solo para seleccionar personal') %></strong> <%= tr('para tu negocio. No los uses para publicidad ni los pases a otros negocios, aunque sean amigos o del mismo grupo: para eso haría falta el consentimiento del candidato.') %></li>
       <li><strong><%= tr('Decide con criterios del puesto.') %></strong> <%= tr('Está prohibido discriminar por sexo, edad, origen, nacionalidad, religión, discapacidad, salud, orientación sexual, ideas políticas, afiliación sindical, estado civil o idioma. No preguntes por ello ni lo anotes.') %></li>
       <li><strong><%= tr('No pidas más datos de los necesarios.') %></strong> <%= tr('DNI/NIE, número de la Seguridad Social o cuenta bancaria se piden') %> <em><%= tr('al contratar') %></em><%= tr(', en tu proceso de alta, no en la candidatura.') %></li>
-      <li><strong><%= tr('No guardes los datos para siempre.') %></strong> <%= tr('Fíchame borra automáticamente según los plazos de abajo. Si descargas un CV, bórralo también de tu dispositivo cuando ya no lo necesites.') %></li>
+      <li><strong><%= tr('No guardes los datos para siempre.') %></strong> <%= autoRetention ? tr('Fíchame borra automáticamente según los plazos de abajo. Si descargas un CV, bórralo también de tu dispositivo cuando ya no lo necesites.') : tr('El borrado automático no está activado: al vencer cada plazo de abajo, elimina la candidatura desde su ficha. Si descargas un CV, bórralo también de tu dispositivo cuando ya no lo necesites.') %></li>
       <li><strong><%= tr('Responde a los derechos en un mes.') %></strong> <%= tr('Las solicitudes llegan a') %> <a href="/panel/derechos"><%= tr('Derechos') %></a>. <%= tr('Tienes herramientas para exportar y suprimir los datos de un candidato desde su ficha.') %></li>
       <li><strong><%= tr('Protege el acceso.') %></strong> <%= tr('No compartas tu contraseña. Si sospechas que alguien ha entrado en tu cuenta o ves algo raro, cambia la contraseña y avisa a Fíchame enseguida: puede ser una brecha de datos que tienes que valorar en 72 horas.') %></li>
     </ol>
@@ -36,7 +36,7 @@
   <div class="card">
     <h2><%= tr('Plazos de conservación') %></h2>
     <p class="help help-lift">
-      <%= tr('Fíchame borra automáticamente las candidaturas (con su CV, notas e historial) cuando vence el plazo. Los valores por defecto son una propuesta técnica:') %>
+      <%= autoRetention ? tr('Fíchame borra automáticamente las candidaturas (con su CV, notas e historial) cuando vence el plazo. Los valores por defecto son una propuesta técnica:') : tr('El borrado automático no está activado: cuando vence el plazo, la candidatura se queda ahí hasta que la eliminas desde su ficha, con su CV, notas e historial. Los valores por defecto son una propuesta técnica:') %>
       <strong><%= tr('confírmalos con tu asesor') %></strong>. <%= tr('Si un caso concreto exige conservar datos (por ejemplo, una reclamación), usa el bloqueo en la ficha del candidato.') %>
     </p>
     <form action="/panel/privacidad/conservacion" method="post">

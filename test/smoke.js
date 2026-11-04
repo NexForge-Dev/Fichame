@@ -646,7 +646,7 @@ async function main() {
     res = await call('GET', '/privacidad');
     html = await text(res);
     check('página de privacidade renderiza',
-      res.status === 200 && html.includes('Tus derechos') && html.includes('Versión 2026-10'));
+      res.status === 200 && html.includes('Tus derechos') && html.includes('Versión 2026-11'));
     check('privacidade distingue responsável/encarregado e sem decisões automatizadas',
       html.includes('encargado del tratamiento') && html.includes('Decisiones automatizadas') && html.includes('BORRADOR'));
     check('privacidade não inventa dados do operador (marcadores)', html.includes('[RAZÓN SOCIAL]') || Boolean(process.env.OPERATOR_LEGAL_NAME));

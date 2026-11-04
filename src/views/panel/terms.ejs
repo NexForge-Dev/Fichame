@@ -26,10 +26,10 @@
         <button class="btn spaced" type="submit"><%= tr('Aceptar') %></button>
       </form>
 
-      <p class="help"><%= tr('Si no estás de acuerdo, puedes darte de baja escribiendo a {email}. Antes del cierre puedes pedir una copia de los datos de tus candidatos.', { email: operator.email }) %></p>
+      <p class="help"><%= tr('Si no estás de acuerdo, puedes darte de baja escribiendo a {email}. Antes del cierre puedes pedir una copia de los datos de tus candidatos.', { email: privacyContact }) %></p>
     <% } else { %>
       <p><%= tr('Tienes aceptada la versión vigente de los') %> <a href="/terminos" target="_blank" rel="noopener"><%= tr('Términos de uso') %></a> (<%= r.terms_version %>)<% if (r.terms_accepted_at) { %>, <%= tr('desde el {date}', { date: fmtDate(r.terms_accepted_at) }) %><% } %>, <%= tr('y del') %> <a href="/encargo" target="_blank" rel="noopener"><%= tr('Acuerdo de encargo del tratamiento') %></a> (<%= r.dpa_version %>).</p>
-      <p class="help"><%= tr('Si los cambiamos, te avisaremos aquí y por email con al menos 30 días de antelación.') %></p>
+      <p class="help"><%= tr('Si los cambiamos, te avisaremos aquí con al menos 30 días de antelación y, si el envío de correo está disponible, también por email.') %></p>
     <% } %>
   </div>
 </main>

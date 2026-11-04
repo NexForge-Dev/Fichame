@@ -1,130 +1,217 @@
 <%- include('../partials/head', { title: 'Política de privacidad' }) %>
 <%- include('../partials/site_top') %>
 
+<%
+  /* Cada frase descreve o que o código faz. Depende de três estados reais:
+   * billingEnabled (Stripe), autoRetention (supressão de candidaturas) e
+   * technicalCleanup (limpeza de registos técnicos). */
+  var planned = technicalCleanup ? '' : ' (plazo previsto)';
+%>
 <main class="container-narrow public-main legal">
   <h1>Política de privacidad de Fíchame</h1>
-  <p class="dim small">Versión <%= noticeVersion %> · Última actualización: 2 de noviembre de 2026</p>
+  <p class="dim small">Versión <%= noticeVersion %> · Última actualización: <%= legalUpdated %></p>
 
   <%- include('draft_banner') %>
 
   <div class="card">
-    <h2>1. Dos papeles distintos</h2>
-    <p>Fíchame trata datos personales en dos situaciones diferentes, y el responsable no es el mismo en cada una:</p>
+    <h2>1. Quién trata tus datos: dos papeles distintos</h2>
+    <p>Fíchame es una herramienta de reclutamiento por código QR o enlace: una persona abre la página de un negocio, envía su candidatura y su CV a ese negocio, y el negocio la gestiona en un panel privado. Por eso hay dos situaciones, con un responsable distinto en cada una:</p>
     <ul>
-      <li><strong>Datos de las personas que se candidatan</strong> a un empleo en un negocio a través de su página Fíchame (formulario, CV, notas del proceso). El <strong>responsable del tratamiento es ese negocio</strong>. Fíchame solo presta la plataforma y trata esos datos por cuenta del negocio, como <strong>encargado del tratamiento</strong> (art. 28 RGPD). La información sobre ese tratamiento, y el formulario para ejercer tus derechos, están en la página de privacidad de cada negocio (enlace «Información completa» en su formulario).</li>
-      <li><strong>Datos de los negocios usuarios y de sus personas usuarias</strong> (cuenta, acceso, seguridad, soporte, comunicaciones del servicio). Aquí el <strong>responsable es el titular de Fíchame</strong>, identificado abajo. Esta política explica sobre todo este segundo caso.</li>
+      <li><strong>Si te has presentado a un empleo en un negocio:</strong> el <strong>responsable del tratamiento es ese negocio</strong>. Decide para qué se usan tus datos y durante cuánto tiempo, y el titular de Fíchame los trata solo por su cuenta, como <strong>encargado del tratamiento</strong> (art. 28 RGPD), según el <a href="/encargo">Acuerdo de encargo</a>. La identidad del negocio y el formulario para ejercer tus derechos están en su página de privacidad (enlace «Información completa» de su formulario). Ver el apartado 3.</li>
+      <li><strong>Si tienes una cuenta de negocio o la usas:</strong> el <strong>responsable es el titular de Fíchame</strong>, identificado en el apartado 2, para los datos de la cuenta, el acceso, la seguridad, el soporte y las métricas internas. Ver el apartado 4.</li>
     </ul>
   </div>
 
   <div class="card">
-    <h2>2. Responsable (cuentas de negocio)</h2>
+    <h2>2. Titular de Fíchame</h2>
     <p>
       <%= operator.name %> · NIF <%= operator.nif %><br>
       <%= operator.address %><br>
-      Contacto de privacidad: <%= operator.email %>
+      Contacto de privacidad: <%= operator.email %><br>
+      Soporte: <a href="mailto:<%= supportEmail %>"><%= supportEmail %></a>
     </p>
     <p class="help">
       Delegado de Protección de Datos: <%= operator.dpo ? operator.dpo : 'no designado. La obligación de designarlo está pendiente de análisis jurídico (art. 37 RGPD y art. 34 LOPDGDD).' %>
     </p>
   </div>
 
+  <div class="card" id="candidatos">
+    <h2>3. Datos de las personas candidatas (Fíchame como encargado)</h2>
+    <p><strong>Qué datos se tratan.</strong></p>
+    <ul>
+      <li><strong>Formulario de candidatura:</strong> nombre, apellidos, email, teléfono, puesto, disponibilidad, experiencia, observaciones y CV en PDF, con el nombre original y el tamaño del archivo.</li>
+      <li><strong>Formulario de futuras oportunidades:</strong> nombre, email, teléfono y experiencia.</li>
+      <li><strong>Consentimiento para futuras oportunidades, si lo das:</strong> el texto que aceptaste, su versión y la fecha.</li>
+      <li><strong>Lo que añade el negocio:</strong> estado del proceso, historial de cambios, favoritos y notas internas.</li>
+      <li><strong>Solicitudes de derechos:</strong> nombre, email, tipo de solicitud y mensaje.</li>
+      <li><strong>Registro técnico:</strong> tipo de acción, fecha e IP truncada, sin datos del navegador. No hace falta crear una cuenta para presentar una candidatura.</li>
+    </ul>
+    <p><strong>Datos especialmente protegidos.</strong> El formulario no pide documento de identidad, fecha de nacimiento, nacionalidad, fotografía ni datos de salud, ideología, religión, afiliación sindical u orientación sexual. Pero el CV y los campos de texto libre los escribes tú, y Fíchame no los revisa: si incluyes datos de ese tipo, quedarán guardados y los verá el negocio. Te recomendamos no incluirlos. Fíchame solo comprueba técnicamente que el archivo es un PDF válido y sin elementos activos; no lee ni analiza su contenido para valorarte.</p>
+    <p><strong>Finalidades y bases jurídicas.</strong> Las decide el negocio y las explica en su página de privacidad. Con carácter general: gestionar tu candidatura, porque tú la pides (medidas precontractuales, art. 6.1.b RGPD), y conservar tus datos para futuras vacantes de ese mismo negocio, solo con tu consentimiento (art. 6.1.a RGPD), que puedes retirar cuando quieras.</p>
+    <p><strong>Uso por parte de Fíchame.</strong> No usamos tus datos para fines propios ni para entrenar sistemas, y no los compartimos con otros negocios. Cada negocio solo ve sus propias candidaturas. Sí contamos que un negocio ha recibido una candidatura o ha abierto un CV, sin ningún dato tuyo (ver «Métricas internas» en el apartado 5).</p>
+    <p><strong>Conservación.</strong> Cada negocio fija sus plazos en su panel y aparecen en su página de privacidad. Por defecto son 180 días sin actividad en un proceso abierto, 90 días tras cerrarlo y 365 días con consentimiento para futuras oportunidades. Son valores técnicos provisionales, pendientes de revisión jurídica.</p>
+    <% if (autoRetention) { %>
+      <p>Un proceso programado suprime las candidaturas vencidas con su CV, notas e historial, salvo las que el negocio haya bloqueado por una obligación legal o una reclamación.</p>
+    <% } else { %>
+      <p><strong>La supresión automática no está activada.</strong> Cuando vence un plazo, los datos no se borran solos: es el negocio quien debe eliminarlos desde su panel, salvo que deba conservarlos bloqueados por una obligación legal o una reclamación.</p>
+    <% } %>
+    <p><strong>Tus derechos.</strong> Dirígete al negocio con el formulario de su página de privacidad. Si nos escribes a nosotros, trasladaremos tu solicitud a ese negocio, que es quien decide. Ver el apartado 8.</p>
+  </div>
+
   <div class="card">
-    <h2>3. Qué datos tratamos como responsable, para qué y con qué base</h2>
+    <h2>4. Datos de las cuentas de negocio (Fíchame como responsable)</h2>
     <div class="table-wrap">
       <table class="table">
         <thead><tr><th>Finalidad</th><th>Datos</th><th>Base jurídica</th><th>Conservación</th></tr></thead>
         <tbody>
           <tr>
-            <td>Crear y gestionar la cuenta del negocio y prestar el servicio contratado</td>
-            <td>Nombre del negocio, razón social, persona de contacto, email, teléfono (opcional), dirección (opcional), contraseña (cifrada con hash). Si usas «Continuar con Google»: el identificador de tu cuenta de Google, su email y tu nombre</td>
+            <td>Crear y gestionar la cuenta y prestar el servicio</td>
+            <td>Nombre del negocio, nombre comercial, razón social, tipo de establecimiento, persona responsable, email, email de privacidad, teléfono y dirección (opcionales), código postal, ciudad, descripción, logotipo y foto, y contraseña (guardada solo como hash). Si usas «Continuar con Google»: el identificador de tu cuenta de Google, su email y tu nombre. Parte de estos datos se muestra en la página pública del negocio</td>
             <td>Ejecución del contrato (art. 6.1.b RGPD)</td>
             <td>Mientras la cuenta esté activa; después, el tiempo necesario por obligaciones legales — <em>plazo pendiente de revisión jurídica</em></td>
           </tr>
           <tr>
-            <td>Seguridad de la plataforma: inicios de sesión, prevención de abusos y fraude, investigación de incidentes</td>
-            <td>Identificador de usuario, tipo de acción, fecha, IP y navegador (en las acciones de candidatos, la IP se guarda truncada y sin navegador)</td>
+            <td>Seguridad: inicios de sesión, prevención de abusos, investigación de incidentes y recuperación de la contraseña</td>
+            <td>Identificador de usuario, tipo de acción, fecha, IP y navegador; datos de la sesión; tokens de un solo uso; contadores de intentos</td>
             <td>Interés legítimo en proteger la plataforma y los datos que aloja (art. 6.1.f RGPD) y obligación de seguridad (art. 32 RGPD)</td>
-            <td>Registros de seguridad: 12 meses. Sesiones: hasta su caducidad</td>
+            <td>Registros de seguridad: <%= days.securityLog %> días<%= planned %>. Sesiones y tokens: hasta su caducidad</td>
           </tr>
           <tr>
             <td>Acreditar qué versión de los términos y del acuerdo de encargo aceptó cada negocio, cuándo y quién</td>
             <td>Versiones aceptadas, fecha, razón social, usuario que aceptó e IP</td>
-            <td>Interés legítimo en poder acreditar el contrato y defenderse de reclamaciones (art. 6.1.f RGPD)</td>
-            <td>Mientras la cuenta esté activa y, después, durante los plazos de prescripción de las acciones derivadas del contrato — <em>plazo pendiente de revisión jurídica</em></td>
+            <td>Interés legítimo en acreditar el contrato y defenderse de reclamaciones (art. 6.1.f RGPD)</td>
+            <td>Mientras la cuenta esté activa y, después, durante la prescripción de las acciones del contrato — <em>plazo pendiente de revisión jurídica</em></td>
           </tr>
           <tr>
-            <td>Registro de errores del servidor, para detectarlos y corregirlos</td>
-            <td>Código del error, fecha, página y método, mensaje técnico (se eliminan emails y números largos antes de guardarlo), identificador de usuario y de negocio si había sesión, y navegador</td>
+            <td>Detectar y corregir errores del servidor</td>
+            <td>Código del error, fecha, página y método, mensaje técnico (sin emails ni números largos), identificador de usuario y de negocio si había sesión, y navegador</td>
             <td>Interés legítimo en mantener el servicio funcionando (art. 6.1.f RGPD) y obligación de seguridad (art. 32 RGPD)</td>
-            <td>90 días</td>
+            <td><%= days.errorEvent %> días<%= planned %></td>
           </tr>
           <tr>
-            <td>Reportes de problemas, sugerencias y dudas que envías desde el panel</td>
-            <td>Tipo y texto del reporte, página de origen, código del error (si lo hay), navegador, y tu usuario y negocio. Te pedimos que no incluyas datos de candidatos</td>
-            <td>Ejecución del contrato (art. 6.1.b RGPD) para atenderlo e interés legítimo (art. 6.1.f RGPD) para mejorar el servicio</td>
-            <td>Mientras se tramita; una vez resuelto, 1 año</td>
+            <td>Atender reportes de problemas, sugerencias y dudas enviados desde el panel</td>
+            <td>Tipo y texto del reporte, página de origen, código del error si lo hay, navegador, usuario y negocio. Te pedimos que no incluyas datos de candidatos</td>
+            <td>Ejecución del contrato (art. 6.1.b RGPD) e interés legítimo en mejorar el servicio (art. 6.1.f RGPD)</td>
+            <td>Mientras se tramita; una vez resuelto, <%= days.report %> días<%= planned %></td>
           </tr>
           <tr>
-            <td>Avisos del servicio (nueva candidatura, solicitudes de derechos, recuperación de contraseña)</td>
-            <td>Email de la cuenta</td>
+            <td>Avisos del servicio: nueva candidatura, solicitud de derechos, recuperación de contraseña, cambio de email</td>
+            <td>Email de la cuenta o de privacidad</td>
             <td>Ejecución del contrato (art. 6.1.b RGPD)</td>
-            <td>Registro del envío mientras exista la candidatura o solicitud asociada</td>
+            <td>Registro del envío mientras exista la candidatura o la solicitud asociada</td>
           </tr>
           <tr>
-            <td>Atender tus derechos y consultas</td>
+            <td>Atender solicitudes de derechos y consultas</td>
             <td>Los datos de la solicitud</td>
             <td>Obligación legal (art. 6.1.c RGPD)</td>
-            <td>Hasta 3 años tras cerrarse — <em>pendiente de revisión jurídica</em></td>
+            <td>Hasta <%= days.rightsRequest %> días tras cerrarse<%= planned %> — <em>pendiente de revisión jurídica</em></td>
           </tr>
           <tr>
-            <td>Estadísticas internas agregadas (número de negocios y candidaturas)</td>
-            <td>Recuentos sin datos identificativos</td>
-            <td>Interés legítimo (art. 6.1.f RGPD)</td>
-            <td>—</td>
+            <td>Métricas internas de uso del producto (apartado 5)</td>
+            <td>Eventos con un identificador pseudónimo del negocio</td>
+            <td>Interés legítimo en conocer cómo se usa el producto y mejorarlo (art. 6.1.f RGPD). Puedes oponerte escribiendo al contacto de privacidad</td>
+            <td><em>Plazo pendiente de definir</em></td>
           </tr>
+          <% if (billingEnabled) { %>
+          <tr>
+            <td>Contratar y gestionar el plan de pago</td>
+            <td>Identificador de cliente y de suscripción en Stripe, plan, periodicidad, estado de la suscripción y fechas</td>
+            <td>Ejecución del contrato (art. 6.1.b RGPD) y obligaciones legales (art. 6.1.c RGPD)</td>
+            <td>Mientras la cuenta esté activa; después, según las obligaciones fiscales y mercantiles — <em>plazo pendiente de revisión jurídica</em></td>
+          </tr>
+          <% } %>
         </tbody>
       </table>
     </div>
-    <p class="help">No enviamos comunicaciones comerciales ni newsletters. No usamos herramientas de analítica, publicidad ni seguimiento (ver <a href="/cookies">política de cookies</a>). No usamos los datos de candidatos para fines propios, para entrenar sistemas ni para mejorar el producto.</p>
+    <% if (!technicalCleanup) { %>
+      <p class="help">La limpieza automática de los registros técnicos no está activada: los plazos marcados como «previstos» son el objetivo, y hoy esos registros pueden conservarse más tiempo.</p>
+    <% } %>
+    <p class="help">Los datos marcados como obligatorios en el registro son necesarios para crear la cuenta; sin ellos no podemos prestar el servicio. No enviamos comunicaciones comerciales ni newsletters.</p>
+  </div>
+
+  <div class="card" id="metricas">
+    <h2>5. Métricas internas: panel NexForge</h2>
+    <p>No usamos herramientas de analítica en tu navegador: no hay scripts, píxeles ni cookies de analítica. Sí enviamos desde nuestro servidor eventos de uso al panel interno de gestión NexForge, para saber cómo se usa el producto. Afectan al negocio, no a las personas candidatas.</p>
+    <p><strong>Campos de cada evento:</strong> un identificador del evento, su nombre, la fecha y hora, un identificador pseudónimo y unas propiedades fijas (<code>platform: web</code> y las indicadas abajo).</p>
+    <p>El identificador pseudónimo es un HMAC-SHA256 del identificador interno del negocio o, antes de terminar el registro, del email del formulario. La clave se queda en nuestro servidor y no se comparte con el panel. Esto es seudonimización, no anonimización: quien tiene la clave podría relacionar el identificador con el negocio.</p>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Evento</th><th>Propiedades adicionales</th></tr></thead>
+        <tbody>
+          <tr><td><code>signup_started</code>, <code>signup_completed</code></td><td><code>method</code>: email o google</td></tr>
+          <tr><td><code>identity_linked</code></td><td><code>previous_id</code>: el identificador pseudónimo previo al registro</td></tr>
+          <tr><td><code>session_started</code>, <code>onboarding_completed</code>, <code>account_deleted</code></td><td>Ninguna</td></tr>
+          <tr><td><code>signup_step_completed</code></td><td><code>step</code>: primeira_vaga, pagina_vista, qr_visto o logo_adicionado</td></tr>
+          <tr><td><code>feature_used</code></td><td><code>feature</code>: busca_filtro, candidatura_recebida, candidatura_aberta, cv_aberto, status_alterado, favorito_marcado, nota_interna, vaga_criada, candidaturas_pausadas, qr_baixado o problema_reportado</td></tr>
+          <tr><td>Solo con el pago online activado: <code>checkout_started</code>, <code>trial_started</code>, <code>plan_activated</code>, <code>plan_changed</code>, <code>plan_canceled</code>, <code>payment_failed</code></td><td><code>plan</code>, <code>from_plan</code>, <code>to_plan</code>, <code>billing_period</code>, <code>amount_cents</code>, <code>currency</code>, <code>trial_days</code> y <code>reason</code>, según el evento</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Qué no se envía nunca:</strong> nombres, emails en claro, teléfonos, IP, datos del navegador, datos de candidatos, CV, notas ni textos de búsqueda.</p>
   </div>
 
   <div class="card" id="subencargados">
-    <h2>4. Destinatarios y proveedores (subencargados)</h2>
-    <p>No cedemos datos a terceros salvo obligación legal. Para prestar el servicio usamos estos proveedores técnicos, que tratan datos por nuestra cuenta con contrato de encargo:</p>
+    <h2>6. Destinatarios y proveedores</h2>
+    <p>No vendemos datos ni los cedemos a terceros, salvo obligación legal (por ejemplo, un requerimiento de una autoridad). Para prestar el servicio intervienen estos proveedores. Los de la primera lista pueden tratar datos de candidatos como subencargados.</p>
     <ul>
-      <li><strong>Supabase, Inc.</strong> — base de datos y almacenamiento de archivos (incluidos los CV). Región de alojamiento del proyecto: Unión Europea — Irlanda (eu-west-1).</li>
-      <li><strong>Vercel Inc.</strong> — alojamiento de la aplicación web. Región de ejecución de las funciones del servidor: Unión Europea — Dublín, Irlanda (dub1). Los archivos estáticos públicos (estilos, imágenes de la web) se sirven desde la red de distribución global de Vercel.</li>
-      <li><strong>[PROVEEDOR DE EMAIL SMTP]</strong> — envío de avisos por email (no incluyen datos de candidatos).</li>
-      <li><strong>Stripe Payments Europe, Ltd.</strong> (Irlanda) — cobro de las suscripciones de los negocios. Trata los datos de facturación (nombre o razón social, email, dirección y, si se indica, NIF/IVA) y los datos de pago. La tarjeta se introduce directamente en las páginas de Stripe: <strong>Fíchame nunca ve ni guarda los números de tarjeta</strong>; solo recibe de Stripe el estado de la suscripción y un identificador de cliente. Para la prevención del fraude y sus obligaciones legales como entidad de pago, Stripe actúa como responsable independiente según su <a href="https://stripe.com/es/privacy" target="_blank" rel="noopener">política de privacidad</a>. No trata datos de candidatos.</li>
+      <li><strong>Supabase, Inc.</strong> — base de datos y almacenamiento de archivos, incluidos los CV. Región de alojamiento del proyecto: Unión Europea, Irlanda (eu-west-1).</li>
+      <li><strong>Vercel Inc.</strong> — alojamiento de la aplicación web, por donde pasan todas las peticiones. Registra rutas e IP en sus registros de peticiones. Región de las funciones del servidor: Unión Europea, Dublín (dub1). Los archivos públicos de la web (estilos, imágenes) se sirven desde su red global.</li>
+      <li><strong>Proveedor de envío de correo electrónico</strong> — avisos del servicio al negocio. Los emails no incluyen el CV ni el nombre, el email o el teléfono del candidato. El aviso de nueva candidatura indica el puesto, que puede ser el texto que el candidato escribió en «otro puesto», y un enlace al panel.</li>
     </ul>
-    <p class="help">La lista se mantiene actualizada en esta página y los negocios clientes son informados de los cambios (art. 28.2 RGPD).</p>
-    <p><strong>Inicio de sesión con Google (opcional).</strong> Si eliges «Continuar con Google», Google LLC / Google Ireland Ltd. nos comunica el identificador de tu cuenta, tu email (verificado) y tu nombre, solo para identificarte; no recibimos tu contraseña de Google ni accedemos a otros datos de tu cuenta. Google actúa como responsable independiente de su servicio de inicio de sesión, según su propia <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">política de privacidad</a>. Puedes desvincular Google en Configuración.</p>
+    <p>Estos otros no reciben datos identificativos de candidatos:</p>
+    <ul>
+      <li><strong>Panel NexForge</strong> — recibe solo los eventos del apartado 5. La aplicación del panel se ejecuta en Vercel (Fráncfort, fra1); su base de datos la presta un proveedor externo y puede estar fuera del Espacio Económico Europeo, incluido EE. UU.</li>
+      <% if (billingEnabled) { %>
+      <li><strong>Stripe Payments Europe, Ltd.</strong> (Irlanda) — cobro de las suscripciones de los negocios. Trata los datos de facturación (nombre o razón social, email, dirección y, si se indica, NIF/IVA) y los datos de pago. La tarjeta se introduce directamente en las páginas de Stripe: Fíchame no ve ni guarda los números de tarjeta; solo recibe el estado de la suscripción y un identificador de cliente. Para la prevención del fraude y sus obligaciones legales, Stripe actúa como responsable independiente según su <a href="https://stripe.com/es/privacy" target="_blank" rel="noopener">política de privacidad</a>.</li>
+      <% } else { %>
+      <li><strong>Pagos</strong> — el pago online no está activado: Fíchame no pide ni envía datos de pago a ningún proveedor. Si se activa, esta política indicará el proveedor antes de usarlo.</li>
+      <% } %>
+      <li><strong>Google</strong> — solo si eliges «Continuar con Google». Google LLC / Google Ireland Ltd. nos comunica el identificador de tu cuenta, tu email verificado y tu nombre, para identificarte. No recibimos tu contraseña de Google. Google actúa como responsable independiente según su <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">política de privacidad</a>. Puedes desvincularlo en Configuración.</li>
+    </ul>
+    <p class="help">Si un negocio contacta contigo con el enlace de WhatsApp de su panel, esa comunicación es decisión del negocio y pasa por Meta, que no es proveedor de Fíchame. La lista de proveedores se mantiene en esta página y los negocios clientes son informados de los cambios (art. 28.2 RGPD).</p>
   </div>
 
   <div class="card" id="transferencias">
-    <h2>5. Transferencias internacionales</h2>
-    <p>Supabase, Inc. y Vercel Inc. son empresas con sede en Estados Unidos, y Stripe Payments Europe, Ltd. forma parte de un grupo con sede en Estados Unidos (Stripe, Inc.). Cuando un tratamiento implica una transferencia fuera del Espacio Económico Europeo, se ampara en la decisión de adecuación UE-EE. UU. (Data Privacy Framework) para empresas certificadas, o en las cláusulas contractuales tipo de la Comisión Europea incluidas en sus acuerdos de tratamiento de datos. <em>Pendiente de verificación por proveedor y región: ver documentación interna de proveedores.</em></p>
+    <h2>7. Transferencias internacionales</h2>
+    <p>Supabase, Inc. y Vercel Inc. son empresas con sede en Estados Unidos. Aunque los datos se alojen en la UE, el acceso desde fuera del Espacio Económico Europeo o sus subencargados pueden suponer una transferencia internacional. También puede haberla con el proveedor de correo electrónico, con Google y con la base de datos del panel NexForge<% if (billingEnabled) { %>, y con Stripe, cuyo grupo tiene sede en Estados Unidos<% } %>.</p>
+    <p>Cuando haya una transferencia, debe ampararse en la decisión de adecuación UE-EE. UU. (Data Privacy Framework, Decisión de Ejecución (UE) 2023/1795) para empresas certificadas, o en las cláusulas contractuales tipo de la Comisión Europea (Decisión de Ejecución (UE) 2021/914). <em>El mecanismo concreto de cada proveedor y región está pendiente de verificación.</em> Puedes pedir información sobre estas garantías en el contacto de privacidad.</p>
   </div>
 
   <div class="card">
-    <h2>6. Tus derechos</h2>
-    <p>Puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación del tratamiento y portabilidad escribiendo a <%= operator.email %>. Te responderemos en el plazo de un mes. Si eres candidato/a, dirígete al negocio en el que te candidataste (formulario en su página de privacidad); si nos escribes a nosotros, trasladaremos tu solicitud a ese negocio, que es quien decide.</p>
-    <p>Si consideras que no se han atendido tus derechos, puedes reclamar ante la <strong>Agencia Española de Protección de Datos</strong> (C/ Jorge Juan 6, 28001 Madrid · www.aepd.es).</p>
+    <h2>8. Tus derechos</h2>
+    <p>Puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación del tratamiento y portabilidad, y retirar en cualquier momento el consentimiento que hayas dado, sin que eso afecte al tratamiento anterior.</p>
+    <ul>
+      <li><strong>Cuentas de negocio:</strong> escribe a <%= privacyContact %>. Te responderemos en el plazo de un mes, ampliable dos meses más en casos complejos, avisándote.</li>
+      <li><strong>Candidaturas:</strong> usa el formulario de la página de privacidad del negocio. El negocio dispone del mismo plazo para responderte.</li>
+    </ul>
+    <p>Si consideras que no se han atendido tus derechos, puedes presentar una reclamación ante la <strong>Agencia Española de Protección de Datos</strong> (C/ Jorge Juan 6, 28001 Madrid · <a href="https://www.aepd.es" target="_blank" rel="noopener">www.aepd.es</a>).</p>
   </div>
 
   <div class="card">
-    <h2>7. Decisiones automatizadas y perfiles</h2>
-    <p>Fíchame no toma decisiones automatizadas ni elabora perfiles sobre candidatos ni sobre usuarios. No hay puntuaciones, rankings ni filtros automáticos de candidaturas: cada candidatura la valora una persona del negocio.</p>
+    <h2>9. Decisiones automatizadas y perfiles</h2>
+    <p>Fíchame no toma decisiones automatizadas con efectos jurídicos o similares (art. 22 RGPD) ni elabora perfiles sobre candidatos ni usuarios. No hay puntuaciones, rankings ni descartes automáticos: cada candidatura la valora una persona del negocio. Las búsquedas y filtros del panel solo los usa esa persona.</p>
+    <p class="help">Hay solo controles técnicos automáticos: se rechazan archivos que no son PDF válidos y, si se repite una candidatura al mismo puesto con el mismo email en menos de 48 horas, la segunda no se guarda.</p>
   </div>
 
   <div class="card">
-    <h2>8. Seguridad</h2>
-    <p>Los datos de cada negocio están separados de los de los demás; los CV se guardan en almacenamiento privado sin enlaces públicos y solo se entregan al negocio correspondiente tras iniciar sesión; las contraseñas se guardan cifradas con un algoritmo de hash; las comunicaciones van cifradas (HTTPS); y los accesos a CV y las acciones relevantes quedan registrados. Ningún sistema es infalible: si detectamos una brecha de seguridad, actuaremos según nuestro procedimiento de gestión de incidentes y las obligaciones legales aplicables.</p>
+    <h2>10. Cookies</h2>
+    <p>Usamos cookies técnicas y, solo si eliges un idioma, una cookie de preferencia. No usamos cookies de analítica ni de publicidad. El detalle está en la <a href="/cookies">política de cookies</a>.</p>
   </div>
 
   <div class="card">
-    <h2>9. Cambios</h2>
-    <p>Si cambiamos esta política, publicaremos la nueva versión con su fecha. Las versiones anteriores se conservan para poder acreditar qué información estaba vigente en cada momento.</p>
+    <h2>11. Menores de edad</h2>
+    <p>Fíchame no está dirigido a menores de 14 años, y las cuentas de negocio son para quienes actúan en nombre de un negocio. En España, los menores de 14 años necesitan el consentimiento de sus padres o tutores para tratamientos basados en el consentimiento (art. 7 LOPDGDD). No pedimos la fecha de nacimiento, así que no comprobamos la edad. Si crees que un menor de 14 años nos ha facilitado datos, escribe a <%= privacyContact %> o al negocio correspondiente.</p>
+  </div>
+
+  <div class="card">
+    <h2>12. Seguridad</h2>
+    <p>Aplicamos medidas técnicas como estas: los datos de cada negocio están separados de los de los demás; los CV se guardan en almacenamiento privado, sin enlaces públicos, y solo se entregan al negocio correspondiente tras iniciar sesión; las contraseñas se guardan solo como hash (scrypt); las comunicaciones van por HTTPS; hay límites de intentos; y las aperturas de CV y las acciones relevantes quedan registradas.</p>
+    <p>Ningún sistema es infalible y no podemos garantizar una seguridad absoluta. Si se produce una brecha de seguridad, actuaremos según las obligaciones legales aplicables.</p>
+  </div>
+
+  <div class="card">
+    <h2>13. Cambios</h2>
+    <p>Si cambiamos esta política, publicaremos la nueva versión con su fecha. Si un cambio afecta de forma relevante a los negocios, lo avisaremos en el panel.</p>
   </div>
 
   <div class="actions-row center-row spaced">

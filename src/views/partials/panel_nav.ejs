@@ -17,7 +17,7 @@ var navItems = [
    * quando chega um pedido de direitos). */
   { href: '/panel/configuracion',   icon: 'cog',    label: tr('Configuración'), short: tr('Ajustes'), group: tr('Cuenta'), also: ['/panel/derechos', '/panel/privacidad'] },
   /* No telemóvel chega-se pelo aviso da prova e por Ajustes (6 separadores no máximo). */
-  { href: '/panel/plan',            icon: 'card',   label: tr('Plan y facturación'), short: tr('Plan'), sideOnly: true },
+  { href: '/panel/plan',            icon: 'card',   label: billingEnabled ? tr('Plan y facturación') : tr('Plan'), short: tr('Plan'), sideOnly: true },
   { href: '/panel/reportar',        icon: 'chat',   label: tr('Reportar un problema'), short: tr('Reportar'), sideOnly: true }
 ];
 

@@ -90,6 +90,50 @@ module.exports = {
     pt: 'O pagamento é feito na Stripe; o Fíchame nunca vê nem guarda os dados do teu cartão.'
   },
   'Leer los Términos': { en: 'Read the Terms', pt: 'Ler os Termos' },
+  'Planes previstos': { en: 'Planned plans', pt: 'Planos previstos' },
+  'Próximamente': { en: 'Coming soon', pt: 'Brevemente' },
+  'Hoy no se puede contratar ningún plan ni se te cobrará nada.': {
+    en: 'No plan can be taken out today and you will not be charged anything.',
+    pt: 'Hoje não é possível contratar nenhum plano e nada te será cobrado.'
+  },
+  'Precios en euros, IVA no incluido.': { en: 'Prices in euros, VAT not included.', pt: 'Preços em euros, IVA não incluído.' },
+  'Tu prueba gratis terminó el {date}. Puedes seguir usando Fíchame sin coste.': {
+    en: 'Your free trial ended on {date}. You can keep using Fíchame at no cost.',
+    pt: 'A tua experiência grátis terminou a {date}. Podes continuar a usar o Fíchame sem custos.'
+  },
+  'Te queda {n} día de prueba gratis. El pago online aún no está activo: no se te cobrará nada.': {
+    en: 'You have {n} day of free trial left. Online payment is not active yet: you will not be charged anything.',
+    pt: 'Resta-te {n} dia de experiência grátis. O pagamento online ainda não está ativo: nada te será cobrado.'
+  },
+  'Te quedan {n} días de prueba gratis. El pago online aún no está activo: no se te cobrará nada.': {
+    en: 'You have {n} days of free trial left. Online payment is not active yet: you will not be charged anything.',
+    pt: 'Restam-te {n} dias de experiência grátis. O pagamento online ainda não está ativo: nada te será cobrado.'
+  },
+  'Durante el lanzamiento solo está disponible la prueba gratis: {days} días, sin tarjeta y sin ningún cobro. Los planes de abajo son los precios previstos para cuando se active el pago online.': {
+    en: 'During the launch only the free trial is available: {days} days, no card and no charges. The plans below are the planned prices for when online payment is activated.',
+    pt: 'Durante o lançamento só está disponível a experiência grátis: {days} dias, sem cartão e sem qualquer cobrança. Os planos abaixo são os preços previstos para quando o pagamento online for ativado.'
+  },
+  'El pago online aún no está activo: hoy no se puede contratar ningún plan y no se cobra nada. Cuando se active, nada se cobrará sin tu aceptación expresa.': {
+    en: 'Online payment is not active yet: no plan can be taken out today and nothing is charged. Once it is activated, nothing will be charged without your express acceptance.',
+    pt: 'O pagamento online ainda não está ativo: hoje não é possível contratar nenhum plano e nada é cobrado. Quando for ativado, nada será cobrado sem a tua aceitação expressa.'
+  },
+  'El borrado automático no está activado: al vencer cada plazo de abajo, elimina la candidatura desde su ficha. Si descargas un CV, bórralo también de tu dispositivo cuando ya no lo necesites.': {
+    en: 'Automatic deletion is not active: when each period below expires, delete the application from its profile. If you download a CV, also delete it from your device when you no longer need it.',
+    pt: 'A eliminação automática não está ativa: quando terminar cada prazo abaixo, elimina a candidatura na respetiva ficha. Se descarregares um CV, apaga-o também do teu dispositivo quando já não precisares dele.'
+  },
+  'El borrado automático no está activado: cuando vence el plazo, la candidatura se queda ahí hasta que la eliminas desde su ficha, con su CV, notas e historial. Los valores por defecto son una propuesta técnica:': {
+    en: 'Automatic deletion is not active: when the period expires, the application stays there until you delete it from its profile, with its CV, notes and history. The default values are a technical proposal:',
+    pt: 'A eliminação automática não está ativa: quando o prazo termina, a candidatura fica lá até a eliminares na respetiva ficha, com o CV, notas e histórico. Os valores por defeito são uma proposta técnica:'
+  },
+  'Mientras esté activo, la candidatura no se podrá eliminar.': {
+    en: 'While it is active, the application cannot be deleted.',
+    pt: 'Enquanto estiver ativo, a candidatura não poderá ser eliminada.'
+  },
+  'Plazo de conservación hasta el': { en: 'Retention period until', pt: 'Prazo de conservação até' },
+  'Al vencer, elimínala desde esta página: el borrado automático no está activado': {
+    en: 'When it expires, delete it from this page: automatic deletion is not active',
+    pt: 'Quando terminar, elimina-a nesta página: a eliminação automática não está ativa'
+  },
 
   // partials/flash.ejs
   'Te queda {n} día de prueba gratis. Si eliges ya tu plan (Fundadores desde {price}/mes, IVA no incluido), no pagarás nada hasta que termine la prueba.': {

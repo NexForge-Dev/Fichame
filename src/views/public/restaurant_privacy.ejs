@@ -68,7 +68,7 @@
       Tus datos no se ceden a terceros ni a otros establecimientos que usan Fíchame.
       Fíchame (<%= operator.name %>) presta la plataforma y trata los datos únicamente por cuenta del
       establecimiento, como <strong>encargado del tratamiento</strong> (art. 28 RGPD), con
-      proveedores técnicos (subencargados) de alojamiento web y base de datos. La lista de
+      proveedores técnicos (subencargados) de alojamiento web, base de datos y envío de avisos por correo electrónico. La lista de
       subencargados y su ubicación está en la <a href="/privacidad#subencargados">política de privacidad de Fíchame</a>.
     </p>
 
@@ -77,10 +77,16 @@
 
     <h3>Conservación</h3>
     <ul>
+      <% if (autoRetention) { %>
       <li>Proceso abierto: mientras siga activo y como máximo <%= retention.inactive %> sin actividad.</li>
       <li>Proceso terminado (contratación o descarte): se borran en <%= retention.closed %>.</li>
+      <% } else { %>
+      <li>Proceso abierto: mientras siga activo, con un plazo de <%= retention.inactive %> sin actividad.</li>
+      <li>Proceso terminado (contratación o descarte): plazo de <%= retention.closed %>.</li>
+      <% } %>
       <li>Futuras oportunidades (si lo marcaste): <%= retention.reserve %> desde que lo aceptaste, o hasta que lo retires.</li>
     </ul>
+    <% if (!autoRetention) { %><p class="help">La supresión automática no está activada: al vencer cada plazo, el establecimiento debe eliminar tus datos desde su panel.</p><% } %>
     <p class="help">Excepcionalmente, si existe una obligación legal o una reclamación en curso, los datos pueden conservarse bloqueados el tiempo imprescindible.</p>
 
     <h3>Tus derechos</h3>

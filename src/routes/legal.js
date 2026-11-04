@@ -11,7 +11,8 @@
 const express = require('express');
 
 const { PRIVACY_NOTICE_VERSION } = require('../lib/consent');
-const { TERMS_VERSION, DPA_VERSION, COOKIES_VERSION, operator, operatorComplete } = require('../lib/legal');
+const { TERMS_VERSION, DPA_VERSION, COOKIES_VERSION, LEGAL_UPDATED, operator, operatorComplete, privacyContact } = require('../lib/legal');
+const { technicalCleanupEnabled, SECURITY_LOG_DAYS, RIGHTS_REQUEST_DAYS, ERROR_EVENT_DAYS, REPORT_DAYS } = require('../lib/retention');
 const { COOKIE_NAME, ANON_TTL_MS } = require('../middleware/session');
 const config = require('../config');
 
@@ -21,6 +22,8 @@ function common() {
   return {
     operator,
     operatorComplete: operatorComplete(),
+    privacyContact: privacyContact(),
+    legalUpdated: LEGAL_UPDATED,
     noticeVersion: PRIVACY_NOTICE_VERSION,
     /* Só depois da revisão por advogado: LEGAL_REVIEWED=1 esconde a faixa de borrador. */
     legalReviewed: process.env.LEGAL_REVIEWED === '1'
@@ -28,7 +31,11 @@ function common() {
 }
 
 router.get('/privacidad', (req, res) => {
-  res.render('legal/privacy', common());
+  res.render('legal/privacy', {
+    ...common(),
+    technicalCleanup: technicalCleanupEnabled(),
+    days: { securityLog: SECURITY_LOG_DAYS, rightsRequest: RIGHTS_REQUEST_DAYS, errorEvent: ERROR_EVENT_DAYS, report: REPORT_DAYS }
+  });
 });
 
 router.get('/cookies', (req, res) => {

@@ -14,25 +14,27 @@
  * uma versão anterior vê um aviso no painel até aceitar em /panel/terminos.
  */
 
+const config = require('../config');
 const { sb, run } = require('../db');
 const { PLANS, TRIAL_DAYS, formatPrice } = require('./pricing');
 
-const TERMS_VERSION = '2026-11-02-pagos';
-const DPA_VERSION = '2026-10-borrador';
-const COOKIES_VERSION = '2026-11';
+const TERMS_VERSION = '2026-11-04-prueba';
+const DPA_VERSION = '2026-11-04-borrador';
+const COOKIES_VERSION = '2026-11-04';
+/* Data mostrada em /privacidad, /terminos, /encargo e /cookies. */
+const LEGAL_UPDATED = '04/11/2026';
 
-/* O que mudou na versão atual, em frases curtas para o negócio. */
+/* O que mudou na versão atual, em frases curtas para o negócio. Tem de ser
+ * verdade com o pagamento online desligado e ligado (config.billingEnabled). */
 const TERMS_CHANGES = [
   /* Construído a partir de src/lib/pricing.js para não escrever preços à mão. */
-  `Precios de lanzamiento (IVA no incluido): ${TRIAL_DAYS} días de prueba gratis desde el registro, sin tarjeta; plan Fundadores a ${formatPrice(PLANS.founders.monthly)}/mes para los primeros ${PLANS.founders.maxCustomers} negocios, con el precio garantizado ${PLANS.founders.lockMonths} meses; plan Profesional a ${formatPrice(PLANS.pro.monthly)}/mes o ${formatPrice(PLANS.pro.yearly)}/año.`,
-  'Pago online del plan desde el panel (Plan y facturación). Los pagos los procesa Stripe Payments Europe, Ltd.; Fíchame nunca ve ni guarda los números de tarjeta.',
-  'No se cobra nada sin tu aceptación expresa: una casilla indica el precio + IVA y la periodicidad. Si contratas durante la prueba gratis, el primer cobro se hace cuando termina.',
-  'La suscripción se renueva automáticamente cada mes o cada año hasta que la canceles. Puedes cancelar cuando quieras desde el portal de cliente; la cancelación tiene efecto al final del periodo ya pagado.',
-  'Los precios se muestran sin IVA (+ IVA); el IVA se añade en el pago y figura en la factura. Un cambio de precio para quien ya tenga un plan se avisará con al menos 30 días de antelación.',
-  'Fíchame se usa mediante código QR o enlace a la página de tu negocio.',
-  'Se detalla la responsabilidad de cada parte: Fíchame no responde de tus decisiones de contratación ni de los contenidos que publicas, y tú respondes si usas la plataforma incumpliendo la ley.',
-  'Se explica cómo darte de baja, cuándo puede suspenderse una cuenta y cómo se te avisará de futuros cambios.',
-  'Ley española y juzgados de Granada para las controversias con negocios.'
+  `Lanzamiento con prueba gratis: ${TRIAL_DAYS} días desde el registro, sin tarjeta. Si el pago online no está activado, no se puede contratar ningún plan ni se cobra nada, y el panel lo indica.`,
+  `Precios de los planes (IVA no incluido): Fundadores a ${formatPrice(PLANS.founders.monthly)}/mes para los primeros ${PLANS.founders.maxCustomers} negocios, con el precio garantizado ${PLANS.founders.lockMonths} meses; Profesional a ${formatPrice(PLANS.pro.monthly)}/mes o ${formatPrice(PLANS.pro.yearly)}/año.`,
+  'Nunca se cobra nada sin tu aceptación expresa. Un cambio de precio para quien ya tenga un plan se avisará con al menos 30 días de antelación.',
+  'El Acuerdo de encargo explica ahora cuándo se borran los datos: si la supresión automática no está activada, cada negocio elimina las candidaturas desde su panel al vencer el plazo.',
+  'El Acuerdo de encargo y la Política de privacidad indican las métricas de uso que se envían al panel interno de NexForge, sin datos de candidatos.',
+  'Las limitaciones de responsabilidad y la indemnidad no se aplican a quien tenga la condición de consumidor.',
+  'Los cambios futuros se avisarán en el panel y, si el envío de correo está disponible, también por email.'
 ];
 
 function termsPending(restaurant) {
@@ -74,7 +76,14 @@ function operatorComplete() {
   return !Object.entries(operator).some(([k, v]) => k !== 'dpo' && /^\[.*\]$/.test(v));
 }
 
+/* Email a que as pessoas podem mesmo escrever: o de privacidade quando está
+ * definido; até lá, o de suporte, para o texto nunca mandar escrever a um
+ * marcador. O marcador continua visível nos dados do titular. */
+function privacyContact() {
+  return /^\[.*\]$/.test(operator.email) ? config.contactEmail : operator.email;
+}
+
 module.exports = {
-  TERMS_VERSION, DPA_VERSION, COOKIES_VERSION, TERMS_CHANGES,
-  operator, operatorComplete, termsPending, recordAcceptance
+  TERMS_VERSION, DPA_VERSION, COOKIES_VERSION, LEGAL_UPDATED, TERMS_CHANGES,
+  operator, operatorComplete, privacyContact, termsPending, recordAcceptance
 };

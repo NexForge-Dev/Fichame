@@ -8,9 +8,10 @@
 |---|---|---|---|
 | **Supabase, Inc.** | PostgreSQL (todas las tablas) y Storage (CV, logos) | Todos los datos de la plataforma | **Sí — todo, incluidos CV** |
 | **Vercel Inc.** | Ejecución de la app Express (funciones) y CDN | Tránsito de todas las peticiones; logs de peticiones (rutas, IP) | **Sí — en tránsito** (formularios, descargas de CV) y logs |
-| Proveedor **SMTP** | Emails de aviso y recuperación | Email del negocio; enlace al panel | No (el email no contiene datos del candidato) — **no configurado** en el entorno auditado |
+| Proveedor **SMTP** | Emails de aviso y recuperación | Email del negocio; enlace al panel; puesto de la candidatura | Parcial: sin nombre, contacto ni CV, pero el puesto puede ser el texto libre «otro puesto» del candidato. **Proveedor sin identificar en el repositorio**: `/privacidad` lo nombra de forma genérica |
+| **Panel NexForge** | Métricas internas de uso (`src/lib/analytics.js`) | Eventos con id pseudónimo (HMAC) del negocio, o del email antes de terminar el registro | No. Lista exacta de eventos en `/privacidad#metricas`. Panel en Vercel `fra1`; la región de su BD no consta en ningún repositorio (el README del panel solo dice «planned: Neon») |
 | Meta (WhatsApp) | Enlace `wa.me` en la ficha | Teléfono del candidato si el negocio pulsa el enlace | **Decisión del negocio**; no es subencargado de Fíchame |
-| CDN de terceros, analítica, CAPTCHA, IA, observabilidad | **Ninguno** (la CSP bloquea dominios externos) | — | — |
+| CDN de terceros, analítica en el navegador, CAPTCHA, IA, observabilidad | **Ninguno** (la CSP bloquea dominios externos) | — | — |
 
 ## Fichas por proveedor
 

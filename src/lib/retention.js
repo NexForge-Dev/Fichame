@@ -132,6 +132,12 @@ function autoRetentionEnabled(env = process.env) {
   return env.RETENTION_AUTO === '1' && String(env.CRON_SECRET || '').length >= 32;
 }
 
+/* A limpeza técnica (/internal/cleanup) só precisa de um CRON_SECRET válido:
+ * as páginas legais só prometem os prazos dos registos técnicos com ela ligada. */
+function technicalCleanupEnabled(env = process.env) {
+  return String(env.CRON_SECRET || '').length >= 32;
+}
+
 /* Limpeza técnica: sessões e tokens expirados, limites de pedidos, logs,
  * erros do servidor, reportes resolvidos e CVs órfãos. Não toca em
  * candidaturas, por isso pode correr todos os dias mesmo com a supressão
@@ -194,4 +200,4 @@ async function runRetention({ apply = false, log = () => {} } = {}) {
   return report;
 }
 
-module.exports = { runRetention, runCleanup, findOrphanCvs, autoRetentionEnabled, SECURITY_LOG_DAYS, RIGHTS_REQUEST_DAYS, ERROR_EVENT_DAYS, REPORT_DAYS };
+module.exports = { runRetention, runCleanup, findOrphanCvs, autoRetentionEnabled, technicalCleanupEnabled, SECURITY_LOG_DAYS, RIGHTS_REQUEST_DAYS, ERROR_EVENT_DAYS, REPORT_DAYS };

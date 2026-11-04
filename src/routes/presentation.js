@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const config = require('../config');
-const { COPY, pickLang } = require('../lib/conoce');
+const { copyFor, pickLang } = require('../lib/conoce');
 const { translate } = require('../lib/i18n');
 
 const router = express.Router();
@@ -41,7 +41,7 @@ router.get('/conoce', (req, res) => {
   const lang = pickLang(req);
   res.setHeader('Vary', 'Accept-Language, Cookie');
   res.render('public/conoce', {
-    t: COPY[lang] || COPY.es,
+    t: copyFor(lang, config.billingEnabled),
     lang,
     // ?lang= pode diferir do idioma do site: o rodapé segue a página.
     tr: (text, vars) => translate(lang, text, vars),

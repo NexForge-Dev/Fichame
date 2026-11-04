@@ -754,4 +754,61 @@ const pt = {
 
 const COPY = { es, en, pt };
 
-module.exports = { LANGS, pickLang, COPY };
+/* Com o pagamento online desligado (lançamento só com prova grátis) estes
+ * textos substituem os que falam de escolher um plano ou de cancelá-lo: os
+ * planos continuam visíveis, mas como preços previstos. */
+const TRIAL_ONLY = {
+  es: {
+    note: `${M.es.days} días gratis · Sin tarjeta · Sin ningún cobro`,
+    cost: `${M.es.days} días gratis, sin tarjeta y sin ningún cobro. El pago online aún no está activo; los planes previstos son desde ${M.es.founders}/mes (IVA no incluido).`,
+    lead: `Durante el lanzamiento solo está disponible la prueba gratis: ${M.es.days} días, sin tarjeta y sin ningún cobro. Los planes de abajo son los precios previstos para cuando se active el pago online.`,
+    soon: 'Próximamente',
+    fine: 'El pago online aún no está activo: hoy no se puede contratar ningún plan y no se cobra nada. Cuando se active, nada se cobrará sin tu aceptación expresa.',
+    after: 'Tu cuenta no se bloquea por sorpresa y no se te cobra nada. El pago online aún no está activo; cuando se active, nada se cobrará sin tu aceptación expresa.',
+    finalNote: 'Sin tarjeta de crédito y sin ningún cobro.'
+  },
+  en: {
+    note: `${M.en.days} days free · No card · No charges`,
+    cost: `${M.en.days} days free, no card and no charges. Online payment is not active yet; the planned plans start from ${M.en.founders}/month (VAT not included).`,
+    lead: `During the launch only the free trial is available: ${M.en.days} days, no card and no charges. The plans below are the planned prices for when online payment is activated.`,
+    soon: 'Coming soon',
+    fine: 'Online payment is not active yet: no plan can be taken out today and nothing is charged. Once it is activated, nothing will be charged without your express acceptance.',
+    after: 'Your account won’t be blocked by surprise and you won’t be charged. Online payment is not active yet; once it is, nothing will be charged without your express acceptance.',
+    finalNote: 'No credit card and no charges.'
+  },
+  pt: {
+    note: `${M.pt.days} dias grátis · Sem cartão · Sem qualquer cobrança`,
+    cost: `${M.pt.days} dias grátis, sem cartão e sem qualquer cobrança. O pagamento online ainda não está ativo; os planos previstos são desde ${M.pt.founders}/mês (IVA não incluído).`,
+    lead: `Durante o lançamento só está disponível a experiência grátis: ${M.pt.days} dias, sem cartão e sem qualquer cobrança. Os planos abaixo são os preços previstos para quando o pagamento online for ativado.`,
+    soon: 'Brevemente',
+    fine: 'O pagamento online ainda não está ativo: hoje não é possível contratar nenhum plano e nada é cobrado. Quando for ativado, nada será cobrado sem a tua aceitação expressa.',
+    after: 'A tua conta não é bloqueada de surpresa e nada te é cobrado. O pagamento online ainda não está ativo; quando for ativado, nada será cobrado sem a tua aceitação expressa.',
+    finalNote: 'Sem cartão de crédito e sem qualquer cobrança.'
+  }
+};
+
+function replaceLast(items, change) {
+  return items.map((item, i) => (i === items.length - 1 ? { ...item, ...change } : item));
+}
+
+/* Texto de /conoce conforme o pagamento online esteja ligado ou não. */
+function copyFor(lang, billingEnabled) {
+  const base = COPY[lang] || COPY.es;
+  if (billingEnabled) return base;
+  const o = TRIAL_ONLY[lang] || TRIAL_ONLY.es;
+  return {
+    ...base,
+    hero: { ...base.hero, note: o.note },
+    quick: { ...base.quick, items: replaceLast(base.quick.items, { a: o.cost }) },
+    pricing: {
+      ...base.pricing,
+      lead: o.lead,
+      cards: base.pricing.cards.map((c) => (c.per ? { ...c, badge: o.soon, featured: false } : { ...c, featured: true })),
+      fine: [o.fine]
+    },
+    faq: { ...base.faq, items: replaceLast(base.faq.items, { a: o.after }) },
+    final: { ...base.final, note: o.finalNote }
+  };
+}
+
+module.exports = { LANGS, pickLang, COPY, copyFor };
