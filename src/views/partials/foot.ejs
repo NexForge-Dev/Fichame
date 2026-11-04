@@ -1,20 +1,73 @@
-  <footer class="footer">
-    <%= tr('Fíchame · Candidaturas con QR para cualquier negocio') %>
-    · <a href="/privacidad"><%= tr('Privacidad') %></a>
-    · <a href="/cookies"><%= tr('Cookies') %></a>
-    · <a href="/terminos"><%= tr('Términos') %></a>
-    <%
-      /* Páginas de erro voltam ao início: o caminho no link faria duas
-       * respostas 404 diferentes, e o 404 tem de ser igual para quem procura
-       * contas que existem ou não. */
-      var langNext = typeof status !== 'undefined' && status >= 400 ? '/' : (path || '/');
-    %>
-    <nav class="lang-switch" aria-label="<%= tr('Idioma') %>">
-      <% LANGS.forEach(function (l) { %>
-        <a href="/idioma/<%= l %>?next=<%= encodeURIComponent(langNext) %>" lang="<%= l %>"<%- l === lang ? ' aria-current="true"' : '' %>><%= l.toUpperCase() %></a>
-      <% }) %>
-    </nav>
-  </footer>
+  <%
+    /* Páginas de erro voltam ao início: o caminho no link faria duas
+     * respostas 404 diferentes, e o 404 tem de ser igual para quem procura
+     * contas que existem ou não. */
+    var langNext = typeof status !== 'undefined' && status >= 400 ? '/' : (path || '/');
+  %>
+  <% if (typeof fullFooter !== 'undefined' && fullFooter) { %>
+    <%# Rodapé completo: páginas de apresentação (/ e /conoce). %>
+    <footer class="site-footer">
+      <div class="lp-wrap site-footer-grid">
+        <div class="site-footer-brand">
+          <a class="brand" href="/">
+            <img class="brand-mark" src="/img/logo.svg?v=<%= assetV %>" alt="" width="28" height="28">
+            <span>Fíchame</span>
+          </a>
+          <p><%= tr('Fíchame · Candidaturas con QR para cualquier negocio') %></p>
+        </div>
+        <nav aria-label="<%= tr('Producto') %>">
+          <h2><%= tr('Producto') %></h2>
+          <ul>
+            <li><a href="/#como-funciona"><%= tr('Cómo funciona') %></a></li>
+            <li><a href="/#funciones"><%= tr('Funciones') %></a></li>
+            <li><a href="/#precios"><%= tr('Precios') %></a></li>
+            <li><a href="/#preguntas"><%= tr('Preguntas') %></a></li>
+            <li><a href="/conoce"><%= tr('Conoce Fíchame') %></a></li>
+          </ul>
+        </nav>
+        <nav aria-label="<%= tr('Cuenta') %>">
+          <h2><%= tr('Cuenta') %></h2>
+          <ul>
+            <li><a href="/registro"><%= tr('Registrar mi negocio') %></a></li>
+            <li><a href="/login"><%= tr('Entrar') %></a></li>
+          </ul>
+        </nav>
+        <nav aria-label="<%= tr('Legal') %>">
+          <h2><%= tr('Legal') %></h2>
+          <ul>
+            <li><a href="/privacidad"><%= tr('Privacidad') %></a></li>
+            <li><a href="/cookies"><%= tr('Cookies') %></a></li>
+            <li><a href="/terminos"><%= tr('Términos') %></a></li>
+            <li><a href="/encargo"><%= tr('Acuerdo de encargo del tratamiento') %></a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="lp-wrap site-footer-end">
+        <span>
+          <% if (typeof supportEmail !== 'undefined' && supportEmail) { %><%= tr('Soporte:') %> <a href="mailto:<%= supportEmail %>"><%= supportEmail %></a><% } %>
+        </span>
+        <nav class="lang-switch" aria-label="<%= tr('Idioma') %>">
+          <% LANGS.forEach(function (l) { %>
+            <a href="/idioma/<%= l %>?next=<%= encodeURIComponent(langNext) %>" lang="<%= l %>"<%- l === lang ? ' aria-current="true"' : '' %>><%= l.toUpperCase() %></a>
+          <% }) %>
+        </nav>
+      </div>
+    </footer>
+  <% } else { %>
+    <footer class="footer">
+      <span><%= tr('Fíchame · Candidaturas con QR para cualquier negocio') %></span>
+      <span class="footer-links">
+        <a href="/privacidad"><%= tr('Privacidad') %></a>
+        <a href="/cookies"><%= tr('Cookies') %></a>
+        <a href="/terminos"><%= tr('Términos') %></a>
+      </span>
+      <nav class="lang-switch" aria-label="<%= tr('Idioma') %>">
+        <% LANGS.forEach(function (l) { %>
+          <a href="/idioma/<%= l %>?next=<%= encodeURIComponent(langNext) %>" lang="<%= l %>"<%- l === lang ? ' aria-current="true"' : '' %>><%= l.toUpperCase() %></a>
+        <% }) %>
+      </nav>
+    </footer>
+  <% } %>
   <script src="/js/app.js?v=<%= assetV %>" defer></script>
 </body>
 </html>

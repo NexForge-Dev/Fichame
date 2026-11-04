@@ -1,6 +1,7 @@
 <%- include('../partials/head', { title: tr('Nueva contraseña') }) %>
 
-<div class="auth-wrap">
+<div class="auth-shell">
+  <div class="auth-pane">
   <div class="auth-card">
     <div class="auth-head">
       <a class="brand" href="/">
@@ -9,8 +10,8 @@
       </a>
     </div>
 
-    <div class="card">
-      <h2><%= tr('Elige una contraseña nueva') %></h2>
+    <div>
+      <h1><%= tr('Elige una contraseña nueva') %></h1>
       <% if (error) { %><div class="flash err"><%= tr(error) %></div><% } %>
       <form action="/recuperar/nueva" method="post">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -34,6 +35,8 @@
       <p class="small muted center auth-alt"><a href="/recuperar"><%= tr('Solicitar un enlace nuevo') %></a></p>
     </div>
   </div>
+  </div>
+  <%- include('../partials/auth_aside') %>
 </div>
 
 <%- include('../partials/foot') %>

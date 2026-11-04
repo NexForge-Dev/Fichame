@@ -4,7 +4,6 @@
 <main class="container">
   <div class="page-title">
     <h1><%= tr('Candidaturas') %> <span class="count">(<%= totalFiltered %>)</span></h1>
-    <a class="btn ghost small" href="/panel">← <%= tr('Inicio') %></a>
   </div>
 
   <%- include('../partials/flash') %>
@@ -51,8 +50,11 @@
       <% if (filters.grupo) { %><input type="hidden" name="grupo" value="<%= filters.grupo %>"><% } %>
       <div class="search-row">
         <label for="q" class="sr-only"><%= tr('Buscar') %></label>
-        <input id="q" type="search" name="q" maxlength="80" placeholder="<%= tr('Buscar por nombre o teléfono') %>" value="<%= filters.q %>">
-        <button class="btn small" type="submit"><%- icon('search') %><span class="hide-xs"><%= tr('Buscar') %></span></button>
+        <div class="search-field">
+          <%- icon('search') %>
+          <input id="q" type="search" name="q" maxlength="80" placeholder="<%= tr('Buscar por nombre o teléfono') %>" value="<%= filters.q %>">
+        </div>
+        <button class="btn secondary small" type="submit" aria-label="<%= tr('Buscar') %>"><span class="show-xs"><%- icon('search') %></span><span class="hide-xs"><%= tr('Buscar') %></span></button>
       </div>
       <details class="more-filters" <%= advanced ? 'open' : '' %>>
         <summary><%= tr('Más filtros') %><% if (advanced) { %> <span class="badge brand"><%= tr('activos') %></span><% } %></summary>
@@ -115,11 +117,11 @@
   <% if (rows.length === 0) { %>
     <div class="card empty">
       <% if (anyFilter) { %>
-        <span class="empty-icon" aria-hidden="true">🔍</span>
+        <span class="empty-icon" aria-hidden="true"><%- icon('search') %></span>
         <p><%= tr('No hay candidaturas con estos filtros.') %></p>
         <div class="actions-row center spaced"><a class="btn secondary small" href="/panel/candidaturas"><%= tr('Quitar filtros') %></a></div>
       <% } else { %>
-        <span class="empty-icon" aria-hidden="true">📭</span>
+        <span class="empty-icon" aria-hidden="true"><%- icon('people') %></span>
         <p><%= tr('Aún no has recibido candidaturas. Cuando alguien escanee tu QR o abra tu enlace, aparecerá aquí.') %></p>
         <div class="actions-row center spaced"><a class="btn small" href="/panel/qr"><%= tr('Ver mi código QR') %></a></div>
       <% } %>
@@ -131,19 +133,19 @@
     <div class="app-list">
       <% rows.forEach(function(r) { %>
         <a class="app-row" href="/panel/candidaturas/<%= r.id %>">
-          <span class="avatar"><%= initials(r.first_name, r.last_name) %></span>
+          <span class="avatar <%= r.status === 'nuevo' ? 'is-new' : '' %>"><%= initials(r.first_name, r.last_name) %></span>
           <div class="grow">
             <div class="who">
-              <%= r.first_name %> <%= r.last_name %>
-              <% if (r.favorite) { %><span class="star" title="<%= tr('Favorito') %>">★</span><% } %>
+              <span class="who-name"><%= r.first_name %> <%= r.last_name %></span>
+              <% if (r.favorite) { %><span class="star" title="<%= tr('Favorito') %>"><%- icon('star') %></span><% } %>
             </div>
             <div class="meta"><%= r.job_title || tr('Sin puesto') %><% if (r.availability) { %> · <%= availabilityLabel(r.availability) %><% } %></div>
-            <div class="meta"><%= r.phone || tr('sin teléfono') %></div>
-            <% if (r.experience) { %><div class="meta"><%= r.experience %></div><% } %>
+            <div class="meta meta-soft"><%= r.phone || tr('sin teléfono') %></div>
+            <% if (r.experience) { %><div class="meta meta-soft"><%= r.experience %></div><% } %>
           </div>
           <div class="right">
             <span class="badge <%= (STATUSES[r.status] || {}).color || 'slate' %>"><%= statusLabel(r.status) %></span>
-            <div class="meta"><%= fmtRelative(r.applied_at) %></div>
+            <span class="when"><%= fmtRelative(r.applied_at) %></span>
           </div>
         </a>
       <% }) %>

@@ -50,7 +50,7 @@
       logs de seguridad.
     </p>
     <div class="table-wrap">
-      <table class="table">
+      <table class="table table-stack">
         <thead>
           <tr>
             <th>Email</th><th>Nombre</th><th>Rol</th>
@@ -60,13 +60,13 @@
         <tbody>
           <% users.forEach(function(u) { %>
             <tr id="u-<%= u.id %>" class="<%= pendingIds.has(u.id) ? 'pw-pending' : '' %>">
-              <td class="small"><%= u.email %><% if (pendingIds.has(u.id)) { %> <span class="badge amber">Pide contraseña</span><% } %></td>
-              <td><%= u.full_name %></td>
-              <td><span class="badge <%= u.role === 'admin' ? 'violet' : 'slate' %>"><%= u.role %></span></td>
-              <td class="small"><%= u.restaurant_name || '—' %></td>
-              <td class="small nowrap"><%= fmtDate(u.created_at) %></td>
-              <td><span class="badge <%= u.blocked ? 'red' : 'green' %>"><%= u.blocked ? 'Bloqueado' : 'Activo' %></span></td>
-              <td>
+              <td class="small" data-label="Email"><span><%= u.email %><% if (pendingIds.has(u.id)) { %> <span class="badge amber">Pide contraseña</span><% } %></span></td>
+              <td data-label="Nombre"><%= u.full_name %></td>
+              <td data-label="Rol"><span class="badge <%= u.role === 'admin' ? 'violet' : 'slate' %>"><%= u.role %></span></td>
+              <td class="small" data-label="Establecimiento"><%= u.restaurant_name || '—' %></td>
+              <td class="small nowrap" data-label="Creado"><%= fmtDate(u.created_at) %></td>
+              <td data-label="Estado"><span class="badge <%= u.blocked ? 'red' : 'green' %>"><%= u.blocked ? 'Bloqueado' : 'Activo' %></span></td>
+              <td class="td-actions">
                 <% if (u.role !== 'admin') { %>
                   <div class="actions-row flat">
                     <form action="/admin/usuarios/<%= u.id %>/bloquear" method="post">

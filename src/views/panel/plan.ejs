@@ -32,17 +32,16 @@ var accept = function (price, per) {
 <main class="container">
   <div class="page-title">
     <h1><%= tr('Plan y facturación') %></h1>
-    <a class="btn ghost small" href="/panel">← <%= tr('Inicio') %></a>
   </div>
 
   <%- include('../partials/flash') %>
 
-  <div class="card narrow-card">
-    <h2><%= tr('Tu plan') %></h2>
-    <p class="flat">
-      <strong><%= currentName %></strong>
-      <% if (st) { %> <span class="badge <%= st.cls %>"><%= st.label %></span><% } %>
-    </p>
+  <div class="card">
+    <div class="card-head">
+      <h2><%= tr('Tu plan') %></h2>
+      <% if (st) { %><span class="badge <%= st.cls %>"><%= st.label %></span><% } %>
+    </div>
+    <p class="today-title"><%= currentName %></p>
 
     <% if (live && r.plan === 'trial') { %>
       <%# Assinatura em vigor sem plano atribuído (ex.: Fundadores sem vaga
@@ -53,13 +52,13 @@ var accept = function (price, per) {
     <% } %>
     <% if (live) { %>
       <% if (r.billing_interval) { %>
-        <p class="muted small"><%= r.billing_interval === 'year' ? tr('Pago anual') : tr('Pago mensual') %><% if (r.current_period_end) { %> · <%= r.subscription_status === 'trialing' ? tr('primer cobro el {date}', { date: fmtDate(r.current_period_end) }) : tr('próxima renovación el {date}', { date: fmtDate(r.current_period_end) }) %><% } %></p>
+        <p class="muted small spaced-sm"><%= r.billing_interval === 'year' ? tr('Pago anual') : tr('Pago mensual') %><% if (r.current_period_end) { %> · <%= r.subscription_status === 'trialing' ? tr('primer cobro el {date}', { date: fmtDate(r.current_period_end) }) : tr('próxima renovación el {date}', { date: fmtDate(r.current_period_end) }) %><% } %></p>
       <% } %>
       <% if (r.plan === 'founders' && r.founders_price_locked_until) { %>
         <p class="muted small"><%= tr('Precio Fundadores garantizado hasta el {date}.', { date: fmtDate(r.founders_price_locked_until) }) %></p>
       <% } %>
     <% } else if (trialInfo) { %>
-      <p class="muted small"><%= trialInfo.active
+      <p class="muted small spaced-sm"><%= trialInfo.active
         ? tr('Tu prueba gratis termina el {date}.', { date: fmtDate(trialInfo.endsAt) })
         : tr('Tu prueba gratis terminó el {date}. Puedes seguir usando Fíchame mientras eliges un plan.', { date: fmtDate(trialInfo.endsAt) }) %></p>
     <% } %>
@@ -74,7 +73,7 @@ var accept = function (price, per) {
     <% if (billingEnabled && r.stripe_customer_id) { %>
       <form action="/panel/plan/portal" method="post" class="spaced-sm" data-busy="<%= tr('Abriendo el portal…') %>">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <button class="btn secondary small" type="submit"><%= tr('Gestionar suscripción y facturas') %></button>
+        <button class="btn secondary small" type="submit"><%- icon('card') %> <%= tr('Gestionar suscripción y facturas') %></button>
       </form>
       <p class="help"><%= tr('En el portal de Stripe puedes cambiar entre pago mensual y anual, actualizar la tarjeta, descargar tus facturas o cancelar. La cancelación se aplica al final del periodo ya pagado.') %></p>
     <% } %>

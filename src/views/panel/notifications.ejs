@@ -12,7 +12,6 @@
           <button class="btn secondary small" type="submit"><%= tr('Marcar todo como leído') %></button>
         </form>
       <% } %>
-      <a class="btn ghost small" href="/panel">← <%= tr('Inicio') %></a>
     </div>
   </div>
 
@@ -20,13 +19,13 @@
 
   <% if (notifications.length === 0) { %>
     <div class="card empty">
-      <span class="empty-icon" aria-hidden="true">🔔</span>
+      <span class="empty-icon" aria-hidden="true"><%- icon('bell') %></span>
       <p><%= tr('Todavía no hay avisos. Aquí aparecerán las nuevas candidaturas y el resultado de los emails de notificación.') %></p>
     </div>
   <% } else { %>
     <div class="card">
       <div class="table-wrap">
-        <table class="table">
+        <table class="table table-stack">
           <thead>
             <tr>
               <th><%= tr('Fecha') %></th>
@@ -39,15 +38,14 @@
           <tbody>
             <% notifications.forEach(function(n) { %>
               <tr>
-                <td class="nowrap">
-                  <%= fmtDate(n.created_at) %>
-                  <div class="dim tiny"><%= fmtRelative(n.created_at) %></div>
-                </td>
-                <td>
+                <td class="nowrap" data-label="<%= tr('Fecha') %>"><span>
+                  <%= fmtRelative(n.created_at) %>
+                </span></td>
+                <td data-label="<%= tr('Aviso') %>"><div>
                   <strong><%= n.type === 'nueva_candidatura' ? tr('Nueva candidatura') : (n.type === 'solicitud_derechos' ? tr('Solicitud de derechos') : n.type) %></strong>
                   <% if (n.jobTitle) { %><div class="dim tiny"><%= n.jobTitle %></div><% } %>
-                </td>
-                <td>
+                </div></td>
+                <td data-label="<%= tr('Candidato') %>">
                   <% if (n.type === 'solicitud_derechos') { %>
                     <a href="/panel/derechos"><%= tr('Gestionar (plazo 1 mes)') %></a>
                   <% } else if (n.application_id) { %>
@@ -56,8 +54,8 @@
                     <span class="dim">—</span>
                   <% } %>
                 </td>
-                <td class="nowrap"><%= n.channel === 'email' ? 'Email' : tr('Panel') %></td>
-                <td>
+                <td class="nowrap" data-label="<%= tr('Canal') %>"><%= n.channel === 'email' ? 'Email' : tr('Panel') %></td>
+                <td data-label="<%= tr('Estado') %>"><div>
                   <%
                     /* `logged` significa que no hay SMTP configurado: el email
                        solo se escribió en el log del servidor. */
@@ -76,7 +74,7 @@
                     <%# o detalhe técnico (em português, do servidor SMTP) fica só no admin %>
                     <div class="dim tiny"><%= tr('No se pudo enviar el email.') %></div>
                   <% } %>
-                </td>
+                </div></td>
               </tr>
             <% }) %>
           </tbody>

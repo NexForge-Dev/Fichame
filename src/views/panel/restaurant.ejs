@@ -4,7 +4,6 @@
 <main class="container">
   <div class="page-title">
     <h1><%= tr('Mi negocio') %></h1>
-    <a class="btn ghost small" href="/panel">← <%= tr('Inicio') %></a>
   </div>
 
   <%- include('../partials/flash') %>
@@ -14,38 +13,27 @@
     <div class="label"><%- icon('qr') %> <%= tr('URL de tu página pública') %></div>
     <div class="url"><%= publicUrl %></div>
     <div class="actions-row flat">
-      <button class="btn small" type="button" data-copy="<%= publicUrl %>"><%= tr('Copiar enlace') %></button>
-      <a class="btn secondary small" href="<%= publicUrl %>" target="_blank" rel="noopener"><%= tr('Abrir página') %></a>
-      <a class="btn secondary small" href="/panel/qr"><%= tr('Generar código QR') %></a>
+      <button class="btn small" type="button" data-copy="<%= publicUrl %>"><%- icon('copy') %> <%= tr('Copiar enlace') %></button>
+      <a class="btn secondary small" href="<%= publicUrl %>" target="_blank" rel="noopener"><%- icon('external') %> <%= tr('Abrir página') %></a>
+      <a class="btn secondary small" href="/panel/qr"><%- icon('qr') %> <%= tr('Generar código QR') %></a>
     </div>
     <p class="small link-note"><%= tr('Comparte esta URL o imprime su código QR. Nunca cambiará, aunque pauses o reactives las candidaturas.') %></p>
   </div>
 
-  <div class="card">
-    <h2><%= tr('Estado de contratación') %></h2>
-    <% if (restaurant.hiring_status === 'open') { %>
-      <div class="status-strip is-open">
-        <span class="dot dot-lg green"></span>
-        <div class="grow"><strong><%= tr('Aceptando candidaturas') %></strong></div>
-      </div>
-      <form action="/panel/contratacion" method="post">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="hidden" name="accion" value="pausar">
-        <button class="btn secondary" type="submit"><%= tr('Pausar candidaturas') %></button>
-      </form>
-      <p class="help"><%= tr('Al pausar, tu página pública mostrará «No estamos contratando» y solo recibirá datos para futuras oportunidades. El enlace y el QR siguen siendo los mismos.') %></p>
-    <% } else { %>
-      <div class="status-strip is-paused">
-        <span class="dot dot-lg red"></span>
-        <div class="grow"><strong><%= tr('Pausado') %></strong></div>
-      </div>
-      <form action="/panel/contratacion" method="post">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="hidden" name="accion" value="activar">
-        <button class="btn" type="submit"><%= tr('Activar candidaturas') %></button>
-      </form>
-      <p class="help"><%= tr('Al activar, el formulario de candidaturas vuelve a estar disponible al instante.') %></p>
-    <% } %>
+  <% var isOpen = restaurant.hiring_status === 'open'; %>
+  <div class="status-strip <%= isOpen ? 'is-open' : 'is-paused' %>">
+    <span class="dot dot-lg <%= isOpen ? 'green' : 'amber' %>"></span>
+    <div class="grow">
+      <strong><%= isOpen ? tr('Aceptando candidaturas') : tr('Pausado') %></strong>
+      <div class="muted small"><%= isOpen
+        ? tr('Al pausar, tu página pública mostrará «No estamos contratando» y solo recibirá datos para futuras oportunidades. El enlace y el QR siguen siendo los mismos.')
+        : tr('Al activar, el formulario de candidaturas vuelve a estar disponible al instante.') %></div>
+    </div>
+    <form action="/panel/contratacion" method="post">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="accion" value="<%= isOpen ? 'pausar' : 'activar' %>">
+      <button class="btn <%= isOpen ? 'secondary' : '' %> small" type="submit"><%= isOpen ? tr('Pausar candidaturas') : tr('Activar candidaturas') %></button>
+    </form>
   </div>
 
   <div class="card">
@@ -53,6 +41,7 @@
     <form action="/panel/restaurante" method="post" enctype="multipart/form-data">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
+      <div class="form-grid">
       <div class="field">
         <label for="name"><%= tr('Nombre del negocio') %> *</label>
         <input id="name" type="text" name="name" maxlength="100" required value="<%= restaurant.name %>">
@@ -71,7 +60,7 @@
           <% }) %>
         </select>
       </div>
-      <div class="field">
+      <div class="field span-2">
         <label for="descripcion"><%= tr('Descripción') %></label>
         <textarea id="descripcion" name="descripcion" maxlength="1500" rows="3"><%= restaurant.description %></textarea>
       </div>
@@ -98,11 +87,11 @@
         <label for="telefono"><%= tr('Teléfono') %> <span class="dim label-hint">(<%= tr('opcional') %>)</span></label>
         <input id="telefono" type="tel" name="telefono" maxlength="30" value="<%= restaurant.phone %>">
       </div>
-      <div class="field">
+      <div class="field span-2">
         <label for="direccion"><%= tr('Dirección') %></label>
         <input id="direccion" type="text" name="direccion" maxlength="200" value="<%= restaurant.address %>">
       </div>
-      <div class="hint-row">
+      <div class="hint-row span-2">
         <div class="field">
           <label for="cp"><%= tr('Código postal') %></label>
           <input id="cp" type="text" name="cp" maxlength="5" pattern="\d{5}" inputmode="numeric" value="<%= restaurant.postal_code %>">
@@ -111,6 +100,7 @@
           <label for="ciudad"><%= tr('Ciudad') %> *</label>
           <input id="ciudad" type="text" name="ciudad" maxlength="100" required value="<%= restaurant.city %>">
         </div>
+      </div>
       </div>
 
       <div class="section-title"><%= tr('Imágenes de tu página pública') %></div>
@@ -168,7 +158,7 @@
     </form>
   </div>
 
-  <div class="card">
+  <div class="card card-tight">
     <h2><%= tr('Tu slug') %></h2>
     <p class="muted small flat"><strong>/<%= restaurant.slug %></strong> — <%= tr('identificador único de tu negocio en la plataforma.') %></p>
     <p class="help"><%= tr('Contacta con soporte si necesitas cambiarlo: cambiarlo invalidaría tu enlace y los códigos QR que ya hayas impreso.') %></p>

@@ -1,6 +1,7 @@
 <%- include('../partials/head', { title: tr('Recuperar contraseña') }) %>
 
-<div class="auth-wrap">
+<div class="auth-shell">
+  <div class="auth-pane">
   <div class="auth-card">
     <div class="auth-head">
       <a class="brand" href="/">
@@ -9,8 +10,8 @@
       </a>
     </div>
 
-    <div class="card">
-      <h2><%= tr('Recuperar contraseña') %></h2>
+    <div>
+      <h1><%= tr('Recuperar contraseña') %></h1>
       <% if (sent) { %>
         <div class="flash ok"><%= tr(message) %></div>
         <% if (!manual) { %><p class="small muted"><%= tr('Si no lo recibes en unos minutos, revisa la carpeta de spam.') %></p><% } %>
@@ -32,6 +33,8 @@
       <p class="small muted center auth-alt"><a href="/login"><%= tr('Volver a iniciar sesión') %></a></p>
     </div>
   </div>
+  </div>
+  <%- include('../partials/auth_aside') %>
 </div>
 
 <%- include('../partials/foot') %>

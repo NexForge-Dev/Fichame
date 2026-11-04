@@ -1,13 +1,15 @@
 <%- include('../partials/head', {
   title: tr('Candidaturas con QR para tu negocio'),
-  description: tr('Restaurantes, tiendas, hoteles o cualquier negocio: pon tu código QR a la vista y recibe candidaturas con CV en PDF, ordenadas en un panel. Sin apps ni papeles.')
+  description: tr('Restaurantes, tiendas, hoteles o cualquier negocio: pon tu código QR a la vista y recibe candidaturas con CV en PDF, ordenadas en un panel. Sin apps ni papeles.'),
+  ogPath: '/'
 }) %>
 
 <!-- Landing page (/). Tudo em HTML + CSS do próprio servidor: o CSP não
      permite fontes, imagens nem scripts externos. As «capturas» do produto
-     são maquetas em HTML, por isso seguem o modo escuro e nunca ficam
-     desatualizadas em relação às cores do sistema. Textos via tr()
-     (traduções em src/locales/40-landing.js). -->
+     são maquetas em HTML, com nomes de exemplo, marcadas aria-hidden: seguem
+     o modo escuro e nunca ficam desatualizadas em relação ao sistema. Textos
+     via tr() (src/locales/40-landing.js e 50-redesign.js); preços sempre de
+     src/lib/pricing.js. Sem depoimentos, logos nem números de clientes. -->
 
 <header class="lp-top">
   <div class="lp-wrap lp-top-row">
@@ -17,8 +19,8 @@
     </a>
     <nav class="lp-top-nav" aria-label="<%= tr('Secciones') %>">
       <a href="#como-funciona"><%= tr('Cómo funciona') %></a>
+      <a href="#para-quien"><%= tr('Para quién') %></a>
       <a href="#funciones"><%= tr('Funciones') %></a>
-      <a href="#privacidad"><%= tr('Privacidad') %></a>
       <a href="#precios"><%= tr('Precios') %></a>
       <a href="#preguntas"><%= tr('Preguntas') %></a>
     </nav>
@@ -29,13 +31,13 @@
   </div>
 </header>
 
-<main>
+<main class="lp">
 
   <!-- ============================ HERO ============================ -->
   <section class="lp-hero">
     <div class="lp-wrap lp-hero-grid">
       <div class="lp-hero-copy">
-        <span class="lp-eyebrow"><%- icon('qr') %> <%= tr('Reclutamiento con QR para cualquier negocio') %></span>
+        <span class="lp-eyebrow"><%- icon('qr') %> <%= tr('Contratación local, sin papel') %></span>
         <h1><%= tr('Tu próximo fichaje está a') %> <span class="lp-hl"><%= tr('un escaneo del móvil') %></span>.</h1>
         <p class="lp-lead">
           <%= tr('Pon tu código QR en tu restaurante, tienda o negocio. Quien quiera trabajar contigo lo escanea con el móvil, rellena un formulario y envía su CV en PDF. Tú lo recibes ordenado en tu panel — sin apps, sin papeles y sin CVs perdidos en el WhatsApp.') %>
@@ -51,10 +53,13 @@
         </ul>
       </div>
 
-      <!-- Maqueta: telemóvel com a página pública de um negócio -->
+      <!-- Maqueta: o cartaz na montra, o telemóvel de quem passa e a ficha que
+           chega ao painel. O desenho do QR é decorativo: não abre nada. -->
       <div class="lp-hero-visual" aria-hidden="true">
-        <div class="lp-tag">
-          <span class="lp-tag-label"><%- icon('qr') %> <%= tr('Escanea con el móvil') %></span>
+        <div class="lp-sign">
+          <div class="lp-sign-title"><%= tr('Estamos contratando') %></div>
+          <span class="lp-sign-code"><%- icon('qr') %></span>
+          <div class="lp-sign-cta"><%= tr('Escanea con el móvil') %></div>
         </div>
 
         <div class="lp-phone">
@@ -73,7 +78,7 @@
               <div class="lp-m-label"><%= tr('Tus datos') %></div>
               <div class="lp-m-input">Lucía Fernández</div>
               <div class="lp-m-input">612 345 678</div>
-              <div class="lp-m-file"><%- icon('file') %> CV_Lucia.pdf <b>✓</b></div>
+              <div class="lp-m-file"><%- icon('file') %> CV_Lucia.pdf <%- icon('check') %></div>
               <div class="lp-m-btn"><%= tr('Enviar candidatura') %></div>
             </div>
           </div>
@@ -108,8 +113,40 @@
     </div>
   </section>
 
+  <!-- ==================== CONTRATAÇÃO LOCAL SEM PAPEL ================= -->
+  <section class="lp-section" id="sin-papel">
+    <div class="lp-wrap">
+      <div class="lp-head">
+        <span class="lp-kicker"><%= tr('Contratación local, sin papel') %></span>
+        <h2><%= tr('Contratar cerca ya no pasa por una pila de currículums.') %></h2>
+        <p><%= tr('Quien busca trabajo cerca de casa entra, pregunta y deja un CV. Fíchame convierte ese momento en una candidatura digital, ordenada y fácil de responder.') %></p>
+      </div>
+
+      <div class="lp-compare">
+        <div class="lp-compare-col">
+          <h3><%= tr('Sin Fíchame') %></h3>
+          <ul>
+            <li><%= tr('Currículums en papel que se quedan en el mostrador') %></li>
+            <li><%= tr('CV perdidos entre los mensajes de WhatsApp') %></li>
+            <li><%= tr('Nadie recuerda quién vino ni para qué puesto') %></li>
+            <li><%= tr('El candidato no sabe si sigues buscando a alguien') %></li>
+          </ul>
+        </div>
+        <div class="lp-compare-col is-after">
+          <h3><%= tr('Con Fíchame') %></h3>
+          <ul>
+            <li><%- icon('check') %> <%= tr('Un QR en la puerta y un enlace para compartir') %></li>
+            <li><%- icon('check') %> <%= tr('Cada candidatura con su CV en PDF, en tu panel') %></li>
+            <li><%- icon('check') %> <%= tr('Estados claros, del «nuevo» al «contratado»') %></li>
+            <li><%- icon('check') %> <%= tr('Tu página muestra tus vacantes y si estás contratando') %></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ========================= COMO FUNCIONA ======================== -->
-  <section class="lp-section" id="como-funciona">
+  <section class="lp-section lp-section-alt" id="como-funciona">
     <div class="lp-wrap">
       <div class="lp-head">
         <span class="lp-kicker"><%= tr('Cómo funciona') %></span>
@@ -120,19 +157,16 @@
       <ol class="lp-steps">
         <li class="lp-step">
           <span class="lp-step-num">1</span>
-          <span class="lp-step-icon"><%- icon('store') %></span>
           <h3><%= tr('Registra tu negocio') %></h3>
           <p><%= tr('Crea tu cuenta, sube el logo y publica tus vacantes: dependiente, camarero, recepcionista, cocina… Con contrato, jornada y requisitos.') %></p>
         </li>
         <li class="lp-step">
           <span class="lp-step-num">2</span>
-          <span class="lp-step-icon"><%- icon('qr') %></span>
           <h3><%= tr('Pon tu QR a la vista') %></h3>
           <p><%= tr('Imprime tu código QR y ponlo en la puerta o el mostrador. También puedes compartir tu enlace por WhatsApp y redes sociales.') %></p>
         </li>
         <li class="lp-step">
           <span class="lp-step-num">3</span>
-          <span class="lp-step-icon"><%- icon('people') %></span>
           <h3><%= tr('Recibe y decide') %></h3>
           <p><%= tr('Cada candidatura llega a tu panel con su CV. Filtra, toma notas, llama o escribe por WhatsApp y marca el estado.') %></p>
         </li>
@@ -141,35 +175,43 @@
   </section>
 
   <!-- ===================== DOIS LADOS DO PRODUTO ==================== -->
-  <section class="lp-section lp-section-alt">
-    <div class="lp-wrap lp-split">
-      <div class="lp-side">
-        <span class="lp-side-icon"><%- icon('phone') %></span>
-        <h3><%= tr('Para el candidato') %></h3>
-        <p class="lp-side-lead"><%= tr('Menos de 2 minutos desde el móvil. Sin registrarse.') %></p>
-        <ul class="lp-list">
-          <li><%- icon('check') %> <%= tr('Ve tu negocio, tus vacantes y si estás contratando.') %></li>
-          <li><%- icon('check') %> <%= tr('Rellena sus datos y adjunta el CV en PDF.') %></li>
-          <li><%- icon('check') %> <%= tr('Sabe exactamente para qué se usan sus datos.') %></li>
-          <li><%- icon('check') %> <%= tr('Si no hay vacantes, deja sus datos para más adelante.') %></li>
-        </ul>
+  <section class="lp-section" id="para-quien">
+    <div class="lp-wrap">
+      <div class="lp-head">
+        <span class="lp-kicker"><%= tr('Para quién') %></span>
+        <h2><%= tr('Fácil para quien busca trabajo y para quien contrata.') %></h2>
       </div>
-      <div class="lp-side lp-side-brand">
-        <span class="lp-side-icon"><%- icon('store') %></span>
-        <h3><%= tr('Para tu negocio') %></h3>
-        <p class="lp-side-lead"><%= tr('Todas las candidaturas en un solo sitio, en orden.') %></p>
-        <ul class="lp-list">
-          <li><%- icon('check') %> <%= tr('Recibe candidatos aunque estés en plena hora punta.') %></li>
-          <li><%- icon('check') %> <%= tr('Cada CV con su teléfono, email y disponibilidad.') %></li>
-          <li><%- icon('check') %> <%= tr('Contacta en un toque: llamada, email o WhatsApp.') %></li>
-          <li><%- icon('check') %> <%= tr('¿Plantilla completa? Pausa sin cambiar el QR.') %></li>
-        </ul>
+      <div class="lp-split">
+        <div class="lp-side lp-side-brand">
+          <span class="lp-side-icon"><%- icon('store') %></span>
+          <h3><%= tr('Para tu negocio') %></h3>
+          <p class="lp-side-lead"><%= tr('Todas las candidaturas en un solo sitio, en orden.') %></p>
+          <ul class="lp-list">
+            <li><%- icon('check') %> <%= tr('Recibe candidatos aunque estés en plena hora punta.') %></li>
+            <li><%- icon('check') %> <%= tr('Cada CV con su teléfono, email y disponibilidad.') %></li>
+            <li><%- icon('check') %> <%= tr('Contacta en un toque: llamada, email o WhatsApp.') %></li>
+            <li><%- icon('check') %> <%= tr('¿Plantilla completa? Pausa sin cambiar el QR.') %></li>
+          </ul>
+          <div class="lp-side-cta"><a class="btn" href="/registro"><%= tr('Registrar mi negocio') %></a></div>
+        </div>
+        <div class="lp-side">
+          <span class="lp-side-icon"><%- icon('phone') %></span>
+          <h3><%= tr('Para el candidato') %></h3>
+          <p class="lp-side-lead"><%= tr('Menos de 2 minutos desde el móvil. Sin registrarse.') %></p>
+          <ul class="lp-list">
+            <li><%- icon('check') %> <%= tr('Ve tu negocio, tus vacantes y si estás contratando.') %></li>
+            <li><%- icon('check') %> <%= tr('Rellena sus datos y adjunta el CV en PDF.') %></li>
+            <li><%- icon('check') %> <%= tr('Sabe exactamente para qué se usan sus datos.') %></li>
+            <li><%- icon('check') %> <%= tr('Si no hay vacantes, deja sus datos para más adelante.') %></li>
+          </ul>
+          <p class="lp-side-note"><%= tr('¿Buscas trabajo? Escanea el QR del negocio o abre su enlace: no hace falta crear ninguna cuenta.') %></p>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- ======================== MAQUETA DO PAINEL ===================== -->
-  <section class="lp-section">
+  <section class="lp-section lp-section-alt">
     <div class="lp-wrap">
       <div class="lp-head">
         <span class="lp-kicker"><%= tr('Tu panel') %></span>
@@ -179,8 +221,7 @@
 
       <div class="lp-panel" aria-hidden="true">
         <div class="lp-panel-bar">
-          <span></span><span></span><span></span>
-          <div class="lp-panel-url">fichame · <%= tr('Candidaturas') %></div>
+          <div class="lp-panel-url">Fíchame · <%= tr('Candidaturas') %></div>
         </div>
         <div class="lp-panel-body">
           <div class="lp-pipe">
@@ -193,37 +234,40 @@
 
           <div class="lp-search"><%- icon('search') %> <%= tr('Buscar por nombre, puesto, experiencia…') %></div>
 
-          <div class="lp-row">
-            <span class="lp-av">LF</span>
-            <div class="lp-row-main">
-              <strong>Lucía Fernández <span class="lp-fav"><%- icon('star') %></span></strong>
-              <span><%= tr('Dependiente/a') %> · <%= tr('Inmediata') %> · <%= tr('hace 5 min') %></span>
+          <div class="lp-rows">
+            <div class="lp-row">
+              <span class="lp-av is-new">LF</span>
+              <div class="lp-row-main">
+                <strong>Lucía Fernández <span class="lp-fav"><%- icon('star') %></span></strong>
+                <span><%= tr('Dependiente/a') %> · <%= tr('Inmediata') %> · <%= tr('hace 5 min') %></span>
+              </div>
+              <span class="badge blue"><%= tr('Nuevo') %></span>
             </div>
-            <span class="lp-chip is-new"><%= tr('Nuevo') %></span>
-          </div>
-          <div class="lp-row">
-            <span class="lp-av lp-av-2">JM</span>
-            <div class="lp-row-main">
-              <strong>Javier Moreno</strong>
-              <span><%= tr('Reponedor/a') %> · <%= tr('Fines de semana') %> · <%= tr('ayer') %></span>
+            <div class="lp-row">
+              <span class="lp-av">JM</span>
+              <div class="lp-row-main">
+                <strong>Javier Moreno</strong>
+                <span><%= tr('Reponedor/a') %> · <%= tr('Fines de semana') %> · <%= tr('ayer') %></span>
+              </div>
+              <span class="badge violet"><%= tr('Entrevista') %></span>
             </div>
-            <span class="lp-chip is-int"><%= tr('Entrevista') %></span>
-          </div>
-          <div class="lp-row">
-            <span class="lp-av lp-av-3">AR</span>
-            <div class="lp-row-main">
-              <strong>Ana Ruiz</strong>
-              <span><%= tr('Cajero/a') %> · <%= tr('Media jornada') %> · <%= tr('hace 3 días') %></span>
+            <div class="lp-row">
+              <span class="lp-av">AR</span>
+              <div class="lp-row-main">
+                <strong>Ana Ruiz</strong>
+                <span><%= tr('Cajero/a') %> · <%= tr('Media jornada') %> · <%= tr('hace 3 días') %></span>
+              </div>
+              <span class="badge green"><%= tr('Contratado') %></span>
             </div>
-            <span class="lp-chip is-ok"><%= tr('Contratado') %></span>
           </div>
         </div>
       </div>
+      <p class="lp-mock-note"><%= tr('Imagen de ejemplo con datos ficticios.') %></p>
     </div>
   </section>
 
   <!-- =========================== FUNÇÕES =========================== -->
-  <section class="lp-section lp-section-alt" id="funciones">
+  <section class="lp-section" id="funciones">
     <div class="lp-wrap">
       <div class="lp-head">
         <span class="lp-kicker"><%= tr('Funciones') %></span>
@@ -267,7 +311,7 @@
   </section>
 
   <!-- ========================== PRIVACIDADE ========================= -->
-  <section class="lp-section" id="privacidad">
+  <section class="lp-section lp-section-tight" id="privacidad">
     <div class="lp-wrap">
       <div class="lp-privacy">
         <div class="lp-privacy-copy">
@@ -344,7 +388,7 @@
 
   <!-- ============================= FAQ ============================= -->
   <section class="lp-section" id="preguntas">
-    <div class="lp-wrap lp-wrap-narrow">
+    <div class="lp-wrap lp-faq-layout">
       <div class="lp-head">
         <span class="lp-kicker"><%= tr('Preguntas frecuentes') %></span>
         <h2><%= tr('Lo que suelen preguntarnos') %></h2>
@@ -356,12 +400,24 @@
           <p><%= tr('No. Al escanear el QR se abre una página web normal en el navegador. Tampoco tiene que crear ninguna cuenta.') %></p>
         </details>
         <details>
+          <summary><%= tr('¿Hace falta tarjeta para probarlo?') %></summary>
+          <p><%= tr('{days} días gratis desde el registro. Sin tarjeta.', { days: pricing.TRIAL_DAYS }) %> <%= tr('Antes de que termine la prueba podrás elegir un plan de pago desde tu panel. No se cobra nada sin tu aceptación expresa.') %></p>
+        </details>
+        <details>
           <summary><%= tr('¿Qué pasa si dejo de contratar?') %></summary>
           <p><%= tr('Pulsa «Pausar candidaturas». Tu página mostrará que no estás contratando y ofrecerá dejar los datos para futuras oportunidades. No hay que cambiar el enlace ni el QR.') %></p>
         </details>
         <details>
           <summary><%= tr('¿Puedo cambiar las vacantes después?') %></summary>
           <p><%= tr('Sí, cuando quieras. Las vacantes se crean, editan, pausan o eliminan desde el panel, y tu página siempre muestra las actuales.') %></p>
+        </details>
+        <details>
+          <summary><%= tr('¿Fíchame elige a los candidatos por mí?') %></summary>
+          <p><%= tr('Fíchame no selecciona candidatos ni decide por ti.') %> <%= tr('Sin filtros automáticos: cada candidato lo valora una persona.') %></p>
+        </details>
+        <details>
+          <summary><%= tr('¿Quién puede ver los CV?') %></summary>
+          <p><%= tr('Solo tú los ves, desde tu panel. Nunca hay enlaces públicos.') %></p>
         </details>
       </div>
     </div>
@@ -370,7 +426,6 @@
   <!-- ========================== CTA FINAL ========================== -->
   <section class="lp-final">
     <div class="lp-wrap lp-final-inner">
-      <span class="lp-final-icon"><%- icon('qr') %></span>
       <h2><%= tr('Tu próxima incorporación puede estar ahora mismo en tu local.') %></h2>
       <p><%= tr('Registra tu negocio y empieza a recibir candidaturas hoy mismo.') %></p>
       <div class="lp-cta-row lp-cta-center">
@@ -382,4 +437,4 @@
 
 </main>
 
-<%- include('../partials/foot') %>
+<%- include('../partials/foot', { fullFooter: true }) %>

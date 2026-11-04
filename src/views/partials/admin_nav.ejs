@@ -15,10 +15,10 @@ var adminItems = [
       <img class="brand-mark" src="/img/logo.svg?v=<%= assetV %>" alt="" width="28" height="28">
       <span>Admin</span>
     </a>
-    <nav class="appnav">
+    <nav class="appnav" aria-label="Administración">
       <% adminItems.forEach(function(item) { %>
         <a class="<%= (item.exact ? path === item.href : path.indexOf(item.href) === 0) ? 'active' : '' %>"
-           href="<%= item.href %>" title="<%= item.label %>" aria-label="<%= item.label %>">
+           href="<%= item.href %>" title="<%= item.label %>" aria-label="<%= item.label %>"<%- (item.exact ? path === item.href : path.indexOf(item.href) === 0) ? ' aria-current="page"' : '' %>>
           <%- icon(item.icon) %>
           <span><%= item.label %></span>
         </a>

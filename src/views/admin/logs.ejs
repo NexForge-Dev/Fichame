@@ -28,24 +28,24 @@
 
   <% if (logs.length === 0) { %>
     <div class="card empty">
-      <span class="empty-icon">🛡️</span>
+      <span class="empty-icon" aria-hidden="true"><%- icon('shield') %></span>
       <p>Sin registros.</p>
     </div>
   <% } else { %>
     <div class="card">
       <div class="table-wrap">
-        <table class="table">
+        <table class="table table-stack">
           <thead>
             <tr><th>ID</th><th>Fecha</th><th>Evento</th><th>IP</th><th>Detalle</th></tr>
           </thead>
           <tbody>
             <% logs.forEach(function(l) { %>
               <tr>
-                <td class="dim small"><%= l.id %></td>
-                <td class="small nowrap"><%= fmtDate(l.created_at) %></td>
-                <td><span class="badge slate"><%= l.event %></span></td>
-                <td class="small nowrap"><%= l.ip %></td>
-                <td class="small log-detail"><%= l.detail %></td>
+                <td class="dim small" data-label="ID"><%= l.id %></td>
+                <td class="small nowrap" data-label="Fecha"><%= fmtDate(l.created_at) %></td>
+                <td data-label="Evento"><span class="badge slate"><%= l.event %></span></td>
+                <td class="small nowrap" data-label="IP"><%= l.ip %></td>
+                <td class="small log-detail" data-label="Detalle"><%= l.detail %></td>
               </tr>
             <% }) %>
           </tbody>

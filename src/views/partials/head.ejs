@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#f6f4f1" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#16140f" media="(prefers-color-scheme: dark)">
   <% if (typeof description !== 'undefined' && description) { %>
   <meta name="description" content="<%= description %>">
@@ -18,13 +18,16 @@
   <% if (typeof description !== 'undefined' && description) { %>
   <meta property="og:description" content="<%= description %>">
   <% } %>
+  <meta name="twitter:card" content="summary">
   <meta property="og:image" content="<%= appUrl %><%= typeof ogImage !== 'undefined' && ogImage ? ogImage : '/apple-touch-icon.png' %>">
   <% if (typeof ogPath !== 'undefined' && ogPath) { %>
   <meta property="og:url" content="<%= appUrl %><%= ogPath %>">
+  <link rel="canonical" href="<%= appUrl %><%= ogPath %>">
   <% } %>
   <link rel="icon" href="/favicon.ico?v=<%= assetV %>" sizes="48x48">
   <link rel="icon" href="/favicon.svg?v=<%= assetV %>" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=<%= assetV %>">
+  <link rel="preload" href="/fonts/figtree-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/style.css?v=<%= assetV %>">
 </head>
 <body>

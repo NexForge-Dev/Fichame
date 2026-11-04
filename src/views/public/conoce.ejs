@@ -62,7 +62,7 @@
       </div>
       <ul class="cn-chores">
         <% t.problem.items.forEach(function (item) { %>
-          <li><span class="cn-emoji" aria-hidden="true"><%= item.emoji %></span><%= item.text %></li>
+          <li><span class="cn-chore-icon"><%- icon(item.icon) %></span><%= item.text %></li>
         <% }) %>
       </ul>
       <p class="cn-scatter"><%= t.problem.scatter %></p>
@@ -303,4 +303,4 @@
 
 </main>
 
-<%- include('../partials/foot') %>
+<%- include('../partials/foot', { fullFooter: true }) %>

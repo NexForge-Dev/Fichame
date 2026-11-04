@@ -10,7 +10,7 @@ document.addEventListener('change', function (e) {
     var out = field && field.querySelector('[data-file-name]');
     if (out) {
       var f = e.target.files && e.target.files[0];
-      out.textContent = f ? '✓ ' + f.name : '';
+      out.textContent = f ? f.name : '';
       out.classList.toggle('is-shown', Boolean(f));
     }
     /* Botão próprio (.file-pick): o texto nativo do input vem na língua do
@@ -30,9 +30,11 @@ document.addEventListener('click', function (e) {
   if (!btn) return;
   var text = btn.getAttribute('data-copy');
   var done = function () {
-    var old = btn.textContent;
+    /* innerHTML: o botão pode ter um ícone. */
+    var old = btn.innerHTML;
     btn.textContent = { en: 'Copied!', pt: 'Copiado!' }[document.documentElement.lang] || '¡Copiado!';
-    setTimeout(function () { btn.textContent = old; }, 1600);
+    btn.classList.add('is-done');
+    setTimeout(function () { btn.innerHTML = old; btn.classList.remove('is-done'); }, 1600);
   };
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(done).catch(done);
@@ -123,7 +125,7 @@ document.addEventListener('submit', function (e) {
   var btn = form.querySelector('button[type=submit]');
   if (!btn) return;
   if (btn.disabled) { e.preventDefault(); return; }
-  btn.setAttribute('data-label', btn.textContent);
+  btn.setAttribute('data-label', btn.innerHTML);
   btn.textContent = form.getAttribute('data-busy');
   /* Desativar só depois de o browser ter recolhido os dados do formulário. */
   setTimeout(function () { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }, 0);
@@ -134,6 +136,6 @@ window.addEventListener('pageshow', function () {
   document.querySelectorAll('form[data-busy] button[aria-busy]').forEach(function (btn) {
     btn.disabled = false;
     btn.removeAttribute('aria-busy');
-    if (btn.hasAttribute('data-label')) btn.textContent = btn.getAttribute('data-label');
+    if (btn.hasAttribute('data-label')) btn.innerHTML = btn.getAttribute('data-label');
   });
 });

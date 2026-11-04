@@ -2,61 +2,55 @@
 <%- include('../partials/panel_nav') %>
 
 <main class="container">
-  <div class="page-title">
-    <h1><%= a.first_name %> <%= a.last_name %></h1>
-    <div class="row">
-      <a class="btn ghost small" href="/panel/candidaturas">← <%= tr('Candidaturas') %></a>
-      <% if (next) { %><a class="btn secondary small" href="/panel/candidaturas/<%= next.id %>"><%= tr('Siguiente') %> →</a><% } %>
-    </div>
-  </div>
-
-  <%- include('../partials/flash') %>
+  <p class="crumb"><a class="back-link" href="/panel/candidaturas"><%- icon('arrowLeft') %> <%= tr('Candidaturas') %></a></p>
 
   <!-- Cabeçalho: quem é, em que estado está, e como se fala com a pessoa.
        As ações de contacto ficam aqui em cima porque são o que o dono do
-       restaurante vem fazer. -->
-  <div class="card">
-    <div class="row-between">
-      <div class="row">
-        <span class="avatar"><%= initials(a.first_name, a.last_name) %></span>
-        <div>
-          <span class="badge badge-lg <%= (STATUSES[a.status] || {}).color || 'slate' %>"><%= statusLabel(a.status) %></span>
-          <%
-            /* fmtRelative só difere da data em «Hoy»/«Ayer»; nos outros dias
-             * devolve a própria data, que ficava repetida entre parênteses. */
-            var rel = fmtRelative(a.applied_at), day = fmtDate(a.applied_at);
-          %>
-          <div class="muted small spaced-sm"><%= tr('Recibida el {date}', { date: day }) %><% if (rel && rel !== day) { %> (<%= rel %>)<% } %></div>
-        </div>
+       negócio vem fazer. -->
+  <header class="page-title profile-head">
+    <span class="avatar avatar-lg <%= a.status === 'nuevo' ? 'is-new' : '' %>"><%= initials(a.first_name, a.last_name) %></span>
+    <div class="grow">
+      <h1><%= a.first_name %> <%= a.last_name %></h1>
+      <%
+        /* fmtRelative só difere da data em «Hoy»/«Ayer»; nos outros dias
+         * devolve a própria data, que ficava repetida entre parênteses. */
+        var rel = fmtRelative(a.applied_at), day = fmtDate(a.applied_at);
+      %>
+      <div class="profile-meta">
+        <span class="badge <%= (STATUSES[a.status] || {}).color || 'slate' %>"><%= statusLabel(a.status) %></span>
+        <span><%= tr('Recibida el {date}', { date: day }) %><% if (rel && rel !== day) { %> (<%= rel %>)<% } %></span>
       </div>
+    </div>
+    <div class="profile-tools">
       <form action="/panel/candidaturas/<%= a.id %>/favorito" method="post">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <button class="btn <%= a.favorite ? 'primary' : 'secondary' %> small" type="submit" aria-pressed="<%= a.favorite ? 'true' : 'false' %>">
-          <%= (a.favorite ? '★ ' : '☆ ') + tr('Favorito') %>
-        </button>
+        <button class="btn secondary small fav-btn" type="submit" aria-pressed="<%= a.favorite ? 'true' : 'false' %>"><%- icon('star') %> <%= tr('Favorito') %></button>
       </form>
+      <% if (next) { %><a class="btn secondary small" href="/panel/candidaturas/<%= next.id %>"><%= tr('Siguiente') %> <%- icon('arrowRight') %></a><% } %>
     </div>
+  </header>
 
-    <div class="actions-row">
-      <a class="btn" href="tel:<%= String(a.phone).replace(/[^\d+]/g, '') %>"><%- icon('phone') %> <%= tr('Llamar') %></a>
-      <%
-        /* wa.me exige o número internacional sem «+». Os candidatos escrevem
-         * quase sempre o móvel espanhol sem indicativo (612 345 678): sem o
-         * 34 à frente o WhatsApp abria um número inválido. */
-        var wa = String(a.phone).replace(/[^\d]/g, '').replace(/^00/, '');
-        if (/^[6789]\d{8}$/.test(wa)) wa = '34' + wa;
-        /* Mensagem já escrita: o dono só tem de carregar em enviar. */
-        var waText = tr('Hola {name}, te escribo de {business}. Hemos visto tu candidatura para {job}. ¿Cuándo te viene bien hablar?', {
-          name: a.first_name,
-          business: restaurantName || tr('nuestro negocio'),
-          job: a.job_title || tr('trabajar con nosotros')
-        });
-      %>
-      <% if (wa) { %>
-        <a class="btn secondary btn-wa" href="https://wa.me/<%= wa %>?text=<%= encodeURIComponent(waText) %>" target="_blank" rel="noopener" title="<%= tr('Abre WhatsApp con este número') %>"><%- icon('chat') %> WhatsApp</a>
-      <% } %>
-      <a class="btn secondary" href="mailto:<%= a.email %>?subject=<%= encodeURIComponent(tr('Candidatura para {job}', { job: a.job_title || tr('tu negocio') })) %>"><%- icon('mail') %> Email</a>
-    </div>
+  <%- include('../partials/flash') %>
+
+  <div class="contact-bar">
+    <a class="btn" href="tel:<%= String(a.phone).replace(/[^\d+]/g, '') %>"><%- icon('call') %> <%= tr('Llamar') %></a>
+    <%
+      /* wa.me exige o número internacional sem «+». Os candidatos escrevem
+       * quase sempre o móvel espanhol sem indicativo (612 345 678): sem o
+       * 34 à frente o WhatsApp abria um número inválido. */
+      var wa = String(a.phone).replace(/[^\d]/g, '').replace(/^00/, '');
+      if (/^[6789]\d{8}$/.test(wa)) wa = '34' + wa;
+      /* Mensagem já escrita: o dono só tem de carregar em enviar. */
+      var waText = tr('Hola {name}, te escribo de {business}. Hemos visto tu candidatura para {job}. ¿Cuándo te viene bien hablar?', {
+        name: a.first_name,
+        business: restaurantName || tr('nuestro negocio'),
+        job: a.job_title || tr('trabajar con nosotros')
+      });
+    %>
+    <% if (wa) { %>
+      <a class="btn secondary btn-wa" href="https://wa.me/<%= wa %>?text=<%= encodeURIComponent(waText) %>" target="_blank" rel="noopener" title="<%= tr('Abre WhatsApp con este número') %>"><%- icon('chat') %> WhatsApp</a>
+    <% } %>
+    <a class="btn secondary" href="mailto:<%= a.email %>?subject=<%= encodeURIComponent(tr('Candidatura para {job}', { job: a.job_title || tr('tu negocio') })) %>"><%- icon('mail') %> Email</a>
   </div>
 
   <div class="detail-cols">
@@ -146,7 +140,7 @@
               <span class="small"><%= tr('Confirmo que esta nota no contiene datos protegidos o que son imprescindibles y legítimos para el puesto (queda registrado).') %></span>
             </label>
           <% } %>
-          <button class="btn" type="submit"><%= tr('Guardar nota') %></button>
+          <button class="btn secondary" type="submit"><%= tr('Guardar nota') %></button>
         </form>
 
         <div class="spaced">
@@ -160,7 +154,7 @@
                   <span><%= fmtDate(note.created_at) %><% if (note.author) { %> · <%= note.author %><% } %></span>
                   <form action="/panel/candidaturas/<%= a.id %>/notas/<%= note.id %>/eliminar" method="post">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                    <button class="btn danger small" type="submit"><%= tr('Eliminar') %></button>
+                    <button class="btn ghost small" type="submit"><%= tr('Eliminar') %></button>
                   </form>
                 </div>
               </div>
@@ -178,8 +172,8 @@
         <% if (cv) { %>
           <p class="muted small"><%= cv.original_filename %> · <%= fmtSize(cv.size_bytes) %></p>
           <div class="actions-row tight">
-            <a class="btn small" href="/panel/cv/<%= cv.id %>" target="_blank" rel="noopener"><%= tr('Ver CV') %></a>
-            <a class="btn secondary small" href="/panel/cv/<%= cv.id %>?descargar=1"><%= tr('Descargar CV') %></a>
+            <a class="btn small" href="/panel/cv/<%= cv.id %>" target="_blank" rel="noopener"><%- icon('file') %> <%= tr('Ver CV') %></a>
+            <a class="btn secondary small" href="/panel/cv/<%= cv.id %>?descargar=1"><%- icon('download') %> <%= tr('Descargar CV') %></a>
           </div>
         <% } else { %>
           <p class="dim flat"><%= tr('Sin CV adjunto.') %></p>
@@ -351,7 +345,7 @@
   <%# Ao acabar de ver uma candidatura, o passo natural é abrir a seguinte. %>
   <% if (next) { %>
     <div class="next-bar">
-      <a class="btn lg block" href="/panel/candidaturas/<%= next.id %>"><%= tr(nextIsNew ? 'Ver la siguiente nueva' : 'Siguiente candidato') %> →</a>
+      <a class="btn secondary block" href="/panel/candidaturas/<%= next.id %>"><%= tr(nextIsNew ? 'Ver la siguiente nueva' : 'Siguiente candidato') %> <%- icon('arrowRight') %></a>
     </div>
   <% } %>
 </main>

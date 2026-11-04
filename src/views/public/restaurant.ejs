@@ -13,38 +13,38 @@
   var hasErrors = Boolean(errors && Object.keys(errors).length > 0);
 %>
 
-<header class="hero <%= restaurant.photo_path ? 'has-photo' : '' %>">
+<header class="pub-head <%= restaurant.photo_path ? 'has-cover' : '' %>">
   <% if (restaurant.photo_path) { %>
-    <!-- Fotografia como fundo através de <img> e não de background-image:
-         o CSP é `style-src 'self'` e bloqueia estilos inline. -->
-    <img class="hero-photo" src="/r/<%= restaurant.slug %>/imagen/foto?v=<%= String(restaurant.photo_path).split('/').pop() %>" alt="" aria-hidden="true">
+    <!-- Fotografia através de <img> e não de background-image: o CSP é
+         `style-src 'self'` e bloqueia estilos inline. -->
+    <div class="pub-cover"><img src="/r/<%= restaurant.slug %>/imagen/foto?v=<%= String(restaurant.photo_path).split('/').pop() %>" alt="" aria-hidden="true"></div>
   <% } %>
 
-  <div class="container-narrow hero-body">
+  <div class="container-narrow pub-body">
     <% if (restaurant.logo_path) { %>
-      <img class="hero-logo" src="/r/<%= restaurant.slug %>/imagen/logo?v=<%= String(restaurant.logo_path).split('/').pop() %>" alt="<%= tr('Logo de {name}', { name: restaurant.name }) %>">
+      <img class="pub-logo" src="/r/<%= restaurant.slug %>/imagen/logo?v=<%= String(restaurant.logo_path).split('/').pop() %>" alt="<%= tr('Logo de {name}', { name: restaurant.name }) %>">
     <% } %>
 
     <h1><%= restaurant.commercial_name || restaurant.name %></h1>
 
     <% if (restaurant.establishment_type && ESTABLISHMENT_TYPES[restaurant.establishment_type]) { %>
-      <p class="sub"><%= ESTABLISHMENT_TYPES[restaurant.establishment_type] %></p>
+      <p class="pub-sub"><%= ESTABLISHMENT_TYPES[restaurant.establishment_type] %></p>
     <% } %>
 
     <% if (restaurant.description) { %>
-      <p class="hero-desc"><%= restaurant.description %></p>
+      <p class="pub-desc"><%= restaurant.description %></p>
     <% } %>
 
     <% if (restaurant.address || restaurant.city) { %>
-      <p class="sub hero-place">
+      <p class="pub-place"><span>
         <%= restaurant.address %><% if (restaurant.postal_code) { %>, <%= restaurant.postal_code %><% } %><% if (restaurant.address && restaurant.city) { %> · <% } %><%= restaurant.city %>
-      </p>
+      </span></p>
     <% } %>
 
     <% if (mode === 'form') { %>
       <span class="badge-open"><span class="dot green"></span> <%= tr('Estamos contratando') %></span>
     <% } else { %>
-      <span class="badge-closed"><span class="dot red"></span> <%= tr('No estamos contratando') %></span>
+      <span class="badge-closed"><span class="dot"></span> <%= tr('No estamos contratando') %></span>
     <% } %>
   </div>
 </header>
@@ -71,7 +71,7 @@
           <% if (job.description) { %><p class="desc"><%= job.description %></p><% } %>
           <% if (job.requirements) { %><p class="desc job-req"><strong><%= tr('Requisitos:') %></strong> <%= job.requirements %></p><% } %>
           <% if (job.contract_type || job.work_schedule) { %>
-            <div class="row spaced-sm">
+            <div class="job-tags">
               <% if (job.contract_type && CONTRACT_TYPES[job.contract_type]) { %>
                 <span class="badge slate"><%= CONTRACT_TYPES[job.contract_type] %></span>
               <% } %>
@@ -96,7 +96,7 @@
     <% } %>
 
     <%# #enviar: depois de um erro a página volta já posicionada no formulário. %>
-    <form action="/r/<%= restaurant.slug %>/apply#enviar" method="post" enctype="multipart/form-data" data-busy="<%= tr('Enviando tu CV…') %>">
+    <form action="/r/<%= restaurant.slug %>/apply#enviar" method="post" enctype="multipart/form-data" class="steps-form" data-busy="<%= tr('Enviando tu CV…') %>">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="hp" aria-hidden="true">
         <label>Sitio web</label>

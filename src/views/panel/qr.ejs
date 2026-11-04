@@ -4,16 +4,17 @@
 <main class="container">
   <div class="page-title no-print">
     <h1><%= tr('Código QR') %></h1>
-    <a class="btn ghost small" href="/panel/restaurante">← <%= tr('Mi negocio') %></a>
+    <a class="back-link" href="/panel/restaurante"><%- icon('arrowLeft') %> <%= tr('Mi negocio') %></a>
   </div>
 
-  <div class="actions-row no-print">
-    <button class="btn" type="button" data-print><%= tr('Imprimir') %></button>
-    <a class="btn secondary" href="/panel/qr.png" download><%= tr('Descargar PNG') %></a>
+  <div class="qr-layout">
+  <div class="no-print">
+    <p class="muted"><%= tr('Lleva a la página pública de tu negocio. Imprímelo y colócalo a la vista, en la puerta, el escaparate o el mostrador.') %></p>
+    <div class="actions-row">
+      <button class="btn" type="button" data-print><%- icon('printer') %> <%= tr('Imprimir') %></button>
+      <a class="btn secondary" href="/panel/qr.png" download><%- icon('download') %> <%= tr('Descargar PNG') %></a>
+    </div>
   </div>
-  <p class="help no-print">
-    <%= tr('Lleva a la página pública de tu negocio. Imprímelo y colócalo a la vista, en la puerta, el escaparate o el mostrador.') %>
-  </p>
 
   <!-- Só esta folha sai na impressão (ver @media print no CSS). -->
   <section class="qr-sheet">
@@ -25,6 +26,7 @@
     <p class="qr-cta"><%= tr('Escanea el código con la cámara del móvil para enviar tu candidatura') %></p>
     <p class="qr-url"><%= publicUrl %></p>
   </section>
+  </div>
 </main>
 
 <%- include('../partials/foot') %>

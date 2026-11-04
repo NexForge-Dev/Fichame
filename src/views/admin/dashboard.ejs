@@ -9,29 +9,29 @@
   <div class="stats">
     <div class="stat"><div class="num"><%= metrics.restaurants %></div><div class="label">Establecimientos</div></div>
     <div class="stat"><div class="num"><%= metrics.restaurantsActive %></div><div class="label">Activos</div></div>
-    <div class="stat accent"><div class="num"><%= metrics.applications %></div><div class="label">Candidaturas totales</div></div>
+    <div class="stat"><div class="num"><%= metrics.applications %></div><div class="label">Candidaturas totales</div></div>
     <div class="stat"><div class="num"><%= metrics.applications7d %></div><div class="label">Últimos 7 días</div></div>
     <div class="stat"><div class="num"><%= metrics.users %></div><div class="label">Usuarios</div></div>
     <div class="stat"><div class="num"><%= metrics.usersBlocked %></div><div class="label">Bloqueados</div></div>
     <div class="stat"><div class="num"><%= metrics.jobs %></div><div class="label">Vacantes</div></div>
-    <div class="stat"><div class="num"><%= metrics.notificationsFailed %></div><div class="label">Emails fallidos</div></div>
+    <div class="stat <%= metrics.notificationsFailed > 0 ? 'is-alert' : '' %>"><div class="num"><%= metrics.notificationsFailed %></div><div class="label">Emails fallidos</div></div>
   </div>
 
   <% if (failed.length > 0) { %>
     <div class="card danger-zone">
       <h2>Notificaciones fallidas recientes</h2>
       <div class="table-wrap">
-        <table class="table">
+        <table class="table table-stack">
           <thead>
             <tr><th>ID</th><th>Establecimiento</th><th>Error</th><th>Fecha</th></tr>
           </thead>
           <tbody>
             <% failed.forEach(function(n) { %>
               <tr>
-                <td><%= n.id %></td>
-                <td><%= n.restaurant_id %></td>
-                <td class="small"><%= n.detail %></td>
-                <td class="nowrap small"><%= fmtDate(n.created_at) %></td>
+                <td data-label="ID"><%= n.id %></td>
+                <td data-label="Establecimiento"><%= n.restaurant_id %></td>
+                <td class="small" data-label="Error"><%= n.detail %></td>
+                <td class="nowrap small" data-label="Fecha"><%= fmtDate(n.created_at) %></td>
               </tr>
             <% }) %>
           </tbody>
@@ -52,7 +52,7 @@
       <p class="dim flat">Sin establecimientos todavía.</p>
     <% } else { %>
       <div class="table-wrap">
-        <table class="table">
+        <table class="table table-stack">
           <thead>
             <tr>
               <th>Establecimiento</th><th>Slug</th><th>Responsable</th>
@@ -62,34 +62,34 @@
           <tbody>
             <% restaurants.forEach(function(r) { %>
               <tr>
-                <td>
+                <td data-label="Establecimiento"><div>
                   <strong><%= r.name %></strong>
                   <div class="dim tiny"><%= r.city %></div>
-                </td>
-                <td class="small">
+                </div></td>
+                <td class="small" data-label="Slug">
                   <a href="/r/<%= r.slug %>" target="_blank" rel="noopener">/r/<%= r.slug %></a>
                 </td>
-                <td class="small">
+                <td class="small" data-label="Responsable"><div>
                   <%= r.owner_name %>
                   <div class="dim tiny"><%= r.email %></div>
-                </td>
-                <td><%= r.apps %></td>
-                <td><%= r.owners %></td>
-                <td class="nowrap small">
+                </div></td>
+                <td data-label="Candidaturas"><%= r.apps %></td>
+                <td data-label="Owners"><%= r.owners %></td>
+                <td class="nowrap small" data-label="Plan"><div>
                   <%# Plano (0014). O estado da assinatura vem do webhook da Stripe. %>
                   <% var planLabel = { trial: 'Prueba', founders: 'Fundadores', pro: 'Profesional' }[r.plan] || r.plan; %>
                   <strong><%= planLabel %></strong><% if (r.billing_interval) { %> <span class="dim tiny"><%= r.billing_interval === 'year' ? 'anual' : 'mensual' %></span><% } %>
                   <% if (r.subscription_status) { %>
                     <div><span class="badge <%= ['active', 'trialing'].indexOf(r.subscription_status) !== -1 ? 'green' : (['past_due', 'unpaid', 'incomplete'].indexOf(r.subscription_status) !== -1 ? 'amber' : 'slate') %>"><%= r.subscription_status %></span></div>
                   <% } %>
-                </td>
-                <td class="nowrap">
+                </div></td>
+                <td class="nowrap" data-label="Estado"><div>
                   <span class="badge <%= r.active ? 'green' : 'red' %>"><%= r.active ? 'Activo' : 'Desactivado' %></span>
                   <% if (r.hiring_status === 'paused') { %>
                     <span class="badge amber">Pausado</span>
                   <% } %>
-                </td>
-                <td>
+                </div></td>
+                <td class="td-actions">
                   <form action="/admin/restaurantes/<%= r.id %>/toggle" method="post">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <input type="hidden" name="quiero" value="<%= r.active ? 0 : 1 %>">

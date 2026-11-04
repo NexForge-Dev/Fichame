@@ -15,7 +15,7 @@ var navItems = [
   { href: '/panel/restaurante',     icon: 'store',  label: tr('Mi negocio'),     short: tr('Mi negocio') },
   /* Derechos e Privacidad usam-se pouco: ficam só em Ajustes (e nos avisos,
    * quando chega um pedido de direitos). */
-  { href: '/panel/configuracion',   icon: 'cog',    label: tr('Configuración'), short: tr('Ajustes'), also: ['/panel/derechos', '/panel/privacidad'] },
+  { href: '/panel/configuracion',   icon: 'cog',    label: tr('Configuración'), short: tr('Ajustes'), group: tr('Cuenta'), also: ['/panel/derechos', '/panel/privacidad'] },
   /* No telemóvel chega-se pelo aviso da prova e por Ajustes (6 separadores no máximo). */
   { href: '/panel/plan',            icon: 'card',   label: tr('Plan y facturación'), short: tr('Plan'), sideOnly: true },
   { href: '/panel/reportar',        icon: 'chat',   label: tr('Reportar un problema'), short: tr('Reportar'), sideOnly: true }
@@ -33,8 +33,10 @@ var unread = (typeof unreadCount !== 'undefined' && unreadCount > 0) ? unreadCou
     <img class="brand-mark" src="/img/logo.svg?v=<%= assetV %>" alt="" width="28" height="28">
     <span>Fíchame</span>
   </a>
+  <% if (typeof restaurantName !== 'undefined' && restaurantName) { %><div class="sidenav-biz"><%= restaurantName %></div><% } %>
 
   <% navItems.forEach(function(item) { %>
+    <% if (item.group) { %><div class="nav-group"><%= item.group %></div><% } %>
     <a class="navlink <%= isActive(item) ? 'active' : '' %>" href="<%= item.href %>"<%- isActive(item) ? ' aria-current="page"' : '' %>>
       <%- icon(item.icon) %>
       <span class="navlabel"><%= item.label %></span>
@@ -45,7 +47,7 @@ var unread = (typeof unreadCount !== 'undefined' && unreadCount > 0) ? unreadCou
   <div class="sidenav-foot">
     <form action="/logout" method="post">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <button class="btn ghost small block" type="submit"><%= tr('Cerrar sesión') %></button>
+      <button class="navlink" type="submit"><%- icon('logout') %><span class="navlabel"><%= tr('Cerrar sesión') %></span></button>
     </form>
   </div>
 </aside>

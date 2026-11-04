@@ -2,6 +2,8 @@
 <% var pageTitle = tr(typeof title !== 'undefined' && title ? title : 'Error'); -%>
 <%- include('partials/head', { title: pageTitle }) %>
 
+<%- include('partials/site_top') %>
+
 <main class="container-narrow error-main">
   <div class="card center pad-lg">
     <div class="error-code"><%= status %></div>

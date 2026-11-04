@@ -1,9 +1,9 @@
 <%- include('../partials/head', { title: tr('Privacidad') + ' · ' + (restaurant.commercial_name || restaurant.name) }) %>
 
-<header class="hero">
-  <div class="container-narrow hero-body">
+<header class="pub-head">
+  <div class="container-narrow pub-body">
     <h1><%= restaurant.commercial_name || restaurant.name %></h1>
-    <p class="sub"><%= tr('Protección de datos de las candidaturas') %></p>
+    <p class="pub-sub"><%= tr('Protección de datos de las candidaturas') %></p>
   </div>
 </header>
 
@@ -23,7 +23,7 @@
 
 <% if (sentRef) { %>
   <div class="card center pad-lg">
-    <div class="success-mark" aria-hidden="true">✓</div>
+    <div class="success-mark" aria-hidden="true"><%- icon('check') %></div>
     <h2><%= tr('Solicitud registrada') %></h2>
     <p><%= tr('Referencia:') %> <strong><%= sentRef %></strong></p>
     <p class="muted">

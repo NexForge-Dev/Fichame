@@ -1,15 +1,15 @@
 <%- include('../partials/head', { title: tr('Candidatura enviada') }) %>
 
-<header class="hero">
-  <div class="container-narrow hero-body">
+<header class="pub-head">
+  <div class="container-narrow pub-body">
     <h1><%= restaurant.commercial_name || restaurant.name %></h1>
-    <p class="sub"><%= tr('Gracias por tu interés') %></p>
+    <p class="pub-sub"><%= tr('Gracias por tu interés') %></p>
   </div>
 </header>
 
 <main class="container-narrow public-main">
   <div class="card center pad-lg">
-    <div class="success-mark" aria-hidden="true">✓</div>
+    <div class="success-mark" aria-hidden="true"><%- icon('check') %></div>
     <% if (future) { %>
       <h2><%= tr('¡Datos guardados correctamente!') %></h2>
       <p class="muted">

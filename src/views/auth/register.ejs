@@ -8,18 +8,19 @@
   }
 %>
 
-<div class="auth-wrap auth-wrap-top">
-  <div class="auth-card">
+<div class="auth-shell">
+  <div class="auth-pane auth-pane-top">
+  <div class="auth-card auth-card-wide">
     <div class="auth-head">
       <a class="brand" href="/">
         <img class="brand-mark" src="/img/logo.svg?v=<%= assetV %>" alt="" width="28" height="28">
         <span>Fíchame</span>
       </a>
-      <p><%= tr('Crea la página de candidaturas de tu negocio') %></p>
     </div>
 
-    <div class="card">
-      <h2><%= tr('Registra tu negocio') %></h2>
+    <div>
+      <h1><%= tr('Registra tu negocio') %></h1>
+      <p class="auth-lead"><%= tr('Crea la página de candidaturas de tu negocio') %></p>
       <% if (locals.google) { %>
         <div class="flash ok"><%= tr('Cuenta de Google verificada:') %> <strong><%= google.email %></strong>. <%= tr('Completa los datos de tu negocio para terminar.') %></div>
       <% } else { %>
@@ -33,6 +34,7 @@
       <form action="<%= locals.google ? '/registro/google' : '/registro' %>" method="post">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
+        <div class="form-grid">
         <div class="field">
           <label for="restaurant_name"><%= tr('Nombre del negocio') %> *</label>
           <input id="restaurant_name" type="text" name="restaurant_name" maxlength="100" required value="<%= form.restaurant_name || '' %>"<%- invalid('restaurant_name') %>>
@@ -56,7 +58,7 @@
           <% if (errors && errors.establishment_type) { %><div class="field-error" id="err-establishment_type"><%= tr(errors.establishment_type) %></div><% } %>
         </div>
 
-        <div class="field">
+        <div class="field span-2">
           <label for="legal_name"><%= tr('Razón social o nombre del titular') %> *</label>
           <input id="legal_name" type="text" name="legal_name" maxlength="150" required value="<%= form.legal_name || '' %>" autocomplete="organization"<%- invalid('legal_name') %>>
           <div class="help"><%= tr('La empresa o persona autónoma titular del negocio. Se muestra a los candidatos como') %> <strong><%= tr('responsable del tratamiento') %></strong> <%= tr('de sus datos (art. 13 RGPD).') %></div>
@@ -83,12 +85,12 @@
           <% if (errors && errors.phone) { %><div class="field-error" id="err-phone"><%= tr(errors.phone) %></div><% } %>
         </div>
 
-        <div class="field">
+        <div class="field span-2">
           <label for="direccion"><%= tr('Dirección') %></label>
           <input id="direccion" type="text" name="direccion" maxlength="200" value="<%= form.address || '' %>">
         </div>
 
-        <div class="hint-row">
+        <div class="hint-row span-2">
           <div class="field">
             <label for="cp"><%= tr('Código postal') %></label>
             <input id="cp" type="text" name="cp" maxlength="5" pattern="\d{5}" inputmode="numeric" placeholder="28013" value="<%= form.postal_code || '' %>"<%- invalid('postal_code') %>>
@@ -101,7 +103,7 @@
           </div>
         </div>
 
-        <div class="field">
+        <div class="field span-2">
           <label for="descripcion"><%= tr('Descripción breve') %></label>
           <textarea id="descripcion" name="descripcion" maxlength="1500" rows="3" placeholder="<%= tr('Ej.: Cocina mediterránea en el centro de Madrid. Buscamos equipo con ganas de aprender.') %>"><%= form.description || '' %></textarea>
           <div class="help"><%= tr('Se muestra en tu página pública.') %></div>
@@ -120,6 +122,7 @@
           <% if (errors && errors.password2) { %><div class="field-error" id="err-password2"><%= tr(errors.password2) %></div><% } %>
         </div>
         <% } %>
+        </div>
 
         <div class="notice-box">
           <strong><%= tr('Antes de crear la cuenta') %></strong>
@@ -143,6 +146,8 @@
       </p>
     </div>
   </div>
+  </div>
+  <%- include('../partials/auth_aside') %>
 </div>
 
 <%- include('../partials/foot') %>

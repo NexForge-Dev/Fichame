@@ -1,0 +1,33 @@
+<div class="card">
+    <h2>Google</h2>
+    <% if (hasGoogle) { %>
+      <p class="muted small"><%= tr('Tu cuenta está vinculada a Google: puedes entrar con el botón «Continuar con Google».') %></p>
+      <% if (hasPassword) { %>
+      <form action="/panel/configuracion/google" method="post">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="field">
+          <label for="google_password_actual"><%= tr('Contraseña actual') %> *</label>
+          <input id="google_password_actual" type="password" name="password_actual" required autocomplete="current-password">
+        </div>
+        <button class="btn secondary" type="submit"><%= tr('Desvincular Google') %></button>
+      </form>
+      <% } else { %>
+      <p class="muted small"><%= tr('Para desvincularla, crea antes una contraseña: si no, no podrías entrar.') %></p>
+      <% } %>
+    <% } else { %>
+      <p class="muted small"><%= tr('Vincula tu cuenta de Google para entrar sin contraseña.') %></p>
+      <% if (isDemo) { %>
+      <p class="muted small"><%= tr('No disponible en la demostración.') %></p>
+      <% } else { %>
+      <%# Pede a senha: uma sessão esquecida aberta não chega para ligar outro Google. %>
+      <form method="post" action="/login/google/vincular">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="field">
+          <label for="google_link_password"><%= tr('Contraseña actual') %> *</label>
+          <input id="google_link_password" type="password" name="password_actual" required autocomplete="current-password">
+        </div>
+        <button class="btn secondary btn-google" type="submit"><%- include('../partials/google_icon') %> <%= tr('Vincular Google') %></button>
+      </form>
+      <% } %>
+    <% } %>
+</div>

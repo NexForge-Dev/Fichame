@@ -4,14 +4,13 @@
 <main class="container">
   <div class="page-title">
     <h1><%= tr('Vacantes') %></h1>
-    <a class="btn ghost small" href="/panel">← <%= tr('Inicio') %></a>
   </div>
 
   <%- include('../partials/flash') %>
 
   <%# Recolhido quando já há vagas: a lista é o que interessa ver primeiro. %>
   <details class="card create-job" <%= jobs.length === 0 ? 'open' : '' %>>
-    <summary class="create-job-summary"><span class="create-job-plus">+</span> <%= tr('Nueva vacante') %></summary>
+    <summary class="create-job-summary"><span class="create-job-plus"><%- icon('plus') %></span> <%= tr('Nueva vacante') %></summary>
     <p class="help"><%= tr('Solo hace falta el nombre del puesto. Lo demás es opcional.') %></p>
 
     <form action="/panel/vagas/crear" method="post">
@@ -65,7 +64,7 @@
       </div>
         </div>
       </details>
-      <button class="btn lg" type="submit"><%= tr('Publicar vacante') %></button>
+      <button class="btn" type="submit"><%= tr('Publicar vacante') %></button>
     </form>
   </details>
 
@@ -76,13 +75,14 @@
 
   <% if (jobs.length === 0) { %>
     <div class="card empty">
-      <span class="empty-icon" aria-hidden="true">💼</span>
+      <span class="empty-icon" aria-hidden="true"><%- icon('jobs') %></span>
       <p><%= tr('Todavía no tienes vacantes. Crea la primera arriba: solo hace falta el nombre del puesto.') %></p>
     </div>
   <% } else { %>
     <div class="stack">
       <% jobs.forEach(function(job) { %>
-        <div class="card">
+        <div class="card job-card <%= job.active ? '' : 'is-off' %>">
+          <div class="job-main">
           <div class="row-between">
             <h3 class="flat"><%= job.title %></h3>
             <span class="badge <%= job.active ? 'green' : 'slate' %>"><%= job.active ? tr('Publicada') : tr('En pausa') %></span>
@@ -93,7 +93,7 @@
             <p class="muted small pre"><strong><%= tr('Requisitos:') %></strong> <%= job.requirements %></p>
           <% } %>
 
-          <div class="row spaced-sm">
+          <div class="job-tags">
             <% if (job.contract_type) { %>
               <span class="badge slate"><%= CONTRACT_TYPES[job.contract_type] || job.contract_type %></span>
             <% } %>
@@ -105,11 +105,13 @@
             <% } %>
           </div>
 
-          <p class="dim tiny spaced-sm">
-            <%= plural(job.applicants, 'candidatura recibida', 'candidaturas recibidas') %> · <%= tr('creada el {date}', { date: fmtDate(job.created_at) }) %>
+          <p class="job-count">
+            <a href="/panel/candidaturas?puesto=<%= job.id %>"><%= plural(job.applicants, 'candidatura recibida', 'candidaturas recibidas') %></a>
+            <span class="dim">· <%= tr('creada el {date}', { date: fmtDate(job.created_at) }) %></span>
           </p>
+          </div>
 
-          <details>
+          <details class="job-edit">
             <summary><%= tr('Cambiar los datos de la vacante') %></summary>
             <div class="details-body">
               <form action="/panel/vagas/<%= job.id %>/editar" method="post">
@@ -162,7 +164,7 @@
             </div>
           </details>
 
-          <div class="actions-row tight">
+          <div class="job-foot">
             <form action="/panel/vagas/<%= job.id %>/toggle" method="post">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <input type="hidden" name="quiero" value="<%= job.active ? 0 : 1 %>">

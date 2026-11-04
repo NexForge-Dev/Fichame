@@ -1,17 +1,17 @@
 <%- include('../partials/head', { title: tr('Iniciar sesión') }) %>
 
-<div class="auth-wrap">
+<div class="auth-shell">
+  <div class="auth-pane">
   <div class="auth-card">
     <div class="auth-head">
       <a class="brand" href="/">
         <img class="brand-mark" src="/img/logo.svg?v=<%= assetV %>" alt="" width="28" height="28">
         <span>Fíchame</span>
       </a>
-      <p><%= tr('Candidaturas con QR para cualquier negocio') %></p>
     </div>
 
-    <div class="card">
-      <h2><%= tr('Iniciar sesión') %></h2>
+    <div>
+      <h1><%= tr('Iniciar sesión') %></h1>
       <% if (error) { %><div class="flash err"><%= tr(error) %></div><% } %>
       <% if (info === 'restablecida') { %><div class="flash ok"><%= tr('Contraseña restablecida. Por seguridad, se han cerrado todas tus sesiones: inicia sesión de nuevo.') %></div><% } %>
 
@@ -40,6 +40,8 @@
       </p>
     </div>
   </div>
+  </div>
+  <%- include('../partials/auth_aside') %>
 </div>
 
 <%- include('../partials/foot') %>

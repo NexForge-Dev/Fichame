@@ -77,12 +77,12 @@ const es = {
     kicker: 'El problema',
     title: '¿Cuántos buenos candidatos se te han escapado ya?',
     items: [
-      { emoji: '📄', text: 'Recibir currículums' },
-      { emoji: '📱', text: 'Contestar mensajes' },
-      { emoji: '🗂️', text: 'Ordenar candidatos' },
-      { emoji: '📞', text: 'Llamar y quedar para entrevistas' },
-      { emoji: '📝', text: 'Tomar notas' },
-      { emoji: '⏳', text: 'Recordar en qué punto está cada uno' }
+      { icon: 'file', text: 'Recibir currículums' },
+      { icon: 'phone', text: 'Contestar mensajes' },
+      { icon: 'folder', text: 'Ordenar candidatos' },
+      { icon: 'call', text: 'Llamar y quedar para entrevistas' },
+      { icon: 'note', text: 'Tomar notas' },
+      { icon: 'clock', text: 'Recordar en qué punto está cada uno' }
     ],
     scatter: 'Y todo repartido entre papeles, WhatsApp, emails, hojas de cálculo… y tu memoria.',
     pain: 'Mientras buscas aquel CV entre mensajes, el buen candidato acepta otro trabajo. Y el turno que falta lo cubres tú.',
@@ -312,12 +312,12 @@ const en = {
     kicker: 'The problem',
     title: 'How many good candidates have you already lost?',
     items: [
-      { emoji: '📄', text: 'Collecting CVs' },
-      { emoji: '📱', text: 'Answering messages' },
-      { emoji: '🗂️', text: 'Sorting candidates' },
-      { emoji: '📞', text: 'Calling and arranging interviews' },
-      { emoji: '📝', text: 'Taking notes' },
-      { emoji: '⏳', text: 'Remembering where everyone is' }
+      { icon: 'file', text: 'Collecting CVs' },
+      { icon: 'phone', text: 'Answering messages' },
+      { icon: 'folder', text: 'Sorting candidates' },
+      { icon: 'call', text: 'Calling and arranging interviews' },
+      { icon: 'note', text: 'Taking notes' },
+      { icon: 'clock', text: 'Remembering where everyone is' }
     ],
     scatter: 'And all of it spread across paper, WhatsApp, emails, spreadsheets… and your memory.',
     pain: 'While you dig for that CV in your messages, the good candidate takes another job. And you end up covering the missing shift yourself.',
@@ -547,12 +547,12 @@ const pt = {
     kicker: 'O problema',
     title: 'Quantos bons candidatos já te escaparam?',
     items: [
-      { emoji: '📄', text: 'Receber currículos' },
-      { emoji: '📱', text: 'Responder a mensagens' },
-      { emoji: '🗂️', text: 'Organizar candidatos' },
-      { emoji: '📞', text: 'Ligar e marcar entrevistas' },
-      { emoji: '📝', text: 'Tomar notas' },
-      { emoji: '⏳', text: 'Lembrar em que ponto está cada um' }
+      { icon: 'file', text: 'Receber currículos' },
+      { icon: 'phone', text: 'Responder a mensagens' },
+      { icon: 'folder', text: 'Organizar candidatos' },
+      { icon: 'call', text: 'Ligar e marcar entrevistas' },
+      { icon: 'note', text: 'Tomar notas' },
+      { icon: 'clock', text: 'Lembrar em que ponto está cada um' }
     ],
     scatter: 'E tudo espalhado entre papéis, WhatsApp, emails, folhas de cálculo… e a tua memória.',
     pain: 'Enquanto procuras aquele CV entre as mensagens, o bom candidato aceita outro trabalho. E o turno que falta acabas por fazê-lo tu.',

@@ -4,12 +4,13 @@
 <main class="container">
   <div class="page-title">
     <h1><%= tr('Configuración') %></h1>
-    <a class="btn ghost small" href="/panel">← <%= tr('Inicio') %></a>
   </div>
 
   <%- include('../partials/flash') %>
 
-  <div class="card narrow-card" id="idioma">
+  <div class="settings-layout">
+  <div class="settings-col">
+  <div class="card" id="idioma">
     <h2><%= tr('Idioma') %></h2>
     <p class="muted small"><%= tr('Elige el idioma en el que quieres ver Fíchame. Se guarda en este navegador.') %></p>
     <div class="lang-options">
@@ -20,30 +21,33 @@
     <p class="help"><%= tr('Los textos legales (privacidad, términos y consentimientos) se muestran en español, que es su versión oficial.') %></p>
   </div>
 
-  <div class="card narrow-card">
-    <h2><%= tr('Privacidad') %></h2>
-    <div class="actions-row flat">
-      <a class="btn secondary small" href="/panel/derechos"><%= tr('Solicitudes de derechos') %></a>
-      <a class="btn secondary small" href="/panel/privacidad"><%= tr('Guía y plazos de conservación') %></a>
-    </div>
-  </div>
-
-  <div class="card narrow-card">
-    <h2><%= tr('Plan y facturación') %></h2>
-    <div class="actions-row flat">
+  <div class="card">
+    <div class="setting-row">
+      <h2><%= tr('Plan y facturación') %></h2>
       <a class="btn secondary small" href="/panel/plan"><%= tr('Ver mi plan') %></a>
     </div>
-  </div>
-
-  <div class="card narrow-card">
-    <h2><%= tr('¿Algo no funciona?') %></h2>
-    <p class="muted small"><%= tr('Fíchame está en fase de prueba. Cuéntanos errores, dudas o ideas.') %></p>
-    <div class="actions-row flat">
+    <div class="setting-row">
+      <h2><%= tr('Privacidad') %></h2>
+      <div class="actions-row flat">
+        <a class="btn secondary small" href="/panel/derechos"><%= tr('Solicitudes de derechos') %></a>
+        <a class="btn secondary small" href="/panel/privacidad"><%= tr('Guía y plazos de conservación') %></a>
+      </div>
+    </div>
+    <div class="setting-row">
+      <div class="grow">
+        <h2><%= tr('¿Algo no funciona?') %></h2>
+        <p class="muted small"><%= tr('Fíchame está en fase de prueba. Cuéntanos errores, dudas o ideas.') %></p>
+      </div>
       <a class="btn secondary small" href="/panel/reportar"><%= tr('Reportar un problema') %></a>
     </div>
   </div>
+  <% if (googleEnabled || hasGoogle) { %>
+  <%- include('settings_google') %>
+  <% } %>
+  </div>
 
-  <div class="card narrow-card">
+  <div class="settings-col">
+  <div class="card">
     <h2><%= tr('Cuenta de acceso') %></h2>
     <p class="muted small"><%= tr('Email actual:') %> <strong><%= userEmail %></strong></p>
     <% if (typeof pendingEmail !== 'undefined' && pendingEmail) { %>
@@ -94,41 +98,8 @@
     <% } %>
   </div>
 
-  <% if (googleEnabled || hasGoogle) { %>
-  <div class="card narrow-card">
-    <h2>Google</h2>
-    <% if (hasGoogle) { %>
-      <p class="muted small"><%= tr('Tu cuenta está vinculada a Google: puedes entrar con el botón «Continuar con Google».') %></p>
-      <% if (hasPassword) { %>
-      <form action="/panel/configuracion/google" method="post">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <div class="field">
-          <label for="google_password_actual"><%= tr('Contraseña actual') %> *</label>
-          <input id="google_password_actual" type="password" name="password_actual" required autocomplete="current-password">
-        </div>
-        <button class="btn secondary" type="submit"><%= tr('Desvincular Google') %></button>
-      </form>
-      <% } else { %>
-      <p class="muted small"><%= tr('Para desvincularla, crea antes una contraseña: si no, no podrías entrar.') %></p>
-      <% } %>
-    <% } else { %>
-      <p class="muted small"><%= tr('Vincula tu cuenta de Google para entrar sin contraseña.') %></p>
-      <% if (isDemo) { %>
-      <p class="muted small"><%= tr('No disponible en la demostración.') %></p>
-      <% } else { %>
-      <%# Pede a senha: uma sessão esquecida aberta não chega para ligar outro Google. %>
-      <form method="post" action="/login/google/vincular">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <div class="field">
-          <label for="google_link_password"><%= tr('Contraseña actual') %> *</label>
-          <input id="google_link_password" type="password" name="password_actual" required autocomplete="current-password">
-        </div>
-        <button class="btn secondary btn-google" type="submit"><%- include('../partials/google_icon') %> <%= tr('Vincular Google') %></button>
-      </form>
-      <% } %>
-    <% } %>
   </div>
-  <% } %>
+  </div>
 </main>
 
 <%- include('../partials/foot') %>
