@@ -10,11 +10,15 @@
   <div class="card">
     <h2>1. Titular del servicio (art. 10 LSSI)</h2>
     <p>
+      <% if (operatorComplete) { %>
       <%= operator.name %> · NIF <%= operator.nif %><br>
       Domicilio: <%= operator.address %><br>
       Email: <%= operator.email %><br>
-      Soporte: <a href="mailto:<%= supportEmail %>"><%= supportEmail %></a><br>
-      <%= operator.registry %>
+      <% } else { %>
+      Identificación del titular (nombre, NIF y domicilio): pendiente de publicación. Hasta entonces, la atención se realiza por el contacto siguiente.<br>
+      <% } %>
+      Soporte: <a href="mailto:<%= supportEmail %>"><%= supportEmail %></a>
+      <% if (operator.registry) { %><br><%= operator.registry %><% } %>
     </p>
   </div>
 

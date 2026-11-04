@@ -179,12 +179,12 @@ function assertConfig() {
   warned = true;
 
   /* Em produção, avisos (não bloqueiam o arranque) para o que falta e só se
-   * notaria mais tarde: páginas legais com marcadores e limpeza diária parada. */
+   * notaria mais tarde: páginas legais sem titular e limpeza diária parada. */
   if (process.env.VERCEL_ENV === 'production') {
     const missingProd = ['OPERATOR_LEGAL_NAME', 'OPERATOR_NIF', 'OPERATOR_ADDRESS', 'OPERATOR_PRIVACY_EMAIL']
       .filter((name) => !String(process.env[name] || '').trim());
     if (missingProd.length > 0) {
-      console.warn(`[config] Páginas legais com marcadores: falta definir ${missingProd.join(', ')}.`);
+      console.warn(`[config] Páginas legais sem a identificação do titular: falta definir ${missingProd.join(', ')}.`);
     }
     if (String(process.env.CRON_SECRET || '').length < 32) {
       console.warn('[config] CRON_SECRET em falta ou com menos de 32 caracteres: a limpeza diária (/internal/cleanup) não corre.');

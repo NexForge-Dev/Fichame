@@ -4,8 +4,8 @@
  *
  * TODAS são BORRADOR — REQUIERE REVISIÓN JURÍDICA ANTES DE USO COMERCIAL.
  * Não declaram conformidade: descrevem o que a plataforma faz. A identidade
- * do operador vem de OPERATOR_* (lib/legal.js); enquanto faltar, aparecem os
- * marcadores [RAZÓN SOCIAL], [NIF]… em vez de dados inventados.
+ * do operador vem de OPERATOR_* (lib/legal.js); enquanto faltar, as páginas
+ * dizem que está pendente de publicação em vez de inventar dados.
  */
 
 const express = require('express');

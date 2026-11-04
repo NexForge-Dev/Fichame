@@ -10,7 +10,7 @@
   <div class="card">
     <h2>Partes</h2>
     <p><strong>Responsable:</strong> el negocio titular de la cuenta (razón social indicada en su perfil).<br>
-       <strong>Encargado:</strong> <%= operator.name %>, NIF <%= operator.nif %>, <%= operator.address %>.</p>
+       <strong>Encargado:</strong> <% if (operatorComplete) { %><%= operator.name %>, NIF <%= operator.nif %>, <%= operator.address %>.<% } else { %>el titular de Fíchame (nombre, NIF y domicilio: pendientes de publicación; contacto: <a href="mailto:<%= supportEmail %>"><%= supportEmail %></a>).<% } %></p>
     <p class="help">Se acepta al crear la cuenta; la versión y la fecha quedan registradas.</p>
   </div>
 

@@ -190,7 +190,7 @@ See [`.env.example`](.env.example) for the commented list.
 | `MAX_CV_MB` / `MAX_IMAGE_MB` | `4` / `2` | Upload limits. On Vercel the CV is clamped to 4 MB (4.5 MB per-request limit) with a warning |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NAME` | — | Admin seed |
 | `SMTP_*` | empty | Without SMTP there are no email alerts and password recovery goes through the admin (`/admin/usuarios`). Without `SMTP_SECURE=1`, STARTTLS is mandatory |
-| `OPERATOR_*` | placeholders | Identification of the Fíchame operator on the legal pages |
+| `OPERATOR_*` | "pending publication" notice | Identification of the Fíchame operator on the legal pages |
 | `CRON_SECRET` / `RETENTION_AUTO` | — / `0` | Daily technical cleanup via `GET /internal/cleanup` (Vercel Cron in `vercel.json`, needs only `CRON_SECRET`); erasure of applications via `GET /internal/retention` (also needs `RETENTION_AUTO=1`) |
 | `SECURITY_LOG_DAYS` / `RIGHTS_REQUEST_DAYS` | `365` / `1095` | Retention of logs and closed rights requests |
 | `CONTACT_EMAIL` | — | Optional “Write to us” button on `/conoce` |

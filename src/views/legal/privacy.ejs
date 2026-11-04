@@ -25,9 +25,13 @@
   <div class="card">
     <h2>2. Titular de Fíchame</h2>
     <p>
+      <% if (operatorComplete) { %>
       <%= operator.name %> · NIF <%= operator.nif %><br>
       <%= operator.address %><br>
       Contacto de privacidad: <%= operator.email %><br>
+      <% } else { %>
+      Identificación del titular (nombre, NIF y domicilio): pendiente de publicación. Hasta entonces, la atención se realiza por el contacto siguiente.<br>
+      <% } %>
       Soporte: <a href="mailto:<%= supportEmail %>"><%= supportEmail %></a>
     </p>
     <p class="help">

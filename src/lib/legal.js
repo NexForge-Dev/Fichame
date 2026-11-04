@@ -2,10 +2,10 @@
 
 /* Identificação do operador da plataforma e versões dos textos legais.
  *
- * Os dados do operador vêm do ambiente. Enquanto não forem preenchidos, as
- * páginas mostram os marcadores [RAZÓN SOCIAL], [NIF]… — de propósito: é
- * informação obrigatória (art. 10 LSSI; art. 13 RGPD) que não pode ser
- * inventada. Ver docs/legal/00-legal-review-required.md.
+ * Os dados do operador vêm do ambiente. Enquanto não estiverem completos, as
+ * páginas dizem que a identificação está pendente de publicação e indicam o
+ * contacto de suporte: é informação obrigatória (art. 10 LSSI; art. 13 RGPD)
+ * que não pode ser inventada. Ver docs/legal/00-legal-review-required.md.
  *
  * Versões: ao alterar o significado de /terminos ou /encargo, incrementar a
  * versão e descrever a mudança em TERMS_CHANGES. A versão aceite fica no
@@ -63,24 +63,25 @@ async function recordAcceptance({ restaurantId, userId, legalName, via, ip }) {
   }), 'histórico de aceitação dos termos');
 }
 
+const env = (name) => String(process.env[name] || '').trim();
+
 const operator = {
-  name: process.env.OPERATOR_LEGAL_NAME || '[RAZÓN SOCIAL]',
-  nif: process.env.OPERATOR_NIF || '[NIF]',
-  address: process.env.OPERATOR_ADDRESS || '[DOMICILIO]',
-  email: process.env.OPERATOR_PRIVACY_EMAIL || '[EMAIL DE PRIVACIDAD]',
-  registry: process.env.OPERATOR_REGISTRY || '[DATOS REGISTRALES, SI APLICA]',
-  dpo: process.env.OPERATOR_DPO || ''
+  name: env('OPERATOR_LEGAL_NAME'),
+  nif: env('OPERATOR_NIF'),
+  address: env('OPERATOR_ADDRESS'),
+  email: env('OPERATOR_PRIVACY_EMAIL'),
+  registry: env('OPERATOR_REGISTRY'), /* só se aplicar: um autónomo não tem */
+  dpo: env('OPERATOR_DPO')
 };
 
 function operatorComplete() {
-  return !Object.entries(operator).some(([k, v]) => k !== 'dpo' && /^\[.*\]$/.test(v));
+  return ['name', 'nif', 'address', 'email'].every((k) => operator[k]);
 }
 
 /* Email a que as pessoas podem mesmo escrever: o de privacidade quando está
- * definido; até lá, o de suporte, para o texto nunca mandar escrever a um
- * marcador. O marcador continua visível nos dados do titular. */
+ * definido; até lá, o de suporte. */
 function privacyContact() {
-  return /^\[.*\]$/.test(operator.email) ? config.contactEmail : operator.email;
+  return operator.email || config.contactEmail;
 }
 
 module.exports = {

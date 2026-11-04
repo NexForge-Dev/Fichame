@@ -10,16 +10,11 @@
 <main class="container-narrow public-main">
 
 <%
-  /* Faixa de borrador igual à das páginas legais (legal/draft_banner). A rota
-     não passa operatorComplete/legalReviewed: calcula-se aqui a partir do
-     `operator` (marcadores [..] por preencher) e de LEGAL_REVIEWED. O aviso
+  /* Faixa de borrador igual à das páginas legais (legal/draft_banner). O aviso
      de idioma do banner fica de fora (lang: 'es') porque esta página já o
      mostra no cartão principal. */
-  var privOperatorComplete = typeof operatorComplete !== 'undefined' ? operatorComplete
-    : !Object.keys(operator).some(function (k) { return k !== 'dpo' && /^\[.*\]$/.test(String(operator[k])); });
-  var privLegalReviewed = typeof legalReviewed !== 'undefined' ? legalReviewed : process.env.LEGAL_REVIEWED === '1';
 %>
-<%- include('../legal/draft_banner', { lang: 'es', operatorComplete: privOperatorComplete, legalReviewed: privLegalReviewed }) %>
+<%- include('../legal/draft_banner', { lang: 'es' }) %>
 
 <% if (sentRef) { %>
   <div class="card center pad-lg">
@@ -66,7 +61,7 @@
     <h3>Destinatarios</h3>
     <p>
       Tus datos no se ceden a terceros ni a otros establecimientos que usan Fíchame.
-      Fíchame (<%= operator.name %>) presta la plataforma y trata los datos únicamente por cuenta del
+      Fíchame<% if (operatorComplete) { %> (<%= operator.name %>)<% } %> presta la plataforma y trata los datos únicamente por cuenta del
       establecimiento, como <strong>encargado del tratamiento</strong> (art. 28 RGPD), con
       proveedores técnicos (subencargados) de alojamiento web, base de datos y envío de avisos por correo electrónico. La lista de
       subencargados y su ubicación está en la <a href="/privacidad#subencargados">política de privacidad de Fíchame</a>.

@@ -234,7 +234,9 @@ test('pagamento online ligado: as condições de contratação voltam a aparecer
   });
 });
 
-test('dados do operador: basta definir OPERATOR_* para os marcadores desaparecerem', () => {
+/* Lê as páginas legais num processo novo, porque lib/legal.js fixa OPERATOR_*
+ * ao ser carregado. */
+function legalPages(env) {
   const { execFileSync } = require('node:child_process');
   const script = `
     const { createApp } = require('./src/app');
@@ -248,20 +250,31 @@ test('dados do operador: basta definir OPERATOR_* para os marcadores desaparecer
       console.log(JSON.stringify(out));
       process.exit(0);
     });`;
-  const out = execFileSync(process.execPath, ['-e', script], {
-    env: {
+  const out = execFileSync(process.execPath, ['-e', script], { env, encoding: 'utf8' });
+  return JSON.parse(out.trim().split('\n').pop());
+}
+
+test('dados do operador em falta: a página diz que estão pendentes, sem marcadores', () => {
+  const env = { ...process.env };
+  for (const k of Object.keys(env)) if (k.startsWith('OPERATOR_')) delete env[k];
+  for (const html of legalPages(env)) {
+    assert.doesNotMatch(html, /\[(RAZÓN SOCIAL|NIF|DOMICILIO|EMAIL DE PRIVACIDAD|DATOS REGISTRALES)/);
+    assert.doesNotMatch(html, /NIF\s*(,|<br>)/);
+    assert.match(html, /pendientes? de publicación/);
+  }
+});
+
+test('dados do operador: basta definir OPERATOR_* para o texto pendente desaparecer', () => {
+  const pages = legalPages({
       ...process.env,
       OPERATOR_LEGAL_NAME: 'Titular de Prueba',
       OPERATOR_NIF: 'NIF-DE-PRUEBA',
       OPERATOR_ADDRESS: 'Dirección de prueba',
       OPERATOR_PRIVACY_EMAIL: 'privacidad@example.com',
       OPERATOR_REGISTRY: 'Registro de prueba'
-    },
-    encoding: 'utf8'
   });
-  const pages = JSON.parse(out.trim().split('\n').pop());
   for (const html of pages) {
-    assert.doesNotMatch(html, /\[(RAZÓN SOCIAL|NIF|DOMICILIO|EMAIL DE PRIVACIDAD|DATOS REGISTRALES)/);
+    assert.doesNotMatch(html, /pendientes? de publicación/);
     assert.match(html, /BORRADOR — REQUIERE REVISIÓN JURÍDICA/);
   }
   assert.match(pages[0], /Titular de Prueba/);

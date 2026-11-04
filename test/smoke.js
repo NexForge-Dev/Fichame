@@ -649,7 +649,7 @@ async function main() {
       res.status === 200 && html.includes('Tus derechos') && html.includes('Versión 2026-11'));
     check('privacidade distingue responsável/encarregado e sem decisões automatizadas',
       html.includes('encargado del tratamiento') && html.includes('Decisiones automatizadas') && html.includes('BORRADOR'));
-    check('privacidade não inventa dados do operador (marcadores)', html.includes('[RAZÓN SOCIAL]') || Boolean(process.env.OPERATOR_LEGAL_NAME));
+    check('privacidade não inventa dados do operador', html.includes('pendiente de publicación') || Boolean(process.env.OPERATOR_LEGAL_NAME));
     for (const p of ['/cookies', '/terminos', '/encargo']) {
       res = await call('GET', p);
       check(`${p} renderiza com aviso de borrador`, res.status === 200 && (await text(res)).includes('REQUIERE REVISIÓN JURÍDICA'));
