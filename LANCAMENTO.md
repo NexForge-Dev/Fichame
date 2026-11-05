@@ -57,6 +57,9 @@ recuperação de senha passa pelo admin em `/admin/usuarios`).
    todas as variáveis da secção 2. **Não** definir `COOKIE_SECURE=0` nem
    `TRUST_PROXY=0` (na Vercel ficam 1 por omissão). `MAX_CV_MB` ≤ 4.
    `RETENTION_AUTO` fica `0` até os prazos de conservação terem validação jurídica.
+   Enquanto isso, o painel de cada negócio mostra as candidaturas vencidas (aviso no início e
+   separador «Vencidas») e o dono apaga-as à mão. Para ligar a supressão diária: `RETENTION_AUTO=1`
+   com `CRON_SECRET` de 32+ caracteres; o cron já está em `vercel.json` e os textos mudam sozinhos.
 3. Deploy (push para a branch de produção ou `vercel --prod`).
 4. `curl https://<domínio>/api/health` → `{"config":true,"db":true,"migrations":true,"ok":true}` (200).
    Com `config:false` (503) a configuração foi recusada: ver Runtime Logs (`[config] Arranque recusado`).
@@ -107,7 +110,7 @@ Production: Vercel project `fichame`, team `nex-forge5`, https://fichame-ten.ver
 
 - `/privacidad`, `/terminos`, `/encargo`, `/cookies` existem (em espanhol — o
   mercado é Espanha, RGPD/LOPDGDD/LSSI). Mostram a faixa **«BORRADOR — REQUIERE
-  REVISIÓN JURÍDICA»** (some só com `LEGAL_REVIEWED=1`, depois da revisão) e marcadores `[RAZÓN SOCIAL]`, `[NIF]`… até preencher `OPERATOR_*`.
+  REVISIÓN JURÍDICA»** (some só com `LEGAL_REVIEWED=1`, depois da revisão) e dizem que a identificação do titular está pendente de publicação até preencher `OPERATOR_*`.
 - Revisão por advogado: ver `docs/legal/00-legal-review-required.md` e
   `docs/security/production-compliance-gate.md` (itens BLOCKER: identidade do
   operador, transferências internacionais, análise «agencia de colocación»).

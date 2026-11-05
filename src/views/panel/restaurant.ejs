@@ -1,7 +1,7 @@
 <%- include('../partials/head', { title: tr('Mi negocio') }) %>
 <%- include('../partials/panel_nav') %>
 
-<main class="container">
+<main id="main" class="container">
   <div class="page-title">
     <h1><%= tr('Mi negocio') %></h1>
   </div>
@@ -72,7 +72,7 @@
       <div class="field">
         <label for="privacy_email"><%= tr('Email de contacto para privacidad') %> *</label>
         <input id="privacy_email" type="email" name="privacy_email" maxlength="120" required value="<%= restaurant.privacy_email || restaurant.email %>">
-        <div class="help"><%= tr('Público: los candidatos lo ven para ejercer sus derechos. Aquí recibirás también los avisos de solicitudes.') %></div>
+        <div class="help"><%= emailEnabled ? tr('Público: los candidatos lo ven para ejercer sus derechos. Aquí recibirás también los avisos de solicitudes.') : tr('Público: los candidatos lo ven para ejercer sus derechos. Las solicitudes te llegan a Avisos, en este panel.') %></div>
       </div>
       <div class="field">
         <label for="owner_name"><%= tr('Persona de contacto') %> *</label>
@@ -81,7 +81,7 @@
       <div class="field">
         <label for="email"><%= tr('Email para avisos de candidaturas') %> *</label>
         <input id="email" type="email" name="email" maxlength="120" required value="<%= restaurant.email %>">
-        <div class="help"><%= tr('Los avisos no incluyen datos del candidato: solo un enlace a tu panel.') %></div>
+        <div class="help"><%= emailEnabled ? tr('Los avisos no incluyen datos del candidato: solo un enlace a tu panel.') : tr('El envío de avisos por email aún no está activo: de momento te avisamos solo en este panel.') %></div>
       </div>
       <div class="field">
         <label for="telefono"><%= tr('Teléfono') %> <span class="dim label-hint">(<%= tr('opcional') %>)</span></label>

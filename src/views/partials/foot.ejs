@@ -46,7 +46,7 @@
         <span>
           <% if (typeof supportEmail !== 'undefined' && supportEmail) { %><%= tr('Soporte:') %> <a href="mailto:<%= supportEmail %>"><%= supportEmail %></a><% } %>
         </span>
-        <nav class="lang-switch" aria-label="<%= tr('Idioma') %>">
+        <nav class="lang-switch" aria-label="<%= tr('Idioma del sitio') %>">
           <% LANGS.forEach(function (l) { %>
             <a href="/idioma/<%= l %>?next=<%= encodeURIComponent(langNext) %>" lang="<%= l %>"<%- l === lang ? ' aria-current="true"' : '' %>><%= l.toUpperCase() %></a>
           <% }) %>

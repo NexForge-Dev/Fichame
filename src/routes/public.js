@@ -7,7 +7,7 @@ const config = require('../config');
 const { sb, one, many, rpc, logSecurity } = require('../db');
 const { ensureSession } = require('../middleware/session');
 const { verifyCsrf } = require('../middleware/csrf');
-const { rateLimit, dbRateLimit } = require('../middleware/rateLimit');
+const { rateLimit, acceptedLimit, dbRateLimit } = require('../middleware/rateLimit');
 const { uploadCvFile, inspectPdf, safeFilename } = require('../middleware/uploads');
 const { notifyNewApplication, notifyRightsRequest } = require('../lib/mailer');
 const analytics = require('../lib/analytics');
@@ -142,14 +142,19 @@ router.get('/r/:slug', ensureSession, async (req, res) => {
 /* ------------------------------------------------------------------ *
  * POST /r/:slug/apply — candidatura com CV
  * ------------------------------------------------------------------ */
+/* Por IP + negócio, só envios aceites. 20 e não 5: numa loja com Wi-Fi vários
+ * candidatos saem pelo mesmo IP, e o duplicado (mesmo email em 48 h) já trava
+ * spam. Um erro no formulário não gasta o limite: um dia de contratação não
+ * pode deixar o candidato seguinte sem se candidatar. O abuso com pedidos
+ * inválidos fica para o limite global, por IP, de 60 por hora. */
+const applyAccepted = acceptedLimit({
+  windowMs: 60 * 60 * 1000, max: 20,
+  key: (req) => `${req.ip}|${req.params.slug}`,
+  message: 'Has enviado demasiadas candidaturas desde este dispositivo. Inténtalo más tarde.'
+});
+
 const applyLimiters = [
-  /* Por IP + negócio. 20 e não 5: numa loja com Wi-Fi vários candidatos
-   * saem pelo mesmo IP, e o duplicado (mesmo email em 48 h) já trava spam. */
-  rateLimit({
-    windowMs: 60 * 60 * 1000, max: 20, name: 'apply',
-    key: (req) => `${req.ip}|${req.params.slug}`,
-    message: 'Has enviado demasiadas candidaturas desde este dispositivo. Inténtalo más tarde.'
-  }),
+  applyAccepted.check,
   /* Partilhado entre instâncias: por IP em toda a plataforma (CV flood). */
   dbRateLimit({
     windowMs: 60 * 60 * 1000, max: 60, name: 'apply-ip',
@@ -158,7 +163,7 @@ const applyLimiters = [
   })
 ];
 
-router.post('/r/:slug/apply', ...applyLimiters, uploadCvFile, async (req, res) => {
+router.post('/r/:slug/apply', ...applyLimiters, uploadCvFile, applyAccepted.finish(async (req, res) => {
   const restaurant = await getPublicRestaurant(req.params.slug);
   if (!restaurant || restaurant.demo) return notFoundRestaurant(res, 'Enlace no válido.');
 
@@ -189,12 +194,14 @@ router.post('/r/:slug/apply', ...applyLimiters, uploadCvFile, async (req, res) =
     return res.status(403).render('error', {
       status: 403,
       title: 'Sesión no válida',
-      message: 'La sesión ha caducado. Vuelve a abrir la página e inténtalo de nuevo.'
+      message: 'La sesión ha caducado. Vuelve a abrir la página e inténtalo de nuevo.',
+      backHref: `/r/${restaurant.slug}`
     });
   }
 
   /* Honeypot: confirma sem gravar nada (§26). */
   if (clean(req.body.sitio_web, 200)) {
+    applyAccepted.hit(req);
     logPublic('spam_honeypot', `rid=${restaurant.id}`, req, restaurant.id);
     return res.redirect(`/r/${restaurant.slug}/enviado`);
   }
@@ -259,6 +266,7 @@ router.post('/r/:slug/apply', ...applyLimiters, uploadCvFile, async (req, res) =
    * qualquer pessoa descobrir, só com um email, se alguém se candidatou a
    * este negócio. O segundo envio não é gravado. */
   const dupResponse = () => {
+    applyAccepted.hit(req);
     logPublic('candidatura_duplicada', `rid=${restaurant.id}`, req, restaurant.id);
     return res.redirect(`/r/${restaurant.slug}/enviado`);
   };
@@ -320,6 +328,8 @@ router.post('/r/:slug/apply', ...applyLimiters, uploadCvFile, async (req, res) =
     });
   }
 
+  applyAccepted.hit(req);
+
   /* Email ao restaurante: só aviso + link para o painel (sem CV nem dados do
    * candidato). Não bloqueia a resposta ao candidato. */
   background(notifyNewApplication({ restaurant, applicationId: result.application_id, jobTitle }), 'mailer');
@@ -330,17 +340,19 @@ router.post('/r/:slug/apply', ...applyLimiters, uploadCvFile, async (req, res) =
 
   /* POST-Redirect-GET: evita reenvio ao recarregar (§7). */
   res.redirect(`/r/${restaurant.slug}/enviado`);
-});
+}));
 
 /* ------------------------------------------------------------------ *
  * POST /r/:slug/interes — deixar dados quando pausado / sem vagas (§20)
  * ------------------------------------------------------------------ */
+const interestAccepted = acceptedLimit({
+  windowMs: 60 * 60 * 1000, max: 20,
+  key: (req) => `${req.ip}|${req.params.slug}`,
+  message: 'Demasiadas solicitudes. Inténtalo más tarde.'
+});
+
 const interestLimiters = [
-  rateLimit({
-    windowMs: 60 * 60 * 1000, max: 20, name: 'interest',
-    key: (req) => `${req.ip}|${req.params.slug}`,
-    message: 'Demasiadas solicitudes. Inténtalo más tarde.'
-  }),
+  interestAccepted.check,
   dbRateLimit({
     windowMs: 60 * 60 * 1000, max: 60, name: 'interest-ip',
     key: (req) => String(req.ip),
@@ -348,13 +360,13 @@ const interestLimiters = [
   })
 ];
 
-router.post('/r/:slug/interes', ...interestLimiters, async (req, res) => {
+router.post('/r/:slug/interes', ...interestLimiters, interestAccepted.finish(async (req, res) => {
   const restaurant = await getPublicRestaurant(req.params.slug);
   if (!restaurant || restaurant.demo) return notFoundRestaurant(res, 'Enlace no válido.');
 
   if (!verifyCsrf(req)) {
     return res.status(403).render('error', {
-      status: 403, title: 'Sesión no válida', message: 'Vuelve a abrir la página e inténtalo de nuevo.'
+      status: 403, title: 'Sesión no válida', message: 'Vuelve a abrir la página e inténtalo de nuevo.', backHref: `/r/${restaurant.slug}`
     });
   }
 
@@ -367,6 +379,7 @@ router.post('/r/:slug/interes', ...interestLimiters, async (req, res) => {
   };
 
   if (clean(req.body.sitio_web, 200)) {
+    interestAccepted.hit(req);
     logPublic('spam_honeypot', `rid=${restaurant.id}`, req, restaurant.id);
     return res.redirect(`/r/${restaurant.slug}/enviado?tipo=futuro`);
   }
@@ -393,6 +406,7 @@ router.post('/r/:slug/interes', ...interestLimiters, async (req, res) => {
     });
   }
 
+  interestAccepted.hit(req);
   const result = await rpc('submit_interest', {
     restaurant_id: restaurant.id,
     first_name: form.nombre,
@@ -419,7 +433,7 @@ router.post('/r/:slug/interes', ...interestLimiters, async (req, res) => {
   logPublic('interes_registrado', `rid=${restaurant.id} app=${result.application_id}`, req, restaurant.id);
 
   res.redirect(`/r/${restaurant.slug}/enviado?tipo=futuro`);
-});
+}));
 
 /* ------------------------------------------------------------------ *
  * GET /r/:slug/enviado — confirmação (§7)
@@ -473,7 +487,7 @@ router.post('/r/:slug/derechos',
     const restaurant = await getPublicRestaurant(req.params.slug, { includeInactive: true });
     if (!restaurant || restaurant.demo) return notFoundRestaurant(res);
     if (!verifyCsrf(req)) {
-      return res.status(403).render('error', { status: 403, title: 'Sesión no válida', message: 'Vuelve a abrir la página.' });
+      return res.status(403).render('error', { status: 403, title: 'Sesión no válida', message: 'Vuelve a abrir la página.', backHref: `/r/${restaurant.slug}/privacidad` });
     }
 
     const form = {

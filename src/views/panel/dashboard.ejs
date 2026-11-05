@@ -1,12 +1,19 @@
 <%- include('../partials/head', { title: tr('Inicio') }) %>
 <%- include('../partials/panel_nav') %>
 
-<main class="container">
+<main id="main" class="container">
   <div class="page-title">
     <h1><%= firstName ? tr('Hola, {name}', { name: firstName }) : tr('Hola de nuevo') %></h1>
   </div>
 
   <%- include('../partials/flash') %>
+
+  <% if (overdue > 0 && !autoRetention) { %>
+    <div class="flash err">
+      <span><%= overdue === 1 ? tr('1 candidatura ha superado su plazo de conservación. Debes eliminarla desde su ficha.') : tr('{n} candidaturas han superado su plazo de conservación. Debes eliminarlas desde su ficha.', { n: overdue }) %>
+        <a href="/panel/candidaturas?vencidas=1"><%= tr('Ver vencidas') %></a></span>
+    </div>
+  <% } %>
 
   <% if (total === 0) { %>
     <%

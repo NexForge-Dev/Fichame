@@ -137,11 +137,18 @@ test('scrypt: hashes novos com N = 2^17; os antigos (2^14) verificam e pedem reh
   assert.equal(c.needsRehash('lixo'), false);
 });
 
-test('sessões anónimas: limite por IP na criação', () => {
-  const { allowAnonSession, ANON_MAX_PER_IP } = require('../src/middleware/session');
-  const now = Date.now();
-  for (let i = 0; i < ANON_MAX_PER_IP; i += 1) assert.equal(allowAnonSession('203.0.113.9', now), true);
-  assert.equal(allowAnonSession('203.0.113.9', now), false);
-  assert.equal(allowAnonSession('203.0.113.10', now), true, 'outro IP não é afetado');
-  assert.equal(allowAnonSession('203.0.113.9', now + 11 * 60 * 1000), true, 'nova janela');
+test('REQUIRED_MIGRATIONS cobre todas as migrations da pasta', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const { REQUIRED_MIGRATIONS } = require('../src/db/check');
+  const dir = path.join(__dirname, '..', 'migrations');
+  const versions = fs.readdirSync(dir)
+    .filter((f) => f.endsWith('.sql') && !f.startsWith('0000_'))
+    .map((f) => f.replace(/\.sql$/, ''))
+    .sort();
+  assert.deepEqual([...REQUIRED_MIGRATIONS].sort(), versions);
+  for (const v of versions) {
+    assert.match(fs.readFileSync(path.join(dir, `${v}.sql`), 'utf8'), new RegExp(`insert into schema_migrations[\\s\\S]*'${v}'`),
+      `${v} tem de se registar em schema_migrations`);
+  }
 });

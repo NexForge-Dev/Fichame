@@ -1,6 +1,17 @@
 'use strict';
 
+/* A BD não respondeu ao carregar a sessão: não se sabe quem é a pessoa, e
+ * mandá-la para /login diria que a sessão terminou. */
+function sessionUnavailable(res) {
+  return res.status(503).render('error', {
+    status: 503,
+    title: 'Servicio no disponible',
+    message: 'No hemos podido cargar tu sesión. Inténtalo de nuevo en unos minutos.'
+  });
+}
+
 function requireOwner(req, res, next) {
+  if (req.sessionUnavailable) return sessionUnavailable(res);
   if (req.blockedSession) {
     return res.redirect('/login?error=' + encodeURIComponent('Tu cuenta ha sido bloqueada.'));
   }
@@ -24,6 +35,7 @@ function requireOwner(req, res, next) {
 }
 
 function requireAdmin(req, res, next) {
+  if (req.sessionUnavailable) return sessionUnavailable(res);
   if (req.blockedSession) {
     return res.redirect('/login?error=' + encodeURIComponent('Tu cuenta ha sido bloqueada.'));
   }
@@ -35,4 +47,4 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-module.exports = { requireOwner, requireAdmin };
+module.exports = { requireOwner, requireAdmin, sessionUnavailable };

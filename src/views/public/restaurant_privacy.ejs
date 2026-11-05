@@ -7,7 +7,7 @@
   </div>
 </header>
 
-<main class="container-narrow public-main">
+<main id="main" class="container-narrow public-main"<% if (errors || sentRef) { %> data-replace-url="/r/<%= restaurant.slug %>/privacidad"<% } %>>
 
 <%
   /* Faixa de borrador igual à das páginas legais (legal/draft_banner). O aviso

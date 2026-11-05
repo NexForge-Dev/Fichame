@@ -20,6 +20,10 @@ let base;
 
 test.before(async () => {
   server = createApp().listen(0, '127.0.0.1');
+  /* Os testes com execFileSync bloqueiam este processo, onde corre o servidor:
+   * com os 5 s por omissão, um filho lento fecha o socket keep-alive e o fetch
+   * seguinte falha com ECONNRESET. */
+  server.keepAliveTimeout = 60000;
   await new Promise((resolve) => server.once('listening', resolve));
   base = `http://127.0.0.1:${server.address().port}`;
 });

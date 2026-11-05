@@ -10,8 +10,8 @@
 -- se ganhar a corrida a linha volta a ser avaliada (legal_hold = true) e fica
 -- de fora. O resto da função é igual a 0005.
 --
--- Não muda nenhuma interface: o código funciona com ou sem esta migration
--- (não está em REQUIRED_MIGRATIONS). Idempotente. Aplicar depois de 0014.
+-- Não muda nenhuma interface. Idempotente. Aplicar depois de 0014.
+-- Está em REQUIRED_MIGRATIONS desde que /api/health passou a verificá-la.
 -- ===========================================================================
 
 create or replace function apply_retention(p jsonb) returns jsonb

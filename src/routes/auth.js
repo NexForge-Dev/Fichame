@@ -111,6 +111,7 @@ async function handleRegister(req, res, googleAccount = null) {
     legal_name: clean(req.body.legal_name, 150),
     owner_name: clean(req.body.owner_name, 100),
     email: googleAccount ? googleAccount.email : clean(req.body.email, 120),
+    privacy_email: clean(req.body.privacy_email, 120),
     phone: clean(req.body.telefono, 30),
     address: clean(req.body.direccion, 200),
     postal_code: clean(req.body.cp, 10),
@@ -129,6 +130,9 @@ async function handleRegister(req, res, googleAccount = null) {
   if (form.legal_name.length < 2) errors.legal_name = 'Indica la razón social o el nombre del titular del negocio.';
   if (form.owner_name.length < 2) errors.owner_name = 'Indica el responsable.';
   if (!isValidEmail(form.email)) errors.email = 'Indica un email válido.';
+  /* Sai no formulário público: quem o escolhe é o dono, para que o email de
+   * acesso à conta não fique visível (facilitava phishing). */
+  if (!isValidEmail(form.privacy_email)) errors.privacy_email = 'Indica un email válido.';
   if (form.phone && !/^[\d\s().+-]{6,25}$/.test(form.phone)) errors.phone = 'Indica un teléfono válido.';
   if (form.city.length < 2) errors.city = 'Indica la ciudad.';
   if (form.postal_code && !/^\d{5}$/.test(form.postal_code)) errors.postal_code = 'El código postal debe tener 5 dígitos (ej.: 28013).';
@@ -171,7 +175,7 @@ async function handleRegister(req, res, googleAccount = null) {
     google_sub: googleAccount ? googleAccount.sub : '',
     test_prefix: config.testPrefix,
     legal_name: form.legal_name,
-    privacy_email: form.email,
+    privacy_email: form.privacy_email,
     terms_version: TERMS_VERSION,
     dpa_version: DPA_VERSION,
     ip: String(req.ip || '').slice(0, 64)
@@ -281,12 +285,15 @@ router.post('/login/google/vincular',
     startGoogleFlow(res, 'link');
   });
 
-router.get('/login/google/callback',
-  rateLimit({ windowMs: 15 * 60 * 1000, max: 30, name: 'google-callback' }),
-  dbRateLimit({ windowMs: 15 * 60 * 1000, max: 60, name: 'google-ip', key: (req) => String(req.ip) }),
-  async (req, res) => {
-    if (!google.enabled()) return notFound(res);
+const googleCallbackDbLimit = dbRateLimit({ windowMs: 15 * 60 * 1000, max: 60, name: 'google-ip', key: (req) => String(req.ip) });
 
+router.get('/login/google/callback',
+  (req, res, next) => (google.enabled() ? next() : notFound(res)),
+  rateLimit({ windowMs: 15 * 60 * 1000, max: 30, name: 'google-callback' }),
+  /* O contador partilhado grava na BD: só para quem iniciou o fluxo neste
+   * browser. Um GET de um crawler fica no limite em memória e cai logo abaixo. */
+  (req, res, next) => (req.cookies[GOOGLE_FLOW_COOKIE] ? googleCallbackDbLimit(req, res, next) : next()),
+  async (req, res) => {
     let flow = null;
     try {
       flow = JSON.parse(Buffer.from(String(req.cookies[GOOGLE_FLOW_COOKIE] || ''), 'base64url').toString('utf8'));
@@ -468,7 +475,7 @@ router.post('/login', ...loginLimiters, async (req, res) => {
   }
 
   await destroySession(req, res);
-  await createSession(req, res, user.id);
+  await createSession(req, res, user.id, user.role);
 
   if (user.role === 'owner') analytics.sessionStarted(user.restaurant_id);
   logSecurity('login_ok', `user=${user.id} role=${user.role}`, req.ip, {
@@ -495,29 +502,42 @@ router.post('/logout', async (req, res) => {
 /* ------------------------------------------------------------------ *
  * Demo — entra no painel do negócio fictício (src/lib/demo.js)
  * ------------------------------------------------------------------ *
- * GET porque é o destino de um link na /conoce. Quem já tem sessão de um
+ * O link na /conoce abre uma página com um botão: entrar cria uma sessão e um
+ * registo, e isso só acontece num POST com token CSRF. Um GET (crawler,
+ * pré-visualização de um link) não escreve nada. Quem já tem sessão de um
  * negócio real não é desligado: volta ao seu painel. Sem `npm run demo:seed`
  * a conta não existe e a rota dá 404. */
-router.get('/demo',
+async function demoAccount(req, res) {
+  const user = await one(
+    sb().from('users').select('id, blocked').eq('email', DEMO_EMAIL),
+    'conta demo'
+  );
+  if (user && !user.blocked) return user;
+  res.status(404).render('error', {
+    status: 404, title: 'Demo no disponible', message: 'La demostración no está disponible en este momento.'
+  });
+  return null;
+}
+
+function leaveDemoPage(req, res) {
+  return res.redirect(req.user.role === 'admin' ? '/admin' : '/panel');
+}
+
+router.get('/demo', ensureSession, async (req, res) => {
+  if (req.user) return leaveDemoPage(req, res);
+  if (await demoAccount(req, res)) res.render('public/demo');
+});
+
+router.post('/demo',
   rateLimit({
     windowMs: 15 * 60 * 1000, max: 20, name: 'demo',
     message: 'Demasiados accesos a la demo. Espera unos minutos.'
   }),
   async (req, res) => {
-    if (req.user && !isDemoUser(req.user)) {
-      return res.redirect(req.user.role === 'admin' ? '/admin' : '/panel');
-    }
-    if (req.user) return res.redirect('/panel');
+    if (req.user) return leaveDemoPage(req, res);
 
-    const user = await one(
-      sb().from('users').select('id, blocked').eq('email', DEMO_EMAIL),
-      'conta demo'
-    );
-    if (!user || user.blocked) {
-      return res.status(404).render('error', {
-        status: 404, title: 'Demo no disponible', message: 'La demostración no está disponible en este momento.'
-      });
-    }
+    const user = await demoAccount(req, res);
+    if (!user) return;
 
     await destroySession(req, res);
     await createSession(req, res, user.id);

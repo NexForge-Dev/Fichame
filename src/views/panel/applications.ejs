@@ -1,7 +1,7 @@
 <%- include('../partials/head', { title: tr('Candidaturas') }) %>
 <%- include('../partials/panel_nav') %>
 
-<main class="container">
+<main id="main" class="container">
   <div class="page-title">
     <h1><%= tr('Candidaturas') %> <span class="count">(<%= totalFiltered %>)</span></h1>
   </div>
@@ -15,12 +15,18 @@
       return groups[g].statuses.reduce(function (n, k) { return n + (pipeline[k] || 0); }, 0);
     };
     var allCount = Object.keys(pipeline).reduce(function (n, k) { return n + (pipeline[k] || 0); }, 0);
-    var noTab = !filters.grupo && !filters.estado;
+    var noTab = !filters.grupo && !filters.estado && !filters.vencidas;
   %>
   <nav class="group-tabs" aria-label="<%= tr('Mostrar') %>">
     <a class="group-tab <%= noTab ? 'active' : '' %>" href="/panel/candidaturas"<% if (noTab) { %> aria-current="page"<% } %>>
       <span><%= tr('Todas') %></span><span class="group-num"><%= allCount %></span>
     </a>
+    <%# Logo a seguir a «Todas»: no telemóvel os separadores rolam e o último fica fora do ecrã. %>
+    <% if (overdue > 0 || filters.vencidas) { %>
+      <a class="group-tab <%= filters.vencidas ? 'active' : '' %>" href="/panel/candidaturas?vencidas=1"<% if (filters.vencidas) { %> aria-current="page"<% } %>>
+        <span><%= tr('Vencidas') %></span><span class="group-num"><%= overdue %></span>
+      </a>
+    <% } %>
     <% Object.keys(groups).forEach(function (g) {
          var n = groupCount(g);
          if (g === 'futuro' && n === 0 && filters.grupo !== g) return;
@@ -30,6 +36,10 @@
       </a>
     <% }) %>
   </nav>
+
+  <% if (filters.vencidas) { %>
+    <p class="muted small"><%= autoRetention ? tr('Han superado su plazo de conservación. Se borrarán en la próxima limpieza automática.') : tr('Han superado su plazo de conservación. Elimínalas desde su ficha, o usa el bloqueo si debes conservarlas.') %></p>
+  <% } %>
 
   <% if (filters.estado) { %>
     <p class="filter-chip">
@@ -43,11 +53,12 @@
      * ocupavam o ecrã inteiro antes do primeiro candidato. Abrem sozinhos
      * se algum estiver em uso. */
     var advanced = Boolean(filters.estado || filters.puesto || filters.disp || filters.desde || filters.hasta || filters.favs || filters.orden === 'antiguas');
-    var anyFilter = advanced || Boolean(filters.q) || Boolean(filters.grupo);
+    var anyFilter = advanced || Boolean(filters.q) || Boolean(filters.grupo) || filters.vencidas;
   %>
   <div class="card filters-card">
     <form action="/panel/candidaturas" method="get">
       <% if (filters.grupo) { %><input type="hidden" name="grupo" value="<%= filters.grupo %>"><% } %>
+      <% if (filters.vencidas) { %><input type="hidden" name="vencidas" value="1"><% } %>
       <div class="search-row">
         <label for="q" class="sr-only"><%= tr('Buscar') %></label>
         <div class="search-field">
@@ -145,7 +156,7 @@
           </div>
           <div class="right">
             <span class="badge <%= (STATUSES[r.status] || {}).color || 'slate' %>"><%= statusLabel(r.status) %></span>
-            <span class="when"><%= fmtRelative(r.applied_at) %></span>
+            <span class="when"><%= filters.vencidas && r.retention_until ? tr('Venció el {date}', { date: fmtDate(r.retention_until) }) : fmtRelative(r.applied_at) %></span>
           </div>
         </a>
       <% }) %>

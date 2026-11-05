@@ -49,10 +49,10 @@
   </div>
 </header>
 
-<main class="container-narrow public-main">
+<main id="main" class="container-narrow public-main"<% if (errors) { %> data-replace-url="/r/<%= restaurant.slug %>"<% } %>>
 
 <% if (restaurant.demo) { %>
-  <div class="flash ok"><strong><%= tr('Página de demostración.') %></strong> <%= tr('Este negocio es ficticio y el formulario no envía nada.') %> <a href="/registro"><%= tr('Empieza tus {days} días gratis', { days: pricing.TRIAL_DAYS }) %></a>.</div>
+  <div class="flash ok"><span><strong><%= tr('Página de demostración.') %></strong> <%= tr('Este negocio es ficticio y el formulario no envía nada.') %> <a href="/registro"><%= tr('Empieza tus {days} días gratis', { days: pricing.TRIAL_DAYS }) %></a>.</span></div>
 <% } %>
 
 <% if (typeof query !== 'undefined' && query && query.err) { %>
@@ -96,7 +96,7 @@
     <% } %>
 
     <%# #enviar: depois de um erro a página volta já posicionada no formulário. %>
-    <form action="/r/<%= restaurant.slug %>/apply#enviar" method="post" enctype="multipart/form-data" class="steps-form" data-busy="<%= tr('Enviando tu CV…') %>">
+    <form action="/r/<%= restaurant.slug %>/apply#enviar" method="post" enctype="multipart/form-data" class="steps-form" data-busy="<%= tr('Enviando tu CV…') %>" data-upload data-network-error="<%= tr('No se pudo enviar. Comprueba tu conexión e inténtalo de nuevo: tus datos y tu CV siguen aquí.') %>" data-http-error="<%= tr('No se pudo enviar por un problema nuestro. Inténtalo de nuevo en unos minutos: tus datos y tu CV siguen aquí.') %>" data-session-renewed="<%= tr('Tu sesión había caducado y ya la hemos renovado. Pulsa de nuevo «Enviar candidatura»: tus datos y tu CV siguen aquí.') %>" data-cookies-needed="<%= tr('Tu navegador está bloqueando las cookies y sin la cookie de sesión no podemos recibir tu candidatura. Actívalas para esta página y vuelve a abrirla.') %>">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="hp" aria-hidden="true">
         <label>Sitio web</label>
@@ -209,6 +209,8 @@
       </label>
 
       <p class="help"><%= tr('Los campos con * son obligatorios.') %></p>
+      <progress class="upload-progress" max="100" value="0" hidden data-upload-progress aria-label="<%= tr('Progreso del envío') %>"></progress>
+      <p class="field-error is-hidden" role="alert" data-upload-failed><%= tr('No se pudo enviar. Comprueba tu conexión e inténtalo de nuevo: tus datos y tu CV siguen aquí.') %></p>
       <button class="btn block lg spaced" type="submit"<%= restaurant.demo ? ' disabled' : '' %>><%= tr('Enviar candidatura') %></button>
     </form>
   </div>
@@ -271,6 +273,7 @@
   </div>
 
 <% } %>
+  <p class="help center spaced"><%= tr('¿Esta página no corresponde a este negocio?') %> <a href="mailto:<%= supportEmail %>?subject=<%= encodeURIComponent('Fíchame · /r/' + restaurant.slug) %>"><%= tr('Avísanos') %></a></p>
 </main>
 
 <%- include('../partials/foot') %>

@@ -1,7 +1,7 @@
 <%- include('../partials/head', { title: a.first_name + ' ' + a.last_name }) %>
 <%- include('../partials/panel_nav') %>
 
-<main class="container">
+<main id="main" class="container">
   <p class="crumb"><a class="back-link" href="/panel/candidaturas"><%- icon('arrowLeft') %> <%= tr('Candidaturas') %></a></p>
 
   <!-- Cabeçalho: quem é, em que estado está, e como se fala com a pessoa.
@@ -170,7 +170,7 @@
       <div class="card o-cv">
         <h2><%= tr('Currículum') %></h2>
         <% if (cv) { %>
-          <p class="muted small"><%= cv.original_filename %> · <%= fmtSize(cv.size_bytes) %></p>
+          <p class="muted small wrap-any"><%= cv.original_filename %> · <%= fmtSize(cv.size_bytes) %></p>
           <div class="actions-row tight">
             <a class="btn small" href="/panel/cv/<%= cv.id %>" target="_blank" rel="noopener"><%- icon('file') %> <%= tr('Ver CV') %></a>
             <a class="btn secondary small" href="/panel/cv/<%= cv.id %>?descargar=1"><%- icon('download') %> <%= tr('Descargar CV') %></a>
@@ -238,7 +238,7 @@
           </form>
         <% } else { %>
           <p class="small">
-            <% if (a.retention_until && autoRetention) { %><%= tr('Se borrará automáticamente a partir del') %> <strong><%= fmtDate(a.retention_until) %></strong><% } else if (a.retention_until) { %><%= tr('Plazo de conservación hasta el') %> <strong><%= fmtDate(a.retention_until) %></strong>. <%= tr('Al vencer, elimínala desde esta página: el borrado automático no está activado') %><% } else { %><%= tr('Sin fecha de borrado calculada') %><% } %>.
+            <% if (a.retention_until && !a.legal_hold && new Date(a.retention_until) < new Date()) { %><span class="badge red"><%= tr('Plazo vencido') %></span> <% } %><% if (a.retention_until && autoRetention) { %><%= tr('Se borrará automáticamente a partir del') %> <strong><%= fmtDate(a.retention_until) %></strong><% } else if (a.retention_until) { %><%= tr('Plazo de conservación hasta el') %> <strong><%= fmtDate(a.retention_until) %></strong>. <%= tr('Al vencer, elimínala desde esta página: el borrado automático no está activado') %><% } else { %><%= tr('Sin fecha de borrado calculada') %><% } %>.
           </p>
           <details>
             <summary class="small"><%= tr('Bloquear el borrado (obligación legal o reclamación)…') %></summary>

@@ -1,7 +1,7 @@
 <%- include('../partials/head', { title: 'Administración' }) %>
 <%- include('../partials/admin_nav') %>
 
-<main class="container">
+<main id="main" class="container">
   <div class="page-title"><h1>Métricas de la plataforma</h1></div>
 
   <%- include('../partials/flash') %>
@@ -56,7 +56,7 @@
           <thead>
             <tr>
               <th>Establecimiento</th><th>Slug</th><th>Responsable</th>
-              <th>Candidaturas</th><th>Owners</th><th>Plan</th><th>Estado</th><th></th>
+              <th>Candidaturas</th><th>Owners</th><th>Plan</th><th>Estado</th><th><span class="sr-only">Acciones</span></th>
             </tr>
           </thead>
           <tbody>

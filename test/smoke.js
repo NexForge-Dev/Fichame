@@ -113,6 +113,23 @@ const PNG = Buffer.from(
   'base64'
 );
 
+/* logSecurity grava em segundo plano: a resposta pode chegar antes do registo. */
+async function logsEventually(query, min) {
+  let rows = [];
+  for (let i = 0; i < 30; i += 1) {
+    const { data } = await query();
+    rows = data || [];
+    if (rows.length >= min) break;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return rows;
+}
+
+/* Location legível: os ok/err assinados vêm com «+» nos espaços. */
+function locationText(res) {
+  return decodeURIComponent(String(res.headers.get('location') || '').replace(/\+/g, ' '));
+}
+
 function applyBody(jar, csrf, overrides = {}) {
   const { __file, ...rest } = overrides;
   const fd = new FormData();
@@ -268,7 +285,7 @@ async function main() {
       jar: ownerJar,
       body: form({
         restaurant_name: `Restaurante Granada ${P}`, owner_name: 'Ana López',
-        email: `ana-${P}@granada.es`, telefono: '912345678',
+        email: `ana-${P}@granada.es`, privacy_email: `ana-${P}@granada.es`, telefono: '912345678',
         direccion: 'Calle Mayor 1', cp: '28013', ciudad: 'Madrid',
         establecimiento: 'restaurante', commercial_name: 'Granada Restaurante',
         descripcion: 'Cocina mediterránea en el centro.',
@@ -284,7 +301,7 @@ async function main() {
       body: form({
         restaurant_name: `Restaurante Granada ${P}`, owner_name: 'Ana López',
         legal_name: `Granada Hostelería SL ${P}`, acepto: '1',
-        email: `ana-${P}@granada.es`, telefono: '912345678',
+        email: `ana-${P}@granada.es`, privacy_email: `ana-${P}@granada.es`, telefono: '912345678',
         direccion: 'Calle Mayor 1', cp: '28013', ciudad: 'Madrid',
         establecimiento: 'restaurante', commercial_name: 'Granada Restaurante',
         descripcion: 'Cocina mediterránea en el centro.',
@@ -486,8 +503,8 @@ async function main() {
     res = await call('GET', '/conoce');
     html = await text(res);
     check('/conoce é pública e explica o produto',
-      res.status === 200 && html.includes('lang="es"') && html.includes('href="/registro"') && html.includes('Prueba de mercado'));
-    check('/conoce diz que é gratuito na prova de mercado', html.includes('0 €') && html.includes('Sin tarjeta de crédito'));
+      res.status === 200 && html.includes('lang="es"') && html.includes('href="/registro"') && html.includes('Encuentra a tu próximo empleado'));
+    check('/conoce diz que a prova é grátis e sem cartão', html.includes('30 días gratis') && html.includes('Sin tarjeta'));
     check('/conoce não renderiza nenhum QR', !html.includes('crispEdges') && !html.includes('/admin/divulgacion'));
     check('/conoce tem espaço para o vídeo', html.includes('data-video'));
     res = await call('GET', '/conoce', { jar: ownerJar });
@@ -513,7 +530,7 @@ async function main() {
     res = await call('GET', '/panel/restaurante', { jar: ownerJar });
     html = await text(res);
     check('Mi restaurante mostra URL NFC',
-      res.status === 200 && html.includes(`/r/${slugA}`) && html.includes('Copiar URL'));
+      res.status === 200 && html.includes(`/r/${slugA}`) && html.includes('Copiar enlace'));
     {
       const fd = new FormData();
       fd.append('_csrf', csrfOf(html));
@@ -601,7 +618,7 @@ async function main() {
     fdBad.append('logo', new Blob([Buffer.from('not an image')], { type: 'text/plain' }), 'logo.txt');
     res = await call('POST', '/panel/restaurante', { jar: ownerJar, body: fdBad });
     check('imagem inválida rejeitada',
-      res.status === 302 && decodeURIComponent(res.headers.get('location') || '').includes('Solo se aceptan imágenes'));
+      res.status === 302 && locationText(res).includes('Solo se aceptan imágenes'));
 
     console.log('\n— Favorito, historial y consentimiento —');
     res = await call('GET', `/panel/candidaturas/${appId}`, { jar: ownerJar });
@@ -611,7 +628,7 @@ async function main() {
     res = await call('GET', `/panel/candidaturas/${appId}`, { jar: ownerJar });
     html = await text(res);
     check('perfil mostra favorito e base jurídica com versão do aviso',
-      html.includes('★ Favorito') && html.includes('art. 6.1.b RGPD') && html.includes('aviso v2026-10'));
+      html.includes('aria-pressed="true"') && html.includes('art. 6.1.b RGPD') && html.includes('aviso v2026-11'));
     /* Abrir a ficha marcou-a como «Visto» antes de passar a «Por contactar». */
     check('histórico regista recepção, «Visto» automático e mudança de estado',
       html.includes('Candidatura recibida') && html.includes('Nuevo → Visto') && html.includes('Visto → Por contactar'));
@@ -724,7 +741,7 @@ async function main() {
     check('página mostra "No estamos contratando"',
       res.status === 200 && html.includes('No estamos contratando'));
     check('formulário de interesse pede uma breve descrição',
-      html.includes('action="/r/' + slugA + '/interes"') && html.includes('¿En qué te gustaría trabajar?'));
+      html.includes('action="/r/' + slugA + '/interes#interes"') && html.includes('¿En qué te gustaría trabajar?'));
 
     res = await call('GET', `/r/${slugA}`, { jar: pubJar });
     const csrfPause = csrfOf(await text(res));
@@ -764,7 +781,7 @@ async function main() {
       body: form({
         restaurant_name: `Bar Sol ${P}`, owner_name: 'Berto Ruiz',
         legal_name: `Berto Ruiz (autónomo) ${P}`, acepto: '1',
-        email: `berto-${P}@barsol.es`, telefono: '934567890',
+        email: `berto-${P}@barsol.es`, privacy_email: `berto-${P}@barsol.es`, telefono: '934567890',
         ciudad: 'Barcelona', establecimiento: 'bar',
         password: 'Secreta123', password2: 'Secreta123', _csrf: csrfB
       })
@@ -882,9 +899,9 @@ async function main() {
         jar: spamJar,
         body: applyBody(null, c, { nombre: 'Test', email: `spam${i}@example.com`, telefono: '600000000' })
       });
-      if (res.status === 429) { limited = true; break; }
+      if (res.status === 303 && locationText(res).includes('demasiadas candidaturas')) { limited = true; break; }
     }
-    check('limite de candidaturas por IP → 429', limited);
+    check('limite de candidaturas por IP volta à página com o aviso', limited);
 
     console.log('\n— Cabeçalhos de segurança, cache e indexação —');
     res = await call('GET', `/r/${slugA}`);
@@ -1037,7 +1054,7 @@ async function main() {
     const resCsrf = csrfOf(await text(res));
     res = await call('POST', `/panel/candidaturas/${appId}/estado`, { jar: ownerJar, body: form({ status: 'reserva', _csrf: resCsrf }) });
     check('reserva sem consentimento recusada',
-      res.status === 302 && decodeURIComponent(res.headers.get('location') || '').includes('Para el futuro'));
+      res.status === 302 && locationText(res).includes('Para el futuro'));
     {
       const { data: st } = await sb.from('applications').select('status, future_interest').eq('id', appId).maybeSingle();
       check('estado e future_interest inalterados', st.status === 'contactar' && st.future_interest === false);
@@ -1048,7 +1065,7 @@ async function main() {
       jar: ownerJar, body: form({ nota: 'Está embarazada, no contratar.', _csrf: resCsrf })
     });
     check('nota com característica protegida não é gravada sem confirmação',
-      res.status === 302 && decodeURIComponent(res.headers.get('location') || '').includes('no se ha guardado'));
+      res.status === 302 && locationText(res).includes('no se ha guardado'));
     {
       const { count } = await sb.from('application_notes').select('id', { count: 'exact', head: true }).eq('application_id', appId).ilike('body', '%embarazada%');
       check('nota sensível não está na BD', count === 0);
@@ -1058,8 +1075,8 @@ async function main() {
     });
     check('nota com confirmação explícita é gravada', res.status === 302);
     {
-      const { data: logs } = await sb.from('security_logs').select('event, detail').eq('restaurant_id', ridA.id)
-        .in('event', ['nota_sensible_bloqueada', 'nota_sensible_confirmada']);
+      const logs = await logsEventually(() => sb.from('security_logs').select('event, detail').eq('restaurant_id', ridA.id)
+        .in('event', ['nota_sensible_bloqueada', 'nota_sensible_confirmada']), 2);
       check('bloqueio e confirmação registados sem o texto da nota',
         (logs || []).length >= 2 && logs.every((l) => !/embarazada|discapacidad/i.test(l.detail)));
     }
@@ -1123,28 +1140,27 @@ async function main() {
     }
     const { data: sofCv } = await sb.from('cvs').select('storage_path').eq('application_id', appIdB).maybeSingle();
     res = await call('POST', `/panel/candidaturas/${appIdB}/eliminar-candidato`, { jar: bJar, body: form({ _csrf: cSof }) });
-    check('supressão exige confirmação', res.status === 302 && decodeURIComponent(res.headers.get('location') || '').includes('confirmación'));
+    check('supressão exige confirmação', res.status === 302 && locationText(res).includes('confirmación'));
     res = await call('POST', `/panel/candidaturas/${appIdB}/eliminar-candidato`, { jar: bJar, body: form({ _csrf: cSof, confirmo: '1' }) });
-    check('supressão do candidato', res.status === 302 && decodeURIComponent(res.headers.get('location') || '').includes('suprimidos'));
+    check('supressão do candidato', res.status === 302 && locationText(res).includes('suprimidos'));
     {
       const { count: left } = await sb.from('candidates').select('id', { count: 'exact', head: true }).eq('restaurant_id', ridB.id).eq('email', 'sofia@example.com');
       const { data: dl } = await sb.storage.from('cvs').download(sofCv.storage_path);
       check('candidato e CV apagados (BD e Storage)', left === 0 && !dl);
-      const { data: logs } = await sb.from('security_logs').select('detail').eq('event', 'candidato_suprimido').eq('restaurant_id', ridB.id);
+      const logs = await logsEventually(() => sb.from('security_logs').select('detail').eq('event', 'candidato_suprimido').eq('restaurant_id', ridB.id), 1);
       check('supressão auditada sem dados pessoais', (logs || []).length === 1 && !/sofia|Sofía/i.test(logs[0].detail));
     }
 
     console.log('\n— Auditoria e minimização dos logs —');
     {
-      const { data: cvLogs } = await sb.from('security_logs').select('event, detail').eq('restaurant_id', ridA.id).in('event', ['cv_visto', 'cv_descargado']);
+      const cvLogs = await logsEventually(() => sb.from('security_logs').select('event, detail').eq('restaurant_id', ridA.id).in('event', ['cv_visto', 'cv_descargado']), 2);
       check('acessos ao CV auditados (ver e descarregar)',
         (cvLogs || []).some((l) => l.event === 'cv_visto') && (cvLogs || []).some((l) => l.event === 'cv_descargado'));
-      const { data: appLogs } = await sb.from('security_logs').select('ip, user_agent, detail').eq('restaurant_id', ridA.id).eq('event', 'candidatura_enviada');
+      const appLogs = await logsEventually(() => sb.from('security_logs').select('ip, user_agent, detail').eq('restaurant_id', ridA.id).eq('event', 'candidatura_enviada'), 1);
       check('logs de candidatos com IP truncado, sem user-agent e sem email',
         (appLogs || []).length > 0 && appLogs.every((l) => /\.0$|::\/48$|^$/.test(l.ip) && l.user_agent === '' && !/@/.test(l.detail)));
-      const { data: anonSess } = await sb.from('sessions').select('ip, user_agent, expires_at, created_at').is('user_id', null).gte('created_at', T0).order('created_at', { ascending: false }).limit(5);
-      check('sessões anónimas sem IP/UA e com validade curta (≤ 2 h)',
-        (anonSess || []).length > 0 && anonSess.every((s) => s.ip === '' && s.user_agent === '' && Number(s.expires_at) - Number(s.created_at) <= 2 * 3600 * 1000));
+      const { count: anonRows } = await sb.from('sessions').select('token_hash', { count: 'exact', head: true }).is('user_id', null).gte('created_at', T0);
+      check('páginas públicas não criam linhas em sessions', anonRows === 0);
     }
 
     console.log('\n— Login: enumeração, força bruta, sessões —');
@@ -1158,7 +1174,7 @@ async function main() {
       const h2 = await text(r2);
       check('email inexistente e senha errada: resposta idêntica', r1.status === 401 && r2.status === 401 &&
         h1.includes('Email o contraseña incorrectos') && h2.includes('Email o contraseña incorrectos'));
-      const { data: fl } = await sb.from('security_logs').select('detail').eq('event', 'login_fallido').order('id', { ascending: false }).limit(5);
+      const fl = await logsEventually(() => sb.from('security_logs').select('detail').eq('event', 'login_fallido').order('id', { ascending: false }).limit(5), 1);
       check('login falhado não grava o email em claro', (fl || []).every((l) => !l.detail.includes('@')));
 
       let blocked = false;
@@ -1177,7 +1193,7 @@ async function main() {
       res = await call('GET', '/panel/configuracion', { jar: ownerJar });
       const cs = csrfOf(await text(res));
       res = await call('POST', '/panel/configuracion', { jar: ownerJar, body: form({ password_actual: 'Secreta123', password_nuevo: 'corta', password_repetir: 'corta', _csrf: cs }) });
-      check('senha nova curta recusada', decodeURIComponent(res.headers.get('location') || '').includes('al menos 10'));
+      check('senha nova curta recusada', locationText(res).includes('al menos 10'));
       res = await call('POST', '/panel/configuracion', { jar: ownerJar, body: form({ password_actual: 'Secreta123', password_nuevo: 'OutraSecreta456', password_repetir: 'OutraSecreta456', _csrf: cs }) });
       check('alterar senha', res.status === 302);
       res = await call('GET', '/panel', { jar: second });
@@ -1428,7 +1444,7 @@ async function main() {
       const missing = await text(await call('GET', `/r/zz-${P}-inexistente`));
       check('negócio desativado = página 404 igual à de um inexistente', res.status === 404 && inactive === missing);
       res = await call('GET', `/r/${slugB}/privacidad`);
-      check('página de privacidade de negócio desativado → 404', res.status === 404);
+      check('privacidade de negócio desativado continua acessível para exercer direitos', res.status === 200);
     }
 
     console.log('\n— Contratação (§37, passo 17) —');
@@ -1450,11 +1466,11 @@ async function main() {
     res = await call('GET', `/panel/candidaturas/${appId}`, { jar: ownerJar });
     const delCsrf = csrfOf(await text(res));
     res = await call('POST', `/panel/candidaturas/${appId}/bloqueo`, { jar: ownerJar, body: form({ accion: 'activar', motivo: '', _csrf: delCsrf }) });
-    check('bloqueio exige motivo', decodeURIComponent(res.headers.get('location') || '').includes('motivo'));
+    check('bloqueio exige motivo', locationText(res).includes('motivo'));
     res = await call('POST', `/panel/candidaturas/${appId}/bloqueo`, { jar: ownerJar, body: form({ accion: 'activar', motivo: 'Reclamación laboral en curso', _csrf: delCsrf }) });
     check('bloqueio ativado', res.status === 302);
     res = await call('POST', `/panel/candidaturas/${appId}/eliminar`, { jar: ownerJar, body: form({ _csrf: delCsrf }) });
-    check('eliminar com bloqueio é recusado', decodeURIComponent(res.headers.get('location') || '').includes('bloqueo'));
+    check('eliminar com bloqueio é recusado', locationText(res).includes('bloqueo'));
     res = await call('GET', `/panel/candidaturas/${appId}`, { jar: ownerJar });
     check('candidatura bloqueada continua a existir', res.status === 200);
     res = await call('POST', `/panel/candidaturas/${appId}/bloqueo`, { jar: ownerJar, body: form({ accion: 'retirar', _csrf: delCsrf }) });

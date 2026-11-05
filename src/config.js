@@ -89,6 +89,7 @@ const config = {
   testPrefix: process.env.EZCV_TEST_PREFIX || '',
 
   sessionTtlMs: (parseInt(process.env.SESSION_TTL_DAYS || '30', 10)) * 24 * 60 * 60 * 1000,
+  adminSessionTtlMs: (parseInt(process.env.ADMIN_SESSION_TTL_HOURS || '12', 10)) * 60 * 60 * 1000,
   maxUploadBytes: (onVercel ? Math.min(maxCvMb, VERCEL_MAX_UPLOAD_MB) : maxCvMb) * 1024 * 1024,
   maxImageBytes: parseInt(process.env.MAX_IMAGE_MB || '2', 10) * 1024 * 1024,
   cookieSecure: flag('COOKIE_SECURE', onVercel),
@@ -162,7 +163,7 @@ function assertConfig() {
   }
 
   /* Inteiros: um valor como SESSION_TTL_DAYS=abc dava NaN em silêncio. */
-  const badInt = ['PORT', 'SESSION_TTL_DAYS', 'MAX_CV_MB', 'MAX_IMAGE_MB', 'SMTP_PORT']
+  const badInt = ['PORT', 'SESSION_TTL_DAYS', 'ADMIN_SESSION_TTL_HOURS', 'MAX_CV_MB', 'MAX_IMAGE_MB', 'SMTP_PORT']
     .filter((name) => process.env[name] && !/^[1-9]\d*$/.test(process.env[name].trim()));
   if (badInt.length > 0) {
     throw new Error(`Valor inválido (esperado inteiro positivo) em: ${badInt.join(', ')}.`);
@@ -185,6 +186,9 @@ function assertConfig() {
       .filter((name) => !String(process.env[name] || '').trim());
     if (missingProd.length > 0) {
       console.warn(`[config] Páginas legais sem a identificação do titular: falta definir ${missingProd.join(', ')}.`);
+    }
+    if (/\.vercel\.app$/i.test(config.appUrl)) {
+      console.warn('[config] APP_URL é um domínio *.vercel.app: os QR impressos ficam presos a ele. Define o domínio próprio antes de abrir ao público.');
     }
     if (String(process.env.CRON_SECRET || '').length < 32) {
       console.warn('[config] CRON_SECRET em falta ou com menos de 32 caracteres: a limpeza diária (/internal/cleanup) não corre.');

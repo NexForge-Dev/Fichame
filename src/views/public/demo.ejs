@@ -1,0 +1,17 @@
+<%- include('../partials/head', { title: tr('Demostración de Fíchame') }) %>
+
+<%- include('../partials/site_top') %>
+
+<main id="main" class="container-narrow error-main">
+  <div class="card center pad-lg">
+    <h1><%= tr('Demostración de Fíchame') %></h1>
+    <p class="muted"><%= tr('Ningún candidato ni negocio de esta cuenta es real y los cambios no se guardan.') %></p>
+    <form action="/demo" method="post" class="actions-row center-row spaced">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn" type="submit"><%= tr('Entrar en la demo') %></button>
+      <a class="btn secondary" href="/conoce"><%= tr('Volver') %></a>
+    </form>
+  </div>
+</main>
+
+<%- include('../partials/foot') %>

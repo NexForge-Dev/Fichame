@@ -9,7 +9,7 @@
 %>
 
 <div class="auth-shell">
-  <div class="auth-pane auth-pane-top">
+  <main id="main" class="auth-pane auth-pane-top">
   <div class="auth-card auth-card-wide">
     <div class="auth-head">
       <a class="brand" href="/">
@@ -22,7 +22,7 @@
       <h1><%= tr('Registra tu negocio') %></h1>
       <p class="auth-lead"><%= tr('Crea la página de candidaturas de tu negocio') %></p>
       <% if (locals.google) { %>
-        <div class="flash ok"><%= tr('Cuenta de Google verificada:') %> <strong><%= google.email %></strong>. <%= tr('Completa los datos de tu negocio para terminar.') %></div>
+        <div class="flash ok"><span><%= tr('Cuenta de Google verificada:') %> <strong><%= google.email %></strong>. <%= tr('Completa los datos de tu negocio para terminar.') %></span></div>
       <% } else { %>
         <p class="muted small"><%= tr('Después podrás compartir tu URL exclusiva o imprimir su código QR.') %></p>
         <% if (locals.googleEnabled) { %>
@@ -78,6 +78,13 @@
           <% if (errors && errors.email) { %><div class="field-error" id="err-email"><%= tr(errors.email) %></div><% } %>
         </div>
         <% } else if (errors && errors.email) { %><div class="field-error" role="alert"><%= tr(errors.email) %></div><% } %>
+
+        <div class="field">
+          <label for="privacy_email"><%= tr('Email de contacto para privacidad') %> *</label>
+          <input id="privacy_email" type="email" name="privacy_email" maxlength="120" required value="<%= form.privacy_email || '' %>" autocomplete="off"<%- invalid('privacy_email') %>>
+          <div class="help"><%= tr('Es público: los candidatos lo ven para ejercer sus derechos. Puede ser distinto del email con el que entras.') %></div>
+          <% if (errors && errors.privacy_email) { %><div class="field-error" id="err-privacy_email"><%= tr(errors.privacy_email) %></div><% } %>
+        </div>
 
         <div class="field">
           <label for="telefono"><%= tr('Teléfono') %> <span class="dim label-hint"><%= tr('(opcional)') %></span></label>
@@ -146,7 +153,7 @@
       </p>
     </div>
   </div>
-  </div>
+  </main>
   <%- include('../partials/auth_aside') %>
 </div>
 

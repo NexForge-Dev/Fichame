@@ -158,11 +158,23 @@ function createApp() {
       'Disallow: /login',
       'Disallow: /registro',
       'Disallow: /recuperar',
+      'Disallow: /demo',
       'Disallow: /internal',
       'Disallow: /r/*/enviado',
       'Disallow: /r/*/derechos',
+      '',
+      `Sitemap: ${config.appUrl}/sitemap.xml`,
       ''
     ].join('\n'));
+  });
+
+  /* Só as páginas fixas indexáveis. As /r/:slug de cada negócio chegam por QR
+   * e por link, e listá-las exigiria uma consulta à BD num pedido público. */
+  app.get('/sitemap.xml', (req, res) => {
+    const urls = ['/', '/conoce', '/privacidad', '/cookies', '/terminos', '/encargo']
+      .map((p) => `  <url><loc>${config.appUrl}${p}</loc></url>`);
+    res.type('application/xml').setHeader('Cache-Control', 'public, max-age=3600');
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`);
   });
 
   /* Os ficheiros estáticos vêm antes da sessão de propósito: carregar a sessão
@@ -215,6 +227,8 @@ function createApp() {
     res.locals.billingEnabled = config.billingEnabled;
     /* Supressão automática a correr de verdade: sem ela nenhum texto a promete. */
     res.locals.autoRetention = autoRetentionEnabled();
+    /* Envio de email ligado: sem SMTP nenhum texto o promete. */
+    res.locals.emailEnabled = Boolean(config.smtp.host);
     res.locals.supportEmail = config.contactEmail;
     next();
   });
