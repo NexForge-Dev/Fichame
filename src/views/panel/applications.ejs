@@ -21,6 +21,12 @@
     <a class="group-tab <%= noTab ? 'active' : '' %>" href="/panel/candidaturas"<% if (noTab) { %> aria-current="page"<% } %>>
       <span><%= tr('Todas') %></span><span class="group-num"><%= allCount %></span>
     </a>
+    <%# Logo a seguir a «Todas»: no telemóvel os separadores rolam e o último fica fora do ecrã. %>
+    <% if (overdue > 0 || filters.vencidas) { %>
+      <a class="group-tab <%= filters.vencidas ? 'active' : '' %>" href="/panel/candidaturas?vencidas=1"<% if (filters.vencidas) { %> aria-current="page"<% } %>>
+        <span><%= tr('Vencidas') %></span><span class="group-num"><%= overdue %></span>
+      </a>
+    <% } %>
     <% Object.keys(groups).forEach(function (g) {
          var n = groupCount(g);
          if (g === 'futuro' && n === 0 && filters.grupo !== g) return;
@@ -29,11 +35,6 @@
         <span><%= tr(groups[g].label) %></span><span class="group-num"><%= n %></span>
       </a>
     <% }) %>
-    <% if (overdue > 0 || filters.vencidas) { %>
-      <a class="group-tab <%= filters.vencidas ? 'active' : '' %>" href="/panel/candidaturas?vencidas=1"<% if (filters.vencidas) { %> aria-current="page"<% } %>>
-        <span><%= tr('Vencidas') %></span><span class="group-num"><%= overdue %></span>
-      </a>
-    <% } %>
   </nav>
 
   <% if (filters.vencidas) { %>
