@@ -2,7 +2,9 @@
 
 const config = require('../config');
 const { sb, one, rpc } = require('../db');
-const { randomToken, sha256 } = require('../lib/crypto');
+const crypto = require('crypto');
+
+const { randomToken, sha256, safeEqual } = require('../lib/crypto');
 const { background } = require('../lib/background');
 
 /* Em produção (HTTPS) o prefixo __Host- obriga o browser a só aceitar o
@@ -12,11 +14,54 @@ const COOKIE_NAME = config.cookieSecure ? '__Host-fichame_sid' : 'ezcv_sid';
 
 /* Sessão anónima: só existe para dar um token CSRF ao formulário público.
  * Validade curta e sem IP nem user-agent — o candidato não é utilizador da
- * plataforma e não há motivo para guardar de onde abriu a página. */
+ * plataforma e não há motivo para guardar de onde abriu a página.
+ *
+ * Não vive na BD: um GET de um crawler a uma página pública não pode escrever
+ * nada. O cookie leva «a1.<validade>.<nonce>.<hmac>», assinado com o segredo
+ * do servidor, e o token CSRF é um HMAC do nonce. Quem não tem o segredo não
+ * forja o par, e o cookie é HttpOnly, SameSite=Lax e __Host- em produção: um
+ * site externo não o lê nem o planta no browser da vítima. A proteção é a
+ * mesma da linha em `sessions`, sem a linha.
+ *
+ * Linhas anónimas antigas em `sessions` continuam válidas até caducarem. */
 const ANON_TTL_MS = 2 * 60 * 60 * 1000;
+const ANON_PREFIX = 'a1';
+
+function anonKey() {
+  return `anon-session|${process.env.FLASH_SECRET || process.env.LOG_HMAC_SECRET || config.supabase.serviceRoleKey}`;
+}
+
+function anonHmac(text) {
+  return crypto.createHmac('sha256', anonKey()).update(text).digest('base64url');
+}
+
+function anonToken({ nonce, expiresAt }) {
+  const body = `${ANON_PREFIX}.${expiresAt}.${nonce}`;
+  return `${body}.${anonHmac(body)}`;
+}
+
+/* { nonce, expiresAt } de um cookie válido e dentro do prazo; senão null. */
+function readAnonToken(token, now = Date.now()) {
+  const parts = String(token || '').split('.');
+  if (parts.length !== 4 || parts[0] !== ANON_PREFIX) return null;
+  const body = parts.slice(0, 3).join('.');
+  if (!safeEqual(parts[3], anonHmac(body))) return null;
+  const expiresAt = Number(parts[1]);
+  if (!Number.isSafeInteger(expiresAt) || expiresAt <= now) return null;
+  return { nonce: parts[2], expiresAt };
+}
+
+/* Depende só do nonce: renovar a validade não invalida formulários abertos. */
+function anonCsrf(nonce) {
+  return anonHmac(`csrf|${nonce}`);
+}
 
 function ttlFor(userId) {
   return userId ? config.sessionTtlMs : ANON_TTL_MS;
+}
+
+function isAnonCookie(token) {
+  return String(token || '').startsWith(`${ANON_PREFIX}.`);
 }
 
 /* Para apagar um cookie __Host- o Set-Cookie tem de levar Secure, tal como
@@ -69,7 +114,7 @@ async function destroyUserSessions(userId, exceptTokenHash = null) {
 async function destroySession(req, res) {
   const token = req.cookies && req.cookies[COOKIE_NAME];
 
-  if (token) {
+  if (token && !isAnonCookie(token)) {
     try {
       await sb().from('sessions').delete().eq('token_hash', sha256(token));
     } catch (err) {
@@ -97,41 +142,18 @@ function parseCookies(header) {
   return out;
 }
 
-/* Cada GET sem cookie criava uma linha em `sessions`: um bot podia encher a
- * tabela só a pedir páginas públicas. Limite em memória, por instância e por
- * IP, à criação de sessões ANÓNIMAS. É generoso (um Wi-Fi de loja tem muitos
- * candidatos atrás do mesmo IP, e um browser normal guarda o cookie e não
- * volta a pedir). Acima do limite a página mostra-se na mesma, mas sem
- * sessão: o formulário falha o CSRF ao enviar. */
-const ANON_WINDOW_MS = 10 * 60 * 1000;
-const ANON_MAX_PER_IP = Math.max(1, parseInt(process.env.ANON_SESSIONS_PER_IP || '600', 10) || 600);
-const anonCounts = new Map();
-const anonSweeper = setInterval(() => {
+/* O candidato não faz login, mas precisa de um token CSRF no formulário
+ * (§26). Sem escrita na BD: ver ANON_TTL_MS. Passada metade da validade o
+ * cookie renova-se com o mesmo nonce, por isso o token não muda. */
+function ensureSession(req, res, next) {
   const now = Date.now();
-  for (const [k, e] of anonCounts) if (e.resetAt <= now) anonCounts.delete(k);
-}, 60 * 1000);
-if (anonSweeper.unref) anonSweeper.unref();
-
-function allowAnonSession(ip, now = Date.now()) {
-  const k = String(ip || 'unknown');
-  let entry = anonCounts.get(k);
-  if (!entry || entry.resetAt <= now) {
-    entry = { count: 0, resetAt: now + ANON_WINDOW_MS };
-    anonCounts.set(k, entry);
-  }
-  entry.count += 1;
-  return entry.count <= ANON_MAX_PER_IP;
-}
-
-/* O candidato não faz login, mas precisa de uma sessão para ter um token
- * CSRF no formulário (§26). */
-async function ensureSession(req, res, next) {
   if (!req.session) {
-    if (allowAnonSession(req.ip)) {
-      await createSession(req, res, null);
-    } else {
-      console.warn('[session] limite de sessões anónimas por IP atingido.');
-    }
+    const nonce = randomToken(16);
+    setSessionCookie(res, anonToken({ nonce, expiresAt: now + ANON_TTL_MS }), ANON_TTL_MS);
+    req.session = { csrfToken: anonCsrf(nonce), userId: null, anon: { nonce, expiresAt: now + ANON_TTL_MS } };
+    res.locals.csrfToken = req.session.csrfToken;
+  } else if (req.session.anon && req.session.anon.expiresAt - now < ANON_TTL_MS / 2) {
+    setSessionCookie(res, anonToken({ nonce: req.session.anon.nonce, expiresAt: now + ANON_TTL_MS }), ANON_TTL_MS);
   }
   next();
 }
@@ -148,6 +170,13 @@ async function loadSession(req, res, next) {
 
   const token = req.cookies[COOKIE_NAME];
   if (!token) return next();
+
+  if (isAnonCookie(token)) {
+    const anon = readAnonToken(token);
+    if (anon) req.session = { csrfToken: anonCsrf(anon.nonce), userId: null, anon };
+    else res.clearCookie(COOKIE_NAME, COOKIE_CLEAR);
+    return next();
+  }
 
   const hash = sha256(token);
   const row = await one(
@@ -209,5 +238,5 @@ async function loadSession(req, res, next) {
 }
 
 module.exports = {
-  COOKIE_NAME, ANON_TTL_MS, ANON_MAX_PER_IP, allowAnonSession, createSession, destroySession, destroyUserSessions, loadSession, ensureSession
+  COOKIE_NAME, ANON_TTL_MS, anonToken, readAnonToken, anonCsrf, createSession, destroySession, destroyUserSessions, loadSession, ensureSession
 };

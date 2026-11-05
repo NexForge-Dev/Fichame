@@ -158,6 +158,7 @@ function createApp() {
       'Disallow: /login',
       'Disallow: /registro',
       'Disallow: /recuperar',
+      'Disallow: /demo',
       'Disallow: /internal',
       'Disallow: /r/*/enviado',
       'Disallow: /r/*/derechos',

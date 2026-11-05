@@ -495,29 +495,42 @@ router.post('/logout', async (req, res) => {
 /* ------------------------------------------------------------------ *
  * Demo — entra no painel do negócio fictício (src/lib/demo.js)
  * ------------------------------------------------------------------ *
- * GET porque é o destino de um link na /conoce. Quem já tem sessão de um
+ * O link na /conoce abre uma página com um botão: entrar cria uma sessão e um
+ * registo, e isso só acontece num POST com token CSRF. Um GET (crawler,
+ * pré-visualização de um link) não escreve nada. Quem já tem sessão de um
  * negócio real não é desligado: volta ao seu painel. Sem `npm run demo:seed`
  * a conta não existe e a rota dá 404. */
-router.get('/demo',
+async function demoAccount(req, res) {
+  const user = await one(
+    sb().from('users').select('id, blocked').eq('email', DEMO_EMAIL),
+    'conta demo'
+  );
+  if (user && !user.blocked) return user;
+  res.status(404).render('error', {
+    status: 404, title: 'Demo no disponible', message: 'La demostración no está disponible en este momento.'
+  });
+  return null;
+}
+
+function leaveDemoPage(req, res) {
+  return res.redirect(req.user.role === 'admin' ? '/admin' : '/panel');
+}
+
+router.get('/demo', ensureSession, async (req, res) => {
+  if (req.user) return leaveDemoPage(req, res);
+  if (await demoAccount(req, res)) res.render('public/demo');
+});
+
+router.post('/demo',
   rateLimit({
     windowMs: 15 * 60 * 1000, max: 20, name: 'demo',
     message: 'Demasiados accesos a la demo. Espera unos minutos.'
   }),
   async (req, res) => {
-    if (req.user && !isDemoUser(req.user)) {
-      return res.redirect(req.user.role === 'admin' ? '/admin' : '/panel');
-    }
-    if (req.user) return res.redirect('/panel');
+    if (req.user) return leaveDemoPage(req, res);
 
-    const user = await one(
-      sb().from('users').select('id, blocked').eq('email', DEMO_EMAIL),
-      'conta demo'
-    );
-    if (!user || user.blocked) {
-      return res.status(404).render('error', {
-        status: 404, title: 'Demo no disponible', message: 'La demostración no está disponible en este momento.'
-      });
-    }
+    const user = await demoAccount(req, res);
+    if (!user) return;
 
     await destroySession(req, res);
     await createSession(req, res, user.id);

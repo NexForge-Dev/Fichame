@@ -136,12 +136,3 @@ test('scrypt: hashes novos com N = 2^17; os antigos (2^14) verificam e pedem reh
   assert.equal(await c.verifyPasswordAsync('x', 'scrypt$1000$00$00'), false);
   assert.equal(c.needsRehash('lixo'), false);
 });
-
-test('sessões anónimas: limite por IP na criação', () => {
-  const { allowAnonSession, ANON_MAX_PER_IP } = require('../src/middleware/session');
-  const now = Date.now();
-  for (let i = 0; i < ANON_MAX_PER_IP; i += 1) assert.equal(allowAnonSession('203.0.113.9', now), true);
-  assert.equal(allowAnonSession('203.0.113.9', now), false);
-  assert.equal(allowAnonSession('203.0.113.10', now), true, 'outro IP não é afetado');
-  assert.equal(allowAnonSession('203.0.113.9', now + 11 * 60 * 1000), true, 'nova janela');
-});
