@@ -136,3 +136,19 @@ test('scrypt: hashes novos com N = 2^17; os antigos (2^14) verificam e pedem reh
   assert.equal(await c.verifyPasswordAsync('x', 'scrypt$1000$00$00'), false);
   assert.equal(c.needsRehash('lixo'), false);
 });
+
+test('REQUIRED_MIGRATIONS cobre todas as migrations da pasta', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const { REQUIRED_MIGRATIONS } = require('../src/db/check');
+  const dir = path.join(__dirname, '..', 'migrations');
+  const versions = fs.readdirSync(dir)
+    .filter((f) => f.endsWith('.sql') && !f.startsWith('0000_'))
+    .map((f) => f.replace(/\.sql$/, ''))
+    .sort();
+  assert.deepEqual([...REQUIRED_MIGRATIONS].sort(), versions);
+  for (const v of versions) {
+    assert.match(fs.readFileSync(path.join(dir, `${v}.sql`), 'utf8'), new RegExp(`insert into schema_migrations[\\s\\S]*'${v}'`),
+      `${v} tem de se registar em schema_migrations`);
+  }
+});

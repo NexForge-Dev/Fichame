@@ -13,7 +13,8 @@ const storage = require('../lib/storage');
 const REQUIRED_MIGRATIONS = [
   '0001_init', '0002_views_rpc', '0003_storage', '0004_notifications_cascade', '0005_privacy_hardening',
   '0006_tenant_fk_cleanup', '0007_google_login', '0008_onboarding_steps', '0009_problem_reports', '0010_terms_acceptances',
-  '0011_password_help_requests', '0012_review_fixes', '0013_launch_fixes', '0014_billing'
+  '0011_password_help_requests', '0012_review_fixes', '0013_launch_fixes', '0014_billing',
+  '0015_retention_lock', '0016_problem_reports_length'
 ];
 
 /* As views e funções de que o código depende. Sem isto, uma migration
