@@ -56,8 +56,12 @@ function anonCsrf(nonce) {
   return anonHmac(`csrf|${nonce}`);
 }
 
-function ttlFor(userId) {
-  return userId ? config.sessionTtlMs : ANON_TTL_MS;
+/* O admin bloqueia contas e gera links de senha para qualquer dono, o que dá
+ * acesso aos CVs, e só entra com senha: a sessão é curta (por omissão 12 h
+ * sem atividade), não os 30 dias da de um dono. */
+function ttlFor(userId, role) {
+  if (!userId) return ANON_TTL_MS;
+  return role === 'admin' ? config.adminSessionTtlMs : config.sessionTtlMs;
 }
 
 function isAnonCookie(token) {
@@ -78,11 +82,11 @@ function setSessionCookie(res, token, maxAge) {
   });
 }
 
-async function createSession(req, res, userId = null) {
+async function createSession(req, res, userId = null, role = '') {
   const token = randomToken(32);
   const csrf = randomToken(24);
   const now = Date.now();
-  const ttl = ttlFor(userId);
+  const ttl = ttlFor(userId, role);
 
   const { error } = await sb().from('sessions').insert({
     token_hash: sha256(token),
@@ -147,6 +151,9 @@ function parseCookies(header) {
  * cookie renova-se com o mesmo nonce, por isso o token não muda. */
 function ensureSession(req, res, next) {
   const now = Date.now();
+  /* BD em baixo com uma sessão real no cookie: não a substituir por uma
+   * anónima, senão uma falha passageira terminava a sessão de quem a tem. */
+  if (req.sessionUnavailable) return next();
   if (!req.session) {
     const nonce = randomToken(16);
     setSessionCookie(res, anonToken({ nonce, expiresAt: now + ANON_TTL_MS }), ANON_TTL_MS);
@@ -179,10 +186,20 @@ async function loadSession(req, res, next) {
   }
 
   const hash = sha256(token);
-  const row = await one(
-    sb().from('session_context').select('*').eq('token_hash', hash),
-    'carregar sessão'
-  );
+  let row;
+  try {
+    row = await one(
+      sb().from('session_context').select('*').eq('token_hash', hash),
+      'carregar sessão'
+    );
+  } catch (err) {
+    /* Corre antes de todas as rotas: sem isto, a BD em baixo dava 500 a quem
+     * tem cookie até nas páginas legais. As rotas que precisam da conta
+     * respondem 503 (requireOwner, requireAdmin, csrfProtection). */
+    console.error('[session] sessão indisponível:', err.message);
+    req.sessionUnavailable = true;
+    return next();
+  }
 
   const now = Date.now();
 
@@ -198,8 +215,10 @@ async function loadSession(req, res, next) {
 
   /* Renova a validade quando passou metade do tempo. Não é esperado com
    * await: é manutenção, não deve atrasar a resposta. */
-  const ttl = ttlFor(row.user_id);
-  if (Number(row.expires_at) - now < ttl / 2) {
+  const ttl = ttlFor(row.user_id, row.role);
+  /* > ttl: sessão de admin criada antes de ter validade curta. */
+  const remaining = Number(row.expires_at) - now;
+  if (remaining < ttl / 2 || remaining > ttl) {
     background(rpc('touch_session', {
       token_hash: hash,
       expires_at: now + ttl,
@@ -238,5 +257,5 @@ async function loadSession(req, res, next) {
 }
 
 module.exports = {
-  COOKIE_NAME, ANON_TTL_MS, anonToken, readAnonToken, anonCsrf, createSession, destroySession, destroyUserSessions, loadSession, ensureSession
+  COOKIE_NAME, ANON_TTL_MS, ttlFor, anonToken, readAnonToken, anonCsrf, createSession, destroySession, destroyUserSessions, loadSession, ensureSession
 };

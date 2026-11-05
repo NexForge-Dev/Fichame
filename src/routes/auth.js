@@ -468,7 +468,7 @@ router.post('/login', ...loginLimiters, async (req, res) => {
   }
 
   await destroySession(req, res);
-  await createSession(req, res, user.id);
+  await createSession(req, res, user.id, user.role);
 
   if (user.role === 'owner') analytics.sessionStarted(user.restaurant_id);
   logSecurity('login_ok', `user=${user.id} role=${user.role}`, req.ip, {

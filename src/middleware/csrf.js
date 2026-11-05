@@ -1,6 +1,7 @@
 'use strict';
 
 const { safeEqual } = require('../lib/crypto');
+const { sessionUnavailable } = require('./auth');
 
 function extractToken(req) {
   if (req.body && typeof req.body._csrf === 'string') return req.body._csrf;
@@ -18,6 +19,7 @@ const MULTIPART_ROUTES = [/^\/r\/[a-z0-9-]+\/apply$/, /^\/panel\/restaurante$/];
 
 function csrfProtection(req, res, next) {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+  if (req.sessionUnavailable) return sessionUnavailable(res);
   /* Multipart é validado depois do multer (o campo vem no corpo do
    * formulário), mas só nas rotas que têm multer. Nas outras o corpo nem é
    * lido: sem esta lista, um POST multipart para /login chegava aos handlers
