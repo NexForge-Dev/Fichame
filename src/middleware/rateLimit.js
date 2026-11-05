@@ -65,9 +65,11 @@ function rateLimit({ windowMs, max, key, message, name = 'global' }) {
   };
 }
 
-/* Como rateLimit, em memória, mas só sobe quando se chama hit(): serve para
- * limitar envios aceites sem castigar erros de validação. `check` corre antes
- * de ler o corpo; quem está no limite nem envia o ficheiro. */
+/* Como rateLimit, em memória, mas só contam os envios aceites: erros de
+ * validação não castigam ninguém. `check` corre antes de ler o corpo (quem está
+ * no limite nem envia o ficheiro) e reserva já uma vaga, sem esperar pelo fim
+ * do pedido: sem isso, 30 envios em paralelo passavam todos. No fim do pedido a
+ * vaga é devolvida, salvo se a rota chamou hit(). */
 function acceptedLimit({ windowMs, max, key, message }) {
   const store = new Map();
 
@@ -79,21 +81,28 @@ function acceptedLimit({ windowMs, max, key, message }) {
   }, 60 * 1000);
   if (sweeper.unref) sweeper.unref();
 
+  const accepted = new WeakSet();
+
   return {
     check(req, res, next) {
+      const k = key(req);
       const now = Date.now();
-      const entry = store.get(key(req));
-      if (entry && entry.resetAt > now && entry.count >= max) {
+      let entry = store.get(k);
+      if (!entry || entry.resetAt <= now) {
+        entry = { count: 0, resetAt: now + windowMs };
+        store.set(k, entry);
+      }
+      if (entry.count >= max) {
         return tooMany(req, res, Math.ceil((entry.resetAt - now) / 1000), message);
       }
+      entry.count += 1;
+      res.once('close', () => {
+        if (!accepted.has(req)) entry.count -= 1;
+      });
       next();
     },
     hit(req) {
-      const k = key(req);
-      const now = Date.now();
-      const entry = store.get(k);
-      if (!entry || entry.resetAt <= now) store.set(k, { count: 1, resetAt: now + windowMs });
-      else entry.count += 1;
+      accepted.add(req);
     }
   };
 }

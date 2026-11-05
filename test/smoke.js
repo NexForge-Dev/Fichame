@@ -113,6 +113,18 @@ const PNG = Buffer.from(
   'base64'
 );
 
+/* logSecurity grava em segundo plano: a resposta pode chegar antes do registo. */
+async function logsEventually(query, min) {
+  let rows = [];
+  for (let i = 0; i < 30; i += 1) {
+    const { data } = await query();
+    rows = data || [];
+    if (rows.length >= min) break;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return rows;
+}
+
 /* Location legível: os ok/err assinados vêm com «+» nos espaços. */
 function locationText(res) {
   return decodeURIComponent(String(res.headers.get('location') || '').replace(/\+/g, ' '));
@@ -1063,14 +1075,8 @@ async function main() {
     });
     check('nota com confirmação explícita é gravada', res.status === 302);
     {
-      /* logSecurity grava em segundo plano: a resposta pode chegar primeiro. */
-      let logs = [];
-      for (let i = 0; i < 20 && logs.length < 2; i += 1) {
-        ({ data: logs } = await sb.from('security_logs').select('event, detail').eq('restaurant_id', ridA.id)
-          .in('event', ['nota_sensible_bloqueada', 'nota_sensible_confirmada']));
-        logs = logs || [];
-        if (logs.length < 2) await new Promise((r) => setTimeout(r, 100));
-      }
+      const logs = await logsEventually(() => sb.from('security_logs').select('event, detail').eq('restaurant_id', ridA.id)
+        .in('event', ['nota_sensible_bloqueada', 'nota_sensible_confirmada']), 2);
       check('bloqueio e confirmação registados sem o texto da nota',
         (logs || []).length >= 2 && logs.every((l) => !/embarazada|discapacidad/i.test(l.detail)));
     }
@@ -1141,16 +1147,16 @@ async function main() {
       const { count: left } = await sb.from('candidates').select('id', { count: 'exact', head: true }).eq('restaurant_id', ridB.id).eq('email', 'sofia@example.com');
       const { data: dl } = await sb.storage.from('cvs').download(sofCv.storage_path);
       check('candidato e CV apagados (BD e Storage)', left === 0 && !dl);
-      const { data: logs } = await sb.from('security_logs').select('detail').eq('event', 'candidato_suprimido').eq('restaurant_id', ridB.id);
+      const logs = await logsEventually(() => sb.from('security_logs').select('detail').eq('event', 'candidato_suprimido').eq('restaurant_id', ridB.id), 1);
       check('supressão auditada sem dados pessoais', (logs || []).length === 1 && !/sofia|Sofía/i.test(logs[0].detail));
     }
 
     console.log('\n— Auditoria e minimização dos logs —');
     {
-      const { data: cvLogs } = await sb.from('security_logs').select('event, detail').eq('restaurant_id', ridA.id).in('event', ['cv_visto', 'cv_descargado']);
+      const cvLogs = await logsEventually(() => sb.from('security_logs').select('event, detail').eq('restaurant_id', ridA.id).in('event', ['cv_visto', 'cv_descargado']), 2);
       check('acessos ao CV auditados (ver e descarregar)',
         (cvLogs || []).some((l) => l.event === 'cv_visto') && (cvLogs || []).some((l) => l.event === 'cv_descargado'));
-      const { data: appLogs } = await sb.from('security_logs').select('ip, user_agent, detail').eq('restaurant_id', ridA.id).eq('event', 'candidatura_enviada');
+      const appLogs = await logsEventually(() => sb.from('security_logs').select('ip, user_agent, detail').eq('restaurant_id', ridA.id).eq('event', 'candidatura_enviada'), 1);
       check('logs de candidatos com IP truncado, sem user-agent e sem email',
         (appLogs || []).length > 0 && appLogs.every((l) => /\.0$|::\/48$|^$/.test(l.ip) && l.user_agent === '' && !/@/.test(l.detail)));
       const { count: anonRows } = await sb.from('sessions').select('token_hash', { count: 'exact', head: true }).is('user_id', null).gte('created_at', T0);
@@ -1168,7 +1174,7 @@ async function main() {
       const h2 = await text(r2);
       check('email inexistente e senha errada: resposta idêntica', r1.status === 401 && r2.status === 401 &&
         h1.includes('Email o contraseña incorrectos') && h2.includes('Email o contraseña incorrectos'));
-      const { data: fl } = await sb.from('security_logs').select('detail').eq('event', 'login_fallido').order('id', { ascending: false }).limit(5);
+      const fl = await logsEventually(() => sb.from('security_logs').select('detail').eq('event', 'login_fallido').order('id', { ascending: false }).limit(5), 1);
       check('login falhado não grava o email em claro', (fl || []).every((l) => !l.detail.includes('@')));
 
       let blocked = false;

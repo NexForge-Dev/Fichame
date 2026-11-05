@@ -57,8 +57,9 @@ function anonCsrf(nonce) {
 }
 
 /* O admin bloqueia contas e gera links de senha para qualquer dono, o que dá
- * acesso aos CVs, e só entra com senha: a sessão é curta (por omissão 12 h
- * sem atividade), não os 30 dias da de um dono. */
+ * acesso aos CVs, e só entra com senha: a sessão é curta, não os 30 dias da de
+ * um dono. Por omissão dura 12 h e renova-se, com o cookie, em pedidos feitos
+ * na segunda metade: termina entre 6 e 12 h depois do último pedido. */
 function ttlFor(userId, role) {
   if (!userId) return ANON_TTL_MS;
   return role === 'admin' ? config.adminSessionTtlMs : config.sessionTtlMs;
@@ -218,7 +219,8 @@ async function loadSession(req, res, next) {
   const ttl = ttlFor(row.user_id, row.role);
   /* > ttl: sessão de admin criada antes de ter validade curta. */
   const remaining = Number(row.expires_at) - now;
-  if (remaining < ttl / 2 || remaining > ttl) {
+  const renew = remaining < ttl / 2 || remaining > ttl;
+  if (renew) {
     background(rpc('touch_session', {
       token_hash: hash,
       expires_at: now + ttl,
@@ -252,6 +254,10 @@ async function loadSession(req, res, next) {
       restaurant_created_at: row.restaurant_created_at || null
     };
   }
+
+  /* Depois do bloqueio, que apaga o cookie. Sem isto o browser deixava cair o
+   * cookie ao fim do Max-Age do login, com a sessão ainda válida na BD. */
+  if (renew) setSessionCookie(res, token, ttl);
 
   next();
 }

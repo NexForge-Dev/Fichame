@@ -268,3 +268,44 @@ test('registo: pede um email público próprio e não publica o de acesso por om
   assert.equal(rpcBodies.register_restaurant.privacy_email, 'rgpd@exemplo.es');
   assert.equal(rpcBodies.register_restaurant.email, 'acesso@exemplo.es');
 });
+
+test('limite de candidaturas: envios em paralelo também param em 20', async () => {
+  const page = await get('/r/bar-teste');
+  const csrf = csrfOf(await page.text());
+  const cookie = cookieOf(page);
+  const all = await Promise.all(Array.from({ length: 30 }, () => apply(cookie, csrf, { sitio_web: 'spam' }, 'negocio-paralelo')));
+  const accepted = all.filter((r) => /\/enviado$/.test(r.headers.get('location') || ''));
+  assert.equal(accepted.length, 20);
+});
+
+test('limite de candidaturas: pedidos recusados em curso devolvem a vaga', async () => {
+  const page = await get('/r/bar-teste');
+  const csrf = csrfOf(await page.text());
+  const cookie = cookieOf(page);
+  const bad = await Promise.all(Array.from({ length: 30 }, () => apply(cookie, csrf, { nombre: 'X' }, 'negocio-erros')));
+  await Promise.all(bad.map((r) => r.text()));
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  const next = await apply(cookie, csrf, { sitio_web: 'spam' }, 'negocio-erros');
+  assert.match(next.headers.get('location') || '', /\/enviado$/);
+});
+
+test('callback da Google: um GET sem fluxo iniciado não escreve na BD', async () => {
+  const config = require('../src/config');
+  /* Os registos em segundo plano do teste anterior não contam. */
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  seen.length = 0;
+  assert.equal((await get('/login/google/callback')).status, 404, 'Google desligado');
+  assert.deepEqual(writes(), []);
+
+  const saved = { ...config.google };
+  config.google.clientId = 'teste.apps.googleusercontent.com';
+  config.google.clientSecret = 'segredo-de-teste';
+  try {
+    const res = await get('/login/google/callback?code=x&state=y');
+    await res.text();
+    assert.ok(res.status >= 400 && res.status < 500, String(res.status));
+    assert.deepEqual(writes(), []);
+  } finally {
+    Object.assign(config.google, saved);
+  }
+});

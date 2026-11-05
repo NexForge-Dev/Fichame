@@ -285,12 +285,15 @@ router.post('/login/google/vincular',
     startGoogleFlow(res, 'link');
   });
 
-router.get('/login/google/callback',
-  rateLimit({ windowMs: 15 * 60 * 1000, max: 30, name: 'google-callback' }),
-  dbRateLimit({ windowMs: 15 * 60 * 1000, max: 60, name: 'google-ip', key: (req) => String(req.ip) }),
-  async (req, res) => {
-    if (!google.enabled()) return notFound(res);
+const googleCallbackDbLimit = dbRateLimit({ windowMs: 15 * 60 * 1000, max: 60, name: 'google-ip', key: (req) => String(req.ip) });
 
+router.get('/login/google/callback',
+  (req, res, next) => (google.enabled() ? next() : notFound(res)),
+  rateLimit({ windowMs: 15 * 60 * 1000, max: 30, name: 'google-callback' }),
+  /* O contador partilhado grava na BD: só para quem iniciou o fluxo neste
+   * browser. Um GET de um crawler fica no limite em memória e cai logo abaixo. */
+  (req, res, next) => (req.cookies[GOOGLE_FLOW_COOKIE] ? googleCallbackDbLimit(req, res, next) : next()),
+  async (req, res) => {
     let flow = null;
     try {
       flow = JSON.parse(Buffer.from(String(req.cookies[GOOGLE_FLOW_COOKIE] || ''), 'base64url').toString('utf8'));

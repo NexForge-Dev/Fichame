@@ -116,6 +116,27 @@ test('uma sessão de administração antiga, de 30 dias, é encurtada', async ()
   assert.ok(state.touches[0].expires_at <= before + 12 * 3600000 + 5000);
 });
 
+test('renovar a sessão renova também o cookie, com a mesma validade da BD', async () => {
+  state.touches = [];
+  state.row = sessionRow('admin', Date.now() + 3600000); // passou de metade das 12 h
+  const res = await get('/privacidad');
+  await res.text();
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(state.touches.length, 1);
+  const header = String(res.headers.get('set-cookie'));
+  assert.ok(header.startsWith(`${session.COOKIE_NAME}=token-de-sessao-real`), header);
+  assert.match(header, /Max-Age=43200/);
+  state.row = null;
+});
+
+test('sessão bloqueada não renova o cookie: só o apaga', async () => {
+  state.row = { ...sessionRow('owner', Date.now() + 86400000), blocked: true };
+  const res = await get('/privacidad');
+  await res.text();
+  assert.doesNotMatch(String(res.headers.get('set-cookie')), /Max-Age=2592000/);
+  state.row = null;
+});
+
 test('sessão de dono a meio do prazo não é tocada', async () => {
   state.touches = [];
   state.row = sessionRow('owner', Date.now() + 29 * 86400000);
