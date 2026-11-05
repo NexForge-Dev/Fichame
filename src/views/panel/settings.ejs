@@ -98,6 +98,26 @@
     <% } %>
   </div>
 
+  <div class="card" id="baja">
+    <h2><%= tr('Tus datos y baja') %></h2>
+    <p class="muted small"><%= tr('Descarga todas tus candidaturas en una hoja de cálculo. Los CV se descargan desde cada ficha.') %></p>
+    <a class="btn secondary small" href="/panel/candidaturas/exportar.csv"><%- icon('download') %> <%= tr('Exportar candidaturas (CSV)') %></a>
+
+    <div class="section-title"><%= tr('Dar de baja el negocio') %></div>
+    <p class="muted small"><%= tr('Exporta antes lo que necesites. Revisaremos la solicitud, te escribiremos al email de tu cuenta y cerraremos el negocio con todos sus datos.') %></p>
+    <% if (subscriptionLive) { %>
+      <p class="help"><%= tr('Tienes una suscripción activa: cancélala antes en') %> <a href="/panel/plan"><%= tr('Plan y facturación') %></a>.</p>
+    <% } %>
+    <form action="/panel/baja" method="post">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="field">
+        <label for="confirmar"><%= tr('Escribe BAJA para confirmar') %></label>
+        <input id="confirmar" type="text" name="confirmar" maxlength="10" required autocomplete="off">
+      </div>
+      <button class="btn danger small" type="submit"><%= tr('Solicitar la baja') %></button>
+    </form>
+  </div>
+
   </div>
   </div>
 </main>

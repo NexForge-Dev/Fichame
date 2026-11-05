@@ -8,6 +8,13 @@
 
   <%- include('../partials/flash') %>
 
+  <% if (overdue > 0 && !autoRetention) { %>
+    <div class="flash err">
+      <span><%= overdue === 1 ? tr('1 candidatura ha superado su plazo de conservación. Debes eliminarla desde su ficha.') : tr('{n} candidaturas han superado su plazo de conservación. Debes eliminarlas desde su ficha.', { n: overdue }) %>
+        <a href="/panel/candidaturas?vencidas=1"><%= tr('Ver vencidas') %></a></span>
+    </div>
+  <% } %>
+
   <% if (total === 0) { %>
     <%
       /* Guia de primeiros passos: só enquanto não chegou nenhuma candidatura.

@@ -180,13 +180,27 @@ async function statusCounts(rid) {
   return counts;
 }
 
+/* Candidaturas com o prazo de conservação vencido e sem bloqueio legal: as que
+ * a retenção automática apagaria. Com RETENTION_AUTO desligado, cabe ao negócio
+ * apagá-las, e isto é o que lhe permite encontrá-las sem abrir cada ficha. */
+function overdueApplications(rid, ...select) {
+  return sb().from('applications').select(...select)
+    .eq('restaurant_id', rid)
+    .lt('retention_until', new Date().toISOString())
+    .eq('legal_hold', false);
+}
+
+function overdueCount(rid) {
+  return count(overdueApplications(rid, 'id', { count: 'exact', head: true }), 'candidaturas vencidas');
+}
+
 /* ================================================================== *
  * Dashboard (§11)
  * ================================================================== */
 router.get('/panel', async (req, res) => {
   const rid = restaurantId(req);
 
-  const [counts, metrics, recent, profile, openJobList] = await Promise.all([
+  const [counts, metrics, recent, profile, openJobList, overdue] = await Promise.all([
     statusCounts(rid),
     one(sb().from('restaurant_metrics').select('*').eq('restaurant_id', rid), 'métricas'),
     many(
@@ -207,7 +221,8 @@ router.get('/panel', async (req, res) => {
         .order('created_at', { ascending: false })
         .limit(6),
       'vagas abertas'
-    )
+    ),
+    overdueCount(rid)
   ]);
 
   const firstName = String(req.user.full_name || '').trim().split(/\s+/)[0] || '';
@@ -229,6 +244,7 @@ router.get('/panel', async (req, res) => {
     openJobs: Number(metrics && metrics.open_jobs) || 0,
     openJobList,
     recent,
+    overdue,
     restaurant: {
       name: req.user.restaurant_name,
       slug: req.user.restaurant_slug,
@@ -252,11 +268,12 @@ router.get('/panel/candidaturas', async (req, res) => {
   const desde = validDate(req.query.desde);
   const hasta = validDate(req.query.hasta);
   const favs = req.query.favs === '1';
+  const vencidas = req.query.vencidas === '1';
   const ascending = req.query.orden === 'antiguas';
 
   /* count: o total real dos filtros, não só as 200 linhas mostradas. */
   let query = sb().from('application_list')
-    .select('id, status, applied_at, job_title, availability, future_interest, favorite, experience, first_name, last_name, email, phone',
+    .select('id, status, applied_at, job_title, availability, future_interest, favorite, experience, first_name, last_name, email, phone, retention_until',
       { count: 'exact' })
     .eq('restaurant_id', rid);
 
@@ -274,13 +291,19 @@ router.get('/panel/candidaturas', async (req, res) => {
   if (desde) query = query.gte('applied_at', madridTime(desde, '00:00:00'));
   if (hasta) query = query.lte('applied_at', madridTime(hasta, '23:59:59.999'));
   if (favs) query = query.eq('favorite', true);
+  if (vencidas) {
+    /* legal_hold não está na view: os ids vêm de `applications`. As 200 mais
+     * antigas chegam para o limite da lista; ao apagá-las aparecem as seguintes. */
+    const ids = await many(overdueApplications(rid, 'id').order('retention_until').limit(200), 'ids vencidos');
+    query = query.in('id', ids.length > 0 ? ids.map((a) => a.id) : [0]);
+  }
 
   query = query
     .order('applied_at', { ascending })
     .order('id', { ascending })
     .limit(200);
 
-  const [{ rows, total }, jobs, pipeline] = await Promise.all([
+  const [{ rows, total }, jobs, pipeline, overdue] = await Promise.all([
     (async () => {
       const { data, count: n, error } = await query;
       if (error) throw dbError(error, 'lista de candidaturas');
@@ -290,18 +313,20 @@ router.get('/panel/candidaturas', async (req, res) => {
       sb().from('jobs').select('id, title').eq('restaurant_id', rid).order('title'),
       'vagas'
     ),
-    statusCounts(rid)
+    statusCounts(rid),
+    overdueCount(rid)
   ]);
 
-  if (q || estado || grupo || puesto || disp || desde || hasta || favs) analytics.feature(metricsId(req, res), 'busca_filtro');
+  if (q || estado || grupo || puesto || disp || desde || hasta || favs || vencidas) analytics.feature(metricsId(req, res), 'busca_filtro');
 
   res.render('panel/applications', {
     rows,
     jobs,
     groups: STATUS_GROUPS,
-    filters: { q, estado, grupo, puesto, disp, desde, hasta, favs, orden: ascending ? 'antiguas' : 'recientes' },
+    filters: { q, estado, grupo, puesto, disp, desde, hasta, favs, vencidas, orden: ascending ? 'antiguas' : 'recientes' },
     totalFiltered: Math.max(total, rows.length),
     pipeline,
+    overdue,
     query: req.query
   });
 });
@@ -309,6 +334,50 @@ router.get('/panel/candidaturas', async (req, res) => {
 /* ================================================================== *
  * Perfil do candidato (§14)
  * ================================================================== */
+/* Exportação de todas as candidaturas do negócio (art. 28.3.g RGPD: devolver
+ * os dados ao terminar). Os CV não vão aqui: descarregam-se em cada ficha. */
+const EXPORT_COLUMNS = [
+  ['Nombre', 'first_name'], ['Apellidos', 'last_name'], ['Email', 'email'], ['Teléfono', 'phone'],
+  ['Puesto', 'job_title'], ['Estado', 'status'], ['Disponibilidad', 'availability'], ['Experiencia', 'experience'],
+  ['Observaciones', 'observations'], ['Fecha de candidatura', 'applied_at'], ['Conservar hasta', 'retention_until']
+];
+
+/* Uma célula começada por = + - @ seria uma fórmula ao abrir na folha de
+ * cálculo, e estes textos foram escritos por quem se candidatou. */
+function csvCell(value) {
+  const text = String(value == null ? '' : value);
+  const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+  return `"${safe.replace(/"/g, '""')}"`;
+}
+
+router.get('/panel/candidaturas/exportar.csv', rateLimit({
+  windowMs: 60 * 60 * 1000, max: 10, name: 'export-all', key: (req) => String(req.user && req.user.id)
+}), async (req, res) => {
+  const rid = restaurantId(req);
+  const rows = [];
+  for (let from = 0; ; from += 1000) {
+    const page = await many(
+      sb().from('application_list').select(EXPORT_COLUMNS.map(([, column]) => column).join(', '))
+        .eq('restaurant_id', rid)
+        .order('id')
+        .range(from, from + 999),
+      'exportação de candidaturas'
+    );
+    rows.push(...page);
+    if (page.length < 1000) break;
+  }
+
+  const lines = [EXPORT_COLUMNS.map(([label]) => csvCell(label)).join(',')];
+  for (const row of rows) lines.push(EXPORT_COLUMNS.map(([, column]) => csvCell(row[column])).join(','));
+
+  await logSecurity('candidaturas_exportadas', `rid=${rid} n=${rows.length}`, req.ip, { userId: req.user.id, restaurantId: rid });
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="candidaturas-${req.user.restaurant_slug}.csv"`);
+  /* BOM: sem ele o Excel lê os acentos como Latin-1. */
+  res.send(`\uFEFF${lines.join('\r\n')}\r\n`);
+});
+
 router.get('/panel/candidaturas/:id', async (req, res) => {
   const application = await ownApplication(req);
   if (!application) return notFound(res);
@@ -1258,7 +1327,7 @@ router.get('/panel/privacidad', async (req, res) => {
     'privacidade do restaurante'
   );
   if (!r) return notFound(res);
-  res.render('panel/privacy', { r, query: req.query, welcome: req.query.bienvenida === '1' });
+  res.render('panel/privacy', { r, query: req.query, welcome: req.query.bienvenida === '1', overdue: await overdueCount(restaurantId(req)) });
 });
 
 router.post('/panel/privacidad/conservacion', async (req, res) => {
@@ -1788,6 +1857,47 @@ router.post('/panel/reportar', rateLimit({
   await forwardReport({ id: saved.id, kind, message, page, createdAt: saved.created_at });
 
   res.redirect(withFlash(volver || '/panel/reportar', 'ok', 'Gracias. Hemos recibido tu reporte y lo revisaremos.'));
+});
+
+/* ================================================================== *
+ * Pedido de baixa do negócio
+ * ================================================================== *
+ * Não apaga nada: o fecho continua a ser feito por `npm run delete-account`,
+ * que confirma bloqueios legais e assinatura. O pedido fica em /admin/reportes
+ * e não segue para o Painel NexForge (leva o nome do negócio). */
+router.post('/panel/baja', rateLimit({
+  windowMs: 60 * 60 * 1000, max: 5, name: 'account-close', key: (req) => String(req.user && req.user.id)
+}), async (req, res) => {
+  if (!verifyCsrf(req)) return invalidSession(res);
+  if (clean(req.body.confirmar, 10).toUpperCase() !== 'BAJA') {
+    return res.redirect(`/panel/configuracion?err=${encodeURIComponent('Escribe BAJA para confirmar la solicitud.')}#baja`);
+  }
+
+  const rid = restaurantId(req);
+  const done = () => res.redirect(`/panel/configuracion?ok=${encodeURIComponent('Hemos recibido tu solicitud de baja. Te escribiremos al email de tu cuenta antes de cerrarla.')}`);
+
+  const open = await many(
+    sb().from('problem_reports').select('id')
+      .eq('restaurant_id', rid)
+      .neq('status', 'resuelto')
+      .like('message', 'Solicitud de baja%')
+      .limit(1),
+    'pedido de baixa em aberto'
+  );
+  if (open.length > 0) return done();
+
+  await run(sb().from('problem_reports').insert({
+    restaurant_id: rid,
+    user_id: req.user.id,
+    kind: 'duda',
+    message: `Solicitud de baja de la cuenta. Negocio: ${req.user.restaurant_name} (id ${rid}, ${req.user.restaurant_slug}). Cerrar con: npm run delete-account -- --id ${rid} --slug ${req.user.restaurant_slug}`,
+    page: '/panel/configuracion',
+    user_agent: String(req.headers['user-agent'] || '').slice(0, 200)
+  }), 'pedido de baixa');
+
+  logSecurity('baja_solicitada', `rid=${rid}`, req.ip, { userId: req.user.id, restaurantId: rid });
+  background(require('../lib/mailer').notifyProblemReport({ kind: 'duda', restaurantName: req.user.restaurant_name }), 'reporte aviso');
+  done();
 });
 
 module.exports = router;

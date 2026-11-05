@@ -5,6 +5,48 @@ module.exports = {
   'Demostración de Fíchame': { en: 'Fíchame demo', pt: 'Demonstração do Fíchame' },
   'Entrar en la demo': { en: 'Enter the demo', pt: 'Entrar na demonstração' },
   'Volver': { en: 'Back', pt: 'Voltar' },
+  '1 candidatura ha superado su plazo de conservación. Debes eliminarla desde su ficha.': {
+    en: '1 application has passed its retention period. You must delete it from its profile.',
+    pt: '1 candidatura ultrapassou o prazo de conservação. Deves eliminá-la a partir da ficha.'
+  },
+  '{n} candidaturas han superado su plazo de conservación. Debes eliminarlas desde su ficha.': {
+    en: '{n} applications have passed their retention period. You must delete them from their profiles.',
+    pt: '{n} candidaturas ultrapassaram o prazo de conservação. Deves eliminá-las a partir das fichas.'
+  },
+  'Ver vencidas': { en: 'View expired', pt: 'Ver vencidas' },
+  'Vencidas': { en: 'Expired', pt: 'Vencidas' },
+  'Venció el {date}': { en: 'Expired on {date}', pt: 'Venceu a {date}' },
+  'Plazo vencido': { en: 'Period expired', pt: 'Prazo vencido' },
+  'Han superado su plazo de conservación. Se borrarán en la próxima limpieza automática.': {
+    en: 'These have passed their retention period. They will be deleted in the next automatic cleanup.',
+    pt: 'Ultrapassaram o prazo de conservação. Serão apagadas na próxima limpeza automática.'
+  },
+  'Han superado su plazo de conservación. Elimínalas desde su ficha, o usa el bloqueo si debes conservarlas.': {
+    en: 'These have passed their retention period. Delete them from their profile, or use the hold if you must keep them.',
+    pt: 'Ultrapassaram o prazo de conservação. Elimina-as a partir da ficha, ou usa o bloqueio se as tiveres de conservar.'
+  },
+  'Tus datos y baja': { en: 'Your data and closing your account', pt: 'Os teus dados e baixa' },
+  'Descarga todas tus candidaturas en una hoja de cálculo. Los CV se descargan desde cada ficha.': {
+    en: 'Download all your applications as a spreadsheet. CVs are downloaded from each profile.',
+    pt: 'Descarrega todas as candidaturas numa folha de cálculo. Os CV descarregam-se em cada ficha.'
+  },
+  'Exportar candidaturas (CSV)': { en: 'Export applications (CSV)', pt: 'Exportar candidaturas (CSV)' },
+  'Dar de baja el negocio': { en: 'Close this business account', pt: 'Dar baixa do negócio' },
+  'Exporta antes lo que necesites. Revisaremos la solicitud, te escribiremos al email de tu cuenta y cerraremos el negocio con todos sus datos.': {
+    en: 'Export what you need first. We will review the request, write to your account email and close the business with all its data.',
+    pt: 'Exporta antes o que precisares. Vamos rever o pedido, escrever para o email da tua conta e fechar o negócio com todos os dados.'
+  },
+  'Tienes una suscripción activa: cancélala antes en': {
+    en: 'You have an active subscription: cancel it first under',
+    pt: 'Tens uma subscrição ativa: cancela-a antes em'
+  },
+  'Escribe BAJA para confirmar': { en: 'Type BAJA to confirm', pt: 'Escreve BAJA para confirmar' },
+  'Solicitar la baja': { en: 'Request account closure', pt: 'Pedir a baixa' },
+  'Escribe BAJA para confirmar la solicitud.': { en: 'Type BAJA to confirm the request.', pt: 'Escreve BAJA para confirmar o pedido.' },
+  'Hemos recibido tu solicitud de baja. Te escribiremos al email de tu cuenta antes de cerrarla.': {
+    en: 'We have received your closure request. We will write to your account email before closing it.',
+    pt: 'Recebemos o teu pedido de baixa. Vamos escrever para o email da tua conta antes de a fechar.'
+  },
   'Volver al formulario': { en: 'Back to the form', pt: 'Voltar ao formulário' },
   'Progreso del envío': { en: 'Upload progress', pt: 'Progresso do envio' },
   'No se pudo enviar. Comprueba tu conexión e inténtalo de nuevo: tus datos y tu CV siguen aquí.': {
