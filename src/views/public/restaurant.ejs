@@ -96,7 +96,7 @@
     <% } %>
 
     <%# #enviar: depois de um erro a página volta já posicionada no formulário. %>
-    <form action="/r/<%= restaurant.slug %>/apply#enviar" method="post" enctype="multipart/form-data" class="steps-form" data-busy="<%= tr('Enviando tu CV…') %>" data-upload>
+    <form action="/r/<%= restaurant.slug %>/apply#enviar" method="post" enctype="multipart/form-data" class="steps-form" data-busy="<%= tr('Enviando tu CV…') %>" data-upload data-network-error="<%= tr('No se pudo enviar. Comprueba tu conexión e inténtalo de nuevo: tus datos y tu CV siguen aquí.') %>" data-http-error="<%= tr('No se pudo enviar por un problema nuestro. Inténtalo de nuevo en unos minutos: tus datos y tu CV siguen aquí.') %>" data-session-renewed="<%= tr('Tu sesión había caducado y ya la hemos renovado. Pulsa de nuevo «Enviar candidatura»: tus datos y tu CV siguen aquí.') %>">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="hp" aria-hidden="true">
         <label>Sitio web</label>

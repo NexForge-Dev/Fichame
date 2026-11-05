@@ -5,6 +5,14 @@ module.exports = {
   'Demostración de Fíchame': { en: 'Fíchame demo', pt: 'Demonstração do Fíchame' },
   'Entrar en la demo': { en: 'Enter the demo', pt: 'Entrar na demonstração' },
   'Volver': { en: 'Back', pt: 'Voltar' },
+  'No se pudo enviar por un problema nuestro. Inténtalo de nuevo en unos minutos: tus datos y tu CV siguen aquí.': {
+    en: 'It could not be sent because of a problem on our side. Try again in a few minutes: your details and CV are still here.',
+    pt: 'Não foi possível enviar por um problema do nosso lado. Tenta de novo daqui a alguns minutos: os teus dados e o CV continuam aqui.'
+  },
+  'Tu sesión había caducado y ya la hemos renovado. Pulsa de nuevo «Enviar candidatura»: tus datos y tu CV siguen aquí.': {
+    en: 'Your session had expired and we have renewed it. Press “Enviar candidatura” again: your details and CV are still here.',
+    pt: 'A tua sessão tinha caducado e já a renovámos. Carrega de novo em «Enviar candidatura»: os teus dados e o CV continuam aqui.'
+  },
   '¿Esta página no corresponde a este negocio?': { en: 'Is this page not really from this business?', pt: 'Esta página não corresponde a este negócio?' },
   'Avísanos': { en: 'Let us know', pt: 'Avisa-nos' },
   '1 candidatura ha superado su plazo de conservación. Debes eliminarla desde su ficha.': {

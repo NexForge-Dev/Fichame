@@ -148,7 +148,7 @@ document.addEventListener('submit', function (e) {
   btn.setAttribute('data-label', btn.innerHTML);
   btn.textContent = form.getAttribute('data-busy');
   /* Desativar só depois de o browser ter recolhido os dados do formulário. */
-  setTimeout(function () { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }, 0);
+  form.busyTimer = setTimeout(function () { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }, 0);
 });
 
 function releaseBusyButton(btn) {
@@ -176,14 +176,40 @@ document.addEventListener('submit', function (e) {
   e.preventDefault();
 
   var body = new FormData(form);
+  /* O FormData já recolheu os dados: desativa-se já. O temporizador de cima
+     podia voltar a desativar o botão depois de uma falha imediata, e um duplo
+     toque antes dele enviava o CV duas vezes. */
+  clearTimeout(form.busyTimer);
+  btn.disabled = true;
+  btn.setAttribute('aria-busy', 'true');
+
   var label = form.getAttribute('data-busy');
   var action = form.action.split('#')[0];
   var xhr = new XMLHttpRequest();
-  var giveUp = function () {
+  var giveUp = function (message) {
     bar.hidden = true;
     bar.value = 0;
     releaseBusyButton(btn);
+    failed.textContent = message;
     failed.classList.remove('is-hidden');
+  };
+  var networkError = function () { giveUp(form.getAttribute('data-network-error')); };
+  var httpError = function () { giveUp(form.getAttribute('data-http-error')); };
+
+  /* 403: o token caducou com o formulário aberto. Um token novo, pedido à
+     própria página, deixa repetir sem perder os dados nem o ficheiro. */
+  var renewToken = function () {
+    var page = new XMLHttpRequest();
+    page.open('GET', action.replace(/\/apply$/, ''));
+    page.onload = function () {
+      var fresh = page.status === 200 && new DOMParser().parseFromString(page.responseText, 'text/html').querySelector('input[name=_csrf]');
+      if (!fresh) { httpError(); return; }
+      form.querySelector('input[name=_csrf]').value = fresh.value;
+      giveUp(form.getAttribute('data-session-renewed'));
+    };
+    page.onerror = httpError;
+    page.ontimeout = httpError;
+    page.send();
   };
 
   xhr.open('POST', action);
@@ -196,21 +222,25 @@ document.addEventListener('submit', function (e) {
     btn.textContent = label + ' ' + pct + ' %';
   };
   xhr.onload = function () {
-    /* Redirecionamento (enviado, ou voltar à página com ?err=): segue-o. Sem
-       ele, a resposta é a página do formulário com os erros ou uma de erro. */
+    /* Redirecionamento (enviado, ou voltar à página com ?err=): segue-o. */
     if (xhr.responseURL && xhr.responseURL.split('#')[0] !== action) {
       window.location.assign(xhr.responseURL);
       return;
     }
+    if (xhr.status === 403) { renewToken(); return; }
+    /* Só a nossa página do formulário com os erros substitui esta. Qualquer
+       outra resposta (5xx, 413, a página de erro da Vercel) apagaria os dados
+       sem deixar sequer o Voltar para os recuperar. */
+    if (xhr.status !== 422 || xhr.responseText.indexOf('data-upload-progress') === -1) { httpError(); return; }
     document.open();
     document.write(xhr.responseText);
     document.close();
     var top = document.getElementById('enviar');
     if (top) top.scrollIntoView();
   };
-  xhr.onerror = giveUp;
-  xhr.ontimeout = giveUp;
-  xhr.onabort = giveUp;
+  xhr.onerror = networkError;
+  xhr.ontimeout = networkError;
+  xhr.onabort = networkError;
   xhr.send(body);
 });
 
