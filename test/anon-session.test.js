@@ -158,3 +158,31 @@ test('uma página com sessão anónima não consulta session_context', async () 
   await (await get('/login', cookieOf(first))).text();
   assert.deepEqual(seen.filter((r) => r.path.endsWith('/session_context')), []);
 });
+
+async function apply(cookie, csrf, fields) {
+  const body = new FormData();
+  for (const [k, v] of Object.entries({ _csrf: csrf, ...fields })) body.append(k, v);
+  return fetch(`${base}/r/bar-teste/apply`, { method: 'POST', redirect: 'manual', headers: { cookie }, body });
+}
+
+test('limite de candidaturas: só os envios aceites contam, os erros não', async () => {
+  const page = await get('/r/bar-teste');
+  const csrf = csrfOf(await page.text());
+  const cookie = cookieOf(page);
+
+  /* Mais de 20 erros seguidos no mesmo Wi-Fi: cada um volta ao formulário. */
+  for (let i = 0; i < 25; i += 1) {
+    const res = await apply(cookie, csrf, { nombre: 'X' });
+    await res.text();
+    assert.equal(res.status, 422, `erro ${i + 1}`);
+  }
+
+  /* O honeypot responde como um envio aceite e conta, como um spam real. */
+  for (let i = 0; i < 20; i += 1) {
+    const res = await apply(cookie, csrf, { sitio_web: 'spam' });
+    assert.match(res.headers.get('location') || '', /\/enviado$/, `envio ${i + 1}`);
+  }
+  const blocked = await apply(cookie, csrf, { sitio_web: 'spam' });
+  assert.equal(blocked.status, 303);
+  assert.match(new URL(blocked.headers.get('location'), base).searchParams.get('err'), /demasiadas candidaturas/);
+});

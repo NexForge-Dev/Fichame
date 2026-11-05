@@ -65,6 +65,39 @@ function rateLimit({ windowMs, max, key, message, name = 'global' }) {
   };
 }
 
+/* Como rateLimit, em memória, mas só sobe quando se chama hit(): serve para
+ * limitar envios aceites sem castigar erros de validação. `check` corre antes
+ * de ler o corpo; quem está no limite nem envia o ficheiro. */
+function acceptedLimit({ windowMs, max, key, message }) {
+  const store = new Map();
+
+  const sweeper = setInterval(() => {
+    const now = Date.now();
+    for (const [k, e] of store) {
+      if (e.resetAt <= now) store.delete(k);
+    }
+  }, 60 * 1000);
+  if (sweeper.unref) sweeper.unref();
+
+  return {
+    check(req, res, next) {
+      const now = Date.now();
+      const entry = store.get(key(req));
+      if (entry && entry.resetAt > now && entry.count >= max) {
+        return tooMany(req, res, Math.ceil((entry.resetAt - now) / 1000), message);
+      }
+      next();
+    },
+    hit(req) {
+      const k = key(req);
+      const now = Date.now();
+      const entry = store.get(k);
+      if (!entry || entry.resetAt <= now) store.set(k, { count: 1, resetAt: now + windowMs });
+      else entry.count += 1;
+    }
+  };
+}
+
 /* Limite partilhado entre instâncias (tabela rate_limit_hits, função atómica
  * rate_limit_hit). A chave guardada é um sha256 — o IP não fica em claro.
  *
@@ -142,4 +175,4 @@ function dbFailureLimit({ windowMs, max, key, message, name }) {
   };
 }
 
-module.exports = { rateLimit, dbRateLimit, dbFailureLimit, backPath };
+module.exports = { rateLimit, acceptedLimit, dbRateLimit, dbFailureLimit, backPath };
