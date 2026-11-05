@@ -13,8 +13,8 @@
     "delete-account": "node src/db/delete-account.js",
     "demo:seed": "node src/db/demo-seed.js",
     "stripe:setup": "node src/db/stripe-setup.js",
-    "test": "node --test test/unit.test.js test/http.test.js test/rules.test.js test/pricing.test.js test/billing.test.js && node test/db.js",
-    "test:unit": "node --test test/unit.test.js test/http.test.js test/rules.test.js test/pricing.test.js test/billing.test.js",
+    "test": "node --test test/unit.test.js test/http.test.js test/rules.test.js test/pricing.test.js test/billing.test.js test/feedback.test.js && node test/db.js",
+    "test:unit": "node --test test/unit.test.js test/http.test.js test/rules.test.js test/pricing.test.js test/billing.test.js test/feedback.test.js",
     "test:db": "node test/db.js",
     "test:e2e": "node test/smoke.js",
     "audit": "npm audit --omit=dev"

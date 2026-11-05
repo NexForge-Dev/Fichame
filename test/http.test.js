@@ -176,7 +176,7 @@ test('/privacidad: proveedor genérico, métricas NexForge e art. 13 cobertos', 
     assert.ok(html.includes(event), event);
   }
   for (const part of ['Agencia Española de Protección de Datos', 'menores de 14 años', 'Transferencias internacionales',
-    'Decisiones automatizadas', 'Última actualización: 04/11/2026', 'eu-west-1', 'nexforge.d4v29@gmail.com']) {
+    'Decisiones automatizadas', 'Última actualización: 05/11/2026', 'eu-west-1', 'nexforge.d4v29@gmail.com']) {
     assert.ok(html.includes(part), part);
   }
   assert.match(html, /BORRADOR — REQUIERE REVISIÓN JURÍDICA/);

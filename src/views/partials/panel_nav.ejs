@@ -78,3 +78,9 @@ var unread = (typeof unreadCount !== 'undefined' && unreadCount > 0) ? unreadCou
     </a>
   <% }) %>
 </nav>
+
+<%# feedbackBack vem do middleware de /panel, depois de requireOwner. Em
+    /panel/reportar o formulário já é a própria página. %>
+<% if (typeof feedbackBack !== 'undefined' && path !== '/panel/reportar') { %>
+  <%- include('feedback') %>
+<% } %>

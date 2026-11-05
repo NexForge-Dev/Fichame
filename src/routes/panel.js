@@ -25,6 +25,7 @@ const storage = require('../lib/storage');
 const { QR_OPTIONS } = require('../lib/qr');
 const { background } = require('../lib/background');
 const analytics = require('../lib/analytics');
+const { MESSAGE_MAX, reportMessage, returnPath, withFlash, forwardReport } = require('../lib/feedback');
 const { TERMS_VERSION, TERMS_CHANGES, privacyContact, termsPending, recordAcceptance } = require('../lib/legal');
 const {
   STATUSES, STATUS_KEYS, STATUS_GROUPS, AVAILABILITIES, ESTABLISHMENT_TYPES,
@@ -40,6 +41,10 @@ router.use('/panel', requireOwner);
  * latência a cada página. */
 router.use('/panel', async (req, res, next) => {
   res.locals.restaurantName = req.user.restaurant_name || '';
+  /* Nem todas as rotas passam query à view; o balão de feedback volta a
+   * qualquer página do painel e o aviso tem de aparecer em todas. */
+  res.locals.query = req.query;
+  res.locals.feedbackBack = returnPath(req.originalUrl) || '/panel';
   const [unread, legal] = await Promise.allSettled([
     count(
       sb().from('notifications')
@@ -1682,10 +1687,13 @@ router.post('/panel/candidaturas/:id/bloqueo', async (req, res) => {
 /* ================================================================== *
  * Reportar un problema (prova de mercado)
  * ================================================================== *
- * O dono do negócio envia um erro, uma sugestão ou uma dúvida. Fica em
- * problem_reports (0009) e o admin lê-o em /admin/reportes. Junta-se a página
- * de onde veio (só o caminho interno, sem query) e, se veio da página de
- * erro, o código do erro registado em error_events. */
+ * O dono do negócio envia um erro, uma sugestão ou uma dúvida, nesta página ou
+ * no balão presente em todo o painel (partials/feedback.ejs). Fica em
+ * problem_reports (0009), o admin lê-o em /admin/reportes e segue uma cópia
+ * para o Painel NexForge (lib/feedback.js). Junta-se a página de onde veio (só
+ * o caminho interno, sem query) e, se veio da página de erro, o código do erro
+ * registado em error_events. O balão manda também `volver`: é para lá que a
+ * resposta redireciona, com o aviso. */
 const REPORT_KINDS = { error: 'Algo no funciona', sugerencia: 'Una sugerencia', duda: 'Tengo una duda' };
 const REPORT_STATUS = { nuevo: 'Recibido', revisando: 'En revisión', resuelto: 'Resuelto' };
 
@@ -1734,26 +1742,39 @@ router.post('/panel/reportar', rateLimit({
   if (!verifyCsrf(req)) return invalidSession(res);
 
   const kind = Object.prototype.hasOwnProperty.call(REPORT_KINDS, req.body.tipo) ? req.body.tipo : 'error';
-  const message = clean(req.body.mensaje, 2000);
+  const message = reportMessage(req.body.mensaje);
   const ref = reportRef(req.body.ref);
   const page = reportPage(req.body.pagina);
+  const volver = returnPath(req.body.volver);
 
-  if (message.length < 3) {
-    const back = new URLSearchParams({ err: 'Cuéntanos qué ha pasado.' });
+  const refuse = (err) => {
+    if (volver) return res.redirect(withFlash(volver, 'err', err));
+    const back = new URLSearchParams({ err });
     if (ref) back.set('ref', ref);
     if (page) back.set('desde', page);
     return res.redirect('/panel/reportar?' + back.toString());
-  }
+  };
 
-  await run(sb().from('problem_reports').insert({
-    restaurant_id: restaurantId(req),
-    user_id: req.user.id,
-    kind,
-    message,
-    page,
-    error_ref: ref,
-    user_agent: String(req.headers['user-agent'] || '').slice(0, 200)
-  }), 'gravar reporte');
+  if (!message) return refuse('Cuéntanos qué ha pasado.');
+  if (message.length > MESSAGE_MAX) return refuse('El mensaje no puede superar los 4000 caracteres.');
+
+  let saved;
+  try {
+    saved = await one(sb().from('problem_reports').insert({
+      restaurant_id: restaurantId(req),
+      user_id: req.user.id,
+      kind,
+      message,
+      page,
+      error_ref: ref,
+      user_agent: String(req.headers['user-agent'] || '').slice(0, 200)
+    }).select('id, created_at'), 'gravar reporte');
+  } catch (err) {
+    const errorRef = newRef();
+    console.error(`[reportar] ${err.message} (ref ${errorRef})`);
+    background(recordError(err, req, errorRef), 'error-events');
+    return refuse('No hemos podido enviar tu mensaje. Inténtalo de nuevo.');
+  }
 
   analytics.feature(metricsId(req, res), 'problema_reportado');
   logSecurity('reporte_enviado', `kind=${kind}${ref ? ` ref=${ref}` : ''}`, req.ip, {
@@ -1764,7 +1785,9 @@ router.post('/panel/reportar', rateLimit({
   background(require('../lib/mailer').notifyProblemReport({ kind, restaurantName: req.user.restaurant_name }),
     'reporte aviso');
 
-  res.redirect('/panel/reportar?ok=' + encodeURIComponent('Gracias. Hemos recibido tu reporte y lo revisaremos.'));
+  await forwardReport({ id: saved.id, kind, message, page, createdAt: saved.created_at });
+
+  res.redirect(withFlash(volver || '/panel/reportar', 'ok', 'Gracias. Hemos recibido tu reporte y lo revisaremos.'));
 });
 
 module.exports = router;

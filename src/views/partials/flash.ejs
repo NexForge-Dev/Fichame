@@ -42,7 +42,4 @@
     <span><%= tr('Hemos actualizado los términos de uso.') %> <a href="/panel/terminos"><%= tr('Revisa los cambios y acéptalos') %></a>.</span>
   </div>
 <% } %>
-<% if (typeof query !== 'undefined' && query) { %>
-  <% if (query.ok) { %><div class="flash ok"><%= tr(query.ok) %></div><% } %>
-  <% if (query.err) { %><div class="flash err"><%= tr(query.err) %></div><% } %>
-<% } %>
+<%- include('flash_query') %>

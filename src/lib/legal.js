@@ -19,10 +19,10 @@ const { sb, run } = require('../db');
 const { PLANS, TRIAL_DAYS, formatPrice } = require('./pricing');
 
 const TERMS_VERSION = '2026-11-04-prueba';
-const DPA_VERSION = '2026-11-04-borrador';
+const DPA_VERSION = '2026-11-05-borrador';
 const COOKIES_VERSION = '2026-11-04';
 /* Data mostrada em /privacidad, /terminos, /encargo e /cookies. */
-const LEGAL_UPDATED = '04/11/2026';
+const LEGAL_UPDATED = '05/11/2026';
 
 /* O que mudou na versão atual, em frases curtas para o negócio. Tem de ser
  * verdade com o pagamento online desligado e ligado (config.billingEnabled). */
@@ -33,6 +33,7 @@ const TERMS_CHANGES = [
   'Nunca se cobra nada sin tu aceptación expresa. Un cambio de precio para quien ya tenga un plan se avisará con al menos 30 días de antelación.',
   'El Acuerdo de encargo explica ahora cuándo se borran los datos: si la supresión automática no está activada, cada negocio elimina las candidaturas desde su panel al vencer el plazo.',
   'El Acuerdo de encargo y la Política de privacidad indican las métricas de uso que se envían al panel interno de NexForge, sin datos de candidatos.',
+  'El Acuerdo de encargo y la Política de privacidad indican que las sugerencias y los problemas que envías desde el panel se copian en el panel interno de NexForge, sin tu nombre, email ni cuenta. No incluyas datos de candidatos. Esa copia no se borra con la cuenta: su supresión se pide al contacto de privacidad.',
   'Las limitaciones de responsabilidad y la indemnidad no se aplican a quien tenga la condición de consumidor.',
   'Los cambios futuros se avisarán en el panel y, si el envío de correo está disponible, también por email.'
 ];

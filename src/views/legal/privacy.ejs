@@ -96,7 +96,7 @@
             <td>Atender reportes de problemas, sugerencias y dudas enviados desde el panel</td>
             <td>Tipo y texto del reporte, página de origen, código del error si lo hay, navegador, usuario y negocio. Te pedimos que no incluyas datos de candidatos</td>
             <td>Ejecución del contrato (art. 6.1.b RGPD) e interés legítimo en mejorar el servicio (art. 6.1.f RGPD)</td>
-            <td>Mientras se tramita; una vez resuelto, <%= days.report %> días<%= planned %></td>
+            <td>Mientras se tramita; una vez resuelto, <%= days.report %> días<%= planned %>. La copia en el panel NexForge se rige por el apartado 5</td>
           </tr>
           <tr>
             <td>Avisos del servicio: nueva candidatura, solicitud de derechos, recuperación de contraseña, cambio de email</td>
@@ -134,7 +134,7 @@
   </div>
 
   <div class="card" id="metricas">
-    <h2>5. Métricas internas: panel NexForge</h2>
+    <h2>5. Panel interno NexForge: métricas y reportes</h2>
     <p>No usamos herramientas de analítica en tu navegador: no hay scripts, píxeles ni cookies de analítica. Sí enviamos desde nuestro servidor eventos de uso al panel interno de gestión NexForge, para saber cómo se usa el producto. Afectan al negocio, no a las personas candidatas.</p>
     <p><strong>Campos de cada evento:</strong> un identificador del evento, su nombre, la fecha y hora, un identificador pseudónimo y unas propiedades fijas (<code>platform: web</code> y las indicadas abajo).</p>
     <p>El identificador pseudónimo es un HMAC-SHA256 del identificador interno del negocio o, antes de terminar el registro, del email del formulario. La clave se queda en nuestro servidor y no se comparte con el panel. Esto es seudonimización, no anonimización: quien tiene la clave podría relacionar el identificador con el negocio.</p>
@@ -151,7 +151,9 @@
         </tbody>
       </table>
     </div>
-    <p><strong>Qué no se envía nunca:</strong> nombres, emails en claro, teléfonos, IP, datos del navegador, datos de candidatos, CV, notas ni textos de búsqueda.</p>
+    <p><strong>Qué no se envía nunca en los eventos:</strong> nombres, emails en claro, teléfonos, IP, datos del navegador, datos de candidatos, CV, notas ni textos de búsqueda.</p>
+    <p><strong>Reportes del panel:</strong> además de los eventos, copiamos en el panel NexForge las sugerencias, los problemas y las dudas que el negocio escribe desde su panel. La copia lleva el tipo (sugerencia o problema), el texto, la página de origen sin identificadores, la fecha y el número del reporte. No lleva el nombre, el email ni el identificador de la cuenta. Es texto libre y se copia tal como se escribe: no incluyas datos de candidatos.</p>
+    <p>Esta copia no se borra al eliminar la cuenta. Para pedir que se suprima, escribe a <%= privacyContact %>.</p>
   </div>
 
   <div class="card" id="subencargados">
@@ -164,7 +166,7 @@
     </ul>
     <p>Estos otros no reciben datos identificativos de candidatos:</p>
     <ul>
-      <li><strong>Panel NexForge</strong> — recibe solo los eventos del apartado 5. La aplicación del panel se ejecuta en Vercel (Fráncfort, fra1); su base de datos la presta un proveedor externo y puede estar fuera del Espacio Económico Europeo, incluido EE. UU.</li>
+      <li><strong>Panel NexForge</strong> — recibe los eventos y la copia de los reportes del apartado 5. La aplicación del panel se ejecuta en Vercel (Fráncfort, fra1); su base de datos la presta un proveedor externo y puede estar fuera del Espacio Económico Europeo, incluido EE. UU.</li>
       <% if (billingEnabled) { %>
       <li><strong>Stripe Payments Europe, Ltd.</strong> (Irlanda) — cobro de las suscripciones de los negocios. Trata los datos de facturación (nombre o razón social, email, dirección y, si se indica, NIF/IVA) y los datos de pago. La tarjeta se introduce directamente en las páginas de Stripe: Fíchame no ve ni guarda los números de tarjeta; solo recibe el estado de la suscripción y un identificador de cliente. Para la prevención del fraude y sus obligaciones legales, Stripe actúa como responsable independiente según su <a href="https://stripe.com/es/privacy" target="_blank" rel="noopener">política de privacidad</a>.</li>
       <% } else { %>

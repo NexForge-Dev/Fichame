@@ -62,10 +62,10 @@ Fíchame generates the QR code for that link (`/panel/qr`): the owner prints it 
 **Platform admin** — `/admin`
 - Global metrics, business activation, user blocking and security logs.
 - **Divulgación** (`/admin/divulgacion`): the single QR code that leads to `/conoce`, to download (PNG/SVG), print or copy the link. Admin only.
-- **Reportes** (`/admin/reportes`): reports sent by businesses (bug, suggestion, question), with status Nuevo → En revisión → Resuelto, plus the latest server 500 errors. Each error has a code (e.g. `A3F9C2`) that the user sees on screen; if they report from there, the report is linked to the error. Email alert to `ADMIN_EMAIL` (with SMTP), without the report text.
+- **Reportes** (`/admin/reportes`): reports sent by businesses (bug, suggestion, question), with status Nuevo → En revisión → Resuelto, plus the latest server 500 errors. Each error has a code (e.g. `A3F9C2`) that the user sees on screen; if they report from there, the report is linked to the error. Email alert to `ADMIN_EMAIL` (with SMTP), without the report text. A copy of the type, text, page path and date also goes to the NexForge panel, never the author's name, e-mail or id.
 - **No access to candidate data**, by design (tested: admin → candidate routes = 403).
 
-**Report a problem** — `/panel/reportar` (in the side menu; under Settings on mobile)
+**Report a problem** — `/panel/reportar` (in the side menu; under Settings on mobile), or the feedback balloon at the bottom right of every panel page
 - Short form for the business owner. Attaches the originating page and the error code, if any. Asks not to include candidate data.
 - Server errors and resolved reports are deleted by the retention job after `ERROR_EVENT_DAYS` (90) and `REPORT_DAYS` (365) days.
 
@@ -130,6 +130,7 @@ npm run migrate
 13. `migrations/0013_launch_fixes.sql`
 14. `migrations/0014_billing.sql` (Stripe billing)
 15. `migrations/0015_retention_lock.sql` (automatic retention never deletes an application put under legal hold mid-run; optional for the code, apply anyway)
+16. `migrations/0016_problem_reports_length.sql` (reports up to 4000 characters; without it, longer ones are refused with an error message)
 
 Migrations are idempotent. `0000_reset.sql` is **destructive** (drops the schema) and only runs with `npm run migrate -- --reset`.
 

@@ -5,7 +5,8 @@
  * Só sai daqui o mínimo: nome do evento, um id pseudónimo do NEGÓCIO
  * (HMAC do restaurant_id com NEXFORGE_PSEUDONYM_SECRET, que nunca sai deste
  * servidor) e códigos fixos (passo, recurso). Nunca dados de candidatos, CVs,
- * notas, textos de pesquisa, emails ou telefones.
+ * notas, textos de pesquisa, emails ou telefones. A única exceção é feedback():
+ * o texto que o dono do negócio escreveu no balão ou em /panel/reportar.
  *
  * Sem as três variáveis NEXFORGE_* é um no-op, tal como nos testes e nos
  * dados E2E (EZCV_TEST_PREFIX). Os envios vão por background(): não atrasam
@@ -81,6 +82,13 @@ const analytics = {
    * reenvios do webhook da Stripe não contam duas vezes. */
   plan(restaurantId, event, properties, onceParts) {
     send(event, restaurantId, properties, onceParts ? nf.onceId(...onceParts) : undefined);
+  },
+
+  /* Uma sugestão ou um problema já gravado em problem_reports (lib/feedback.js).
+   * Espera-se na rota: em serverless um envio em segundo plano podia perder-se. */
+  async feedback(item, maxWaitMs) {
+    if (!nf.enabled) return false;
+    return nf.feedback(item, maxWaitMs);
   },
 
   /* Usado pelo script de eliminação (processo sem pedido HTTP): espera o envio. */

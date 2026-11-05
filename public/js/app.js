@@ -64,6 +64,26 @@ document.addEventListener('click', function (e) {
   }
 })();
 
+/* Balão de feedback: <details> já abre e fecha sozinho; aqui só o Esc e o
+   clique fora, com o foco devolvido ao botão. */
+(function () {
+  var box = document.querySelector('[data-feedback]');
+  if (!box) return;
+  var toggle = box.querySelector('summary');
+  box.addEventListener('toggle', function () {
+    if (box.open) box.querySelector('input[name=tipo]').focus();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && box.open) {
+      box.open = false;
+      toggle.focus();
+    }
+  });
+  document.addEventListener('click', function (e) {
+    if (box.open && !box.contains(e.target)) box.open = false;
+  });
+})();
+
 /* Botão «Imprimir» da página do QR — sem onclick inline por causa do CSP. */
 document.addEventListener('click', function (e) {
   if (e.target.closest('[data-print]')) window.print();

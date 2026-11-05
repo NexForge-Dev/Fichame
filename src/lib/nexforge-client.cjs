@@ -14,7 +14,7 @@
  *
  * Guarantees:
  *  - user ids are HMAC-SHA256'd with the product's own secret before leaving the server; the panel
- *    never sees the real id, e-mail or any content;
+ *    never sees the real id, e-mail or any content (only `feedback()` carries free text);
  *  - fire-and-forget: never throws, never blocks the request; failures are dropped after retries;
  *  - batching (every 5 s or 50 events) and `flush()` for serverless handlers.
  */
@@ -128,7 +128,43 @@ function createNexforge(opts) {
     track("identity_linked", { userId, properties: { previous_id: pseudonym(previousId) } });
   }
 
-  return { track, link, flush, pseudonym, onceId, enabled };
+  /**
+   * Forwards one suggestion or problem report the product has ALREADY saved in its own database.
+   * This is the only call that sends free text: never pass the author's name, e-mail or id.
+   * `externalId` is the product's row id, so sending twice keeps one copy. Await it in the request
+   * handler; it never throws and gives up after `maxWaitMs`. Resolves to whether the panel took it.
+   *
+   * @param {{ externalId: string|number, kind: "suggestion"|"problem", message: string, page?: string, occurredAt?: Date }} item
+   * @param {number} [maxWaitMs]
+   */
+  async function feedback(item, maxWaitMs) {
+    if (!enabled) return false;
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), maxWaitMs || 2500);
+    try {
+      const res = await fetch(String(endpoint).replace(/\/api\/ingest\/?$/, "/api/feedback"), {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${ingestKey}` },
+        body: JSON.stringify({
+          external_id: String(item.externalId),
+          kind: item.kind,
+          message: item.message,
+          page: String(item.page || "").split(/[?#]/, 1)[0].replace(/\/[^/]*\d[^/]*/g, "/:id"),
+          occurred_at: (item.occurredAt || new Date()).toISOString(),
+        }),
+        signal: controller.signal,
+      });
+      if (!res.ok) onError(new Error(`nexforge rejected feedback: ${res.status}`));
+      return res.ok;
+    } catch (err) {
+      onError(err);
+      return false;
+    } finally {
+      clearTimeout(t);
+    }
+  }
+
+  return { track, link, flush, pseudonym, onceId, feedback, enabled };
 }
 
 module.exports = { createNexforge };

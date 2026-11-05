@@ -1,0 +1,23 @@
+<%# Balão de feedback (só no painel, ver panel_nav). <details> abre e fecha sem
+    JavaScript; app.js só acrescenta o Esc e o clique fora. Os dois tipos são
+    valores de problem_reports.kind. %>
+<details class="feedback" data-feedback>
+  <summary class="feedback-toggle" aria-label="<%= tr('Enviar comentarios') %>" title="<%= tr('Enviar comentarios') %>"><%- icon('chat') %></summary>
+  <form class="feedback-panel" action="/panel/reportar" method="post">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="pagina" value="<%= path %>">
+    <input type="hidden" name="volver" value="<%= feedbackBack %>">
+
+    <fieldset class="feedback-kinds">
+      <legend><%= tr('¿Qué quieres contarnos?') %></legend>
+      <label><input type="radio" name="tipo" value="sugerencia" required> <%= tr('Ayúdanos a mejorar') %></label>
+      <label><input type="radio" name="tipo" value="error" required> <%= tr('Reportar un problema') %></label>
+    </fieldset>
+
+    <label for="feedback-mensaje"><%= tr('Tu mensaje') %></label>
+    <textarea id="feedback-mensaje" name="mensaje" maxlength="4000" rows="4" required></textarea>
+    <p class="help"><%= tr('No incluyas datos de candidatos') %></p>
+
+    <button class="btn small" type="submit"><%= tr('Enviar') %></button>
+  </form>
+</details>

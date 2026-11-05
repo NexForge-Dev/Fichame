@@ -7,6 +7,8 @@
     <a class="back-link" href="/panel/configuracion"><%- icon('arrowLeft') %> <%= tr('Configuración') %></a>
   </div>
 
+  <%- include('../partials/flash_query') %>
+
   <div class="card narrow-card">
     <% if (error) { %>
       <div class="flash err" role="alert"><%= tr(error) %></div>
