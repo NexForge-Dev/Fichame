@@ -35,7 +35,8 @@ function setup() {
     'data-busy': 'Enviando tu CV…',
     'data-http-error': 'erro do servidor',
     'data-network-error': 'erro de rede',
-    'data-session-renewed': 'sessão renovada'
+    'data-session-renewed': 'sessão renovada',
+    'data-cookies-needed': 'precisa de cookies'
   };
   const btn = {
     disabled: false,
@@ -118,7 +119,7 @@ function setup() {
     for (const [id, fn] of [...timers]) { timers.delete(id); fn(); }
   };
 
-  return { btn, bar, failed, csrf, xhrs, written, windowStub, submit, runTimers };
+  return { btn, bar, failed, form, csrf, xhrs, written, windowStub, submit, runTimers };
 }
 
 function respond(xhr, status, responseText, responseURL = ACTION) {
@@ -220,4 +221,51 @@ test('redirecionamento (enviado) segue para o URL final', () => {
   respond(t.xhrs[0], 200, 'ok', 'http://local.test/r/bar-teste/enviado');
   assert.equal(t.windowStub.assigned, 'http://local.test/r/bar-teste/enviado');
   assert.deepEqual(t.written, []);
+});
+
+for (const event of ['ontimeout', 'onabort']) {
+  test(`R3: pedido do token novo sem resposta (${event}) acaba no estado normal de repetir`, () => {
+    const t = setup();
+    t.submit();
+    respond(t.xhrs[0], 403, 'x');
+    const renew = t.xhrs[1];
+    assert.ok(renew.timeout > 0 && renew.timeout <= 30000, 'tem limite de tempo');
+    renew[event]();
+    assert.equal(t.btn.disabled, false);
+    assert.equal(t.bar.hidden, true);
+    assert.equal(t.failed.classList.contains('is-hidden'), false);
+    assert.equal(t.failed.textContent, 'erro do servidor');
+  });
+}
+
+function renewed(t) {
+  t.submit();
+  respond(t.xhrs[t.xhrs.length - 1], 403, 'x');
+  const renew = t.xhrs[t.xhrs.length - 1];
+  Object.assign(renew, { status: 200, responseText: '<input name="_csrf" value="token-novo">' });
+  renew.onload();
+}
+
+test('R4: 403 logo depois de renovar quer dizer cookies recusados, e diz-se isso', () => {
+  const t = setup();
+  renewed(t);
+  assert.equal(t.failed.textContent, 'sessão renovada');
+  t.submit();
+  const count = t.xhrs.length;
+  respond(t.xhrs[count - 1], 403, 'x');
+  assert.equal(t.xhrs.length, count, 'não pede outro token');
+  assert.equal(t.failed.textContent, 'precisa de cookies');
+  assert.equal(t.btn.disabled, false);
+  assert.deepEqual(t.written, []);
+  t.submit();
+  respond(t.xhrs[t.xhrs.length - 1], 403, 'x');
+  assert.equal(t.failed.textContent, 'precisa de cookies', 'nunca volta a dizer que renovou');
+});
+
+test('R4: uma sessão que caduca horas depois volta a renovar-se', () => {
+  const t = setup();
+  renewed(t);
+  t.form.tokenRenewedAt -= 3 * 60 * 60 * 1000;
+  renewed(t);
+  assert.equal(t.failed.textContent, 'sessão renovada');
 });

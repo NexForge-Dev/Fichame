@@ -197,18 +197,27 @@ document.addEventListener('submit', function (e) {
   var httpError = function () { giveUp(form.getAttribute('data-http-error')); };
 
   /* 403: o token caducou com o formulário aberto. Um token novo, pedido à
-     própria página, deixa repetir sem perder os dados nem o ficheiro. */
+     própria página, deixa repetir sem perder os dados nem o ficheiro. Se voltar
+     a dar 403 pouco depois de renovar (a sessão anónima dura 2 h), o browser
+     não está a guardar o cookie: renovar outra vez seria dizer uma falsidade. */
   var renewToken = function () {
+    if (form.tokenRenewedAt && Date.now() - form.tokenRenewedAt < 3600000) {
+      giveUp(form.getAttribute('data-cookies-needed'));
+      return;
+    }
     var page = new XMLHttpRequest();
     page.open('GET', action.replace(/\/apply$/, ''));
+    page.timeout = 15000;
     page.onload = function () {
       var fresh = page.status === 200 && new DOMParser().parseFromString(page.responseText, 'text/html').querySelector('input[name=_csrf]');
       if (!fresh) { httpError(); return; }
       form.querySelector('input[name=_csrf]').value = fresh.value;
+      form.tokenRenewedAt = Date.now();
       giveUp(form.getAttribute('data-session-renewed'));
     };
     page.onerror = httpError;
     page.ontimeout = httpError;
+    page.onabort = httpError;
     page.send();
   };
 
