@@ -80,6 +80,13 @@
         <% } else if (errors && errors.email) { %><div class="field-error" role="alert"><%= tr(errors.email) %></div><% } %>
 
         <div class="field">
+          <label for="privacy_email"><%= tr('Email de contacto para privacidad') %> *</label>
+          <input id="privacy_email" type="email" name="privacy_email" maxlength="120" required value="<%= form.privacy_email || '' %>" autocomplete="off"<%- invalid('privacy_email') %>>
+          <div class="help"><%= tr('Es público: los candidatos lo ven para ejercer sus derechos. Puede ser distinto del email con el que entras.') %></div>
+          <% if (errors && errors.privacy_email) { %><div class="field-error" id="err-privacy_email"><%= tr(errors.privacy_email) %></div><% } %>
+        </div>
+
+        <div class="field">
           <label for="telefono"><%= tr('Teléfono') %> <span class="dim label-hint"><%= tr('(opcional)') %></span></label>
           <input id="telefono" type="tel" name="telefono" maxlength="30" value="<%= form.phone || '' %>" inputmode="tel"<%- invalid('phone') %>>
           <% if (errors && errors.phone) { %><div class="field-error" id="err-phone"><%= tr(errors.phone) %></div><% } %>

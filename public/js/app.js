@@ -151,11 +151,75 @@ document.addEventListener('submit', function (e) {
   setTimeout(function () { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }, 0);
 });
 
+function releaseBusyButton(btn) {
+  btn.disabled = false;
+  btn.removeAttribute('aria-busy');
+  if (btn.hasAttribute('data-label')) btn.innerHTML = btn.getAttribute('data-label');
+}
+
 /* Voltar atrás para a página (bfcache) não pode deixar o botão preso. */
 window.addEventListener('pageshow', function () {
-  document.querySelectorAll('form[data-busy] button[aria-busy]').forEach(function (btn) {
-    btn.disabled = false;
-    btn.removeAttribute('aria-busy');
-    if (btn.hasAttribute('data-label')) btn.innerHTML = btn.getAttribute('data-label');
-  });
+  document.querySelectorAll('form[data-busy] button[aria-busy]').forEach(releaseBusyButton);
 });
+
+/* Candidatura com CV: envio por XHR para mostrar a percentagem real. Com
+   400 kbps um CV de 4 MB demora mais de um minuto. Se a rede falhar, o
+   formulário fica como estava, com os dados e o ficheiro. Sem JS, o POST
+   normal continua a funcionar. Corre depois do tratamento de data-busy. */
+document.addEventListener('submit', function (e) {
+  var form = e.target;
+  if (e.defaultPrevented || !form || !form.hasAttribute('data-upload')) return;
+  var bar = form.querySelector('[data-upload-progress]');
+  var failed = form.querySelector('[data-upload-failed]');
+  var btn = form.querySelector('button[type=submit]');
+  if (!bar || !failed || !btn || !window.FormData) return;
+  e.preventDefault();
+
+  var body = new FormData(form);
+  var label = form.getAttribute('data-busy');
+  var action = form.action.split('#')[0];
+  var xhr = new XMLHttpRequest();
+  var giveUp = function () {
+    bar.hidden = true;
+    bar.value = 0;
+    releaseBusyButton(btn);
+    failed.classList.remove('is-hidden');
+  };
+
+  xhr.open('POST', action);
+  bar.hidden = false;
+  failed.classList.add('is-hidden');
+  xhr.upload.onprogress = function (ev) {
+    if (!ev.lengthComputable) return;
+    var pct = Math.round((ev.loaded / ev.total) * 100);
+    bar.value = pct;
+    btn.textContent = label + ' ' + pct + ' %';
+  };
+  xhr.onload = function () {
+    /* Redirecionamento (enviado, ou voltar à página com ?err=): segue-o. Sem
+       ele, a resposta é a página do formulário com os erros ou uma de erro. */
+    if (xhr.responseURL && xhr.responseURL.split('#')[0] !== action) {
+      window.location.assign(xhr.responseURL);
+      return;
+    }
+    document.open();
+    document.write(xhr.responseText);
+    document.close();
+    var top = document.getElementById('enviar');
+    if (top) top.scrollIntoView();
+  };
+  xhr.onerror = giveUp;
+  xhr.ontimeout = giveUp;
+  xhr.onabort = giveUp;
+  xhr.send(body);
+});
+
+/* Página que é resposta a um POST: a entrada do histórico passa a ser o URL
+   normal. Sem isto, voltar atrás a partir da confirmação dava ERR_CACHE_MISS
+   (as páginas são no-store e um POST não se repete). */
+(function () {
+  var el = document.querySelector('[data-replace-url]');
+  if (el && window.history && window.history.replaceState) {
+    window.history.replaceState(null, '', el.getAttribute('data-replace-url') + window.location.hash);
+  }
+})();

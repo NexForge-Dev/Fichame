@@ -16,6 +16,7 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = 'chave-de-teste-unitario';
 process.env.EZCV_TEST_PREFIX = '';
 
 const seen = [];
+const rpcBodies = {};
 const RESTAURANT = {
   id: 7, slug: 'bar-teste', name: 'Bar de Teste', commercial_name: '', legal_name: 'Bar de Teste SL',
   privacy_email: 'privacidad@exemplo.es', email: 'dono@exemplo.es', address: '', postal_code: '', city: 'Granada',
@@ -35,6 +36,11 @@ const fakeSupabase = http.createServer((req, res) => {
       if (asObject) return res.end(rows[0] ? JSON.stringify(rows[0]) : 'null');
       res.end(JSON.stringify(rows));
     };
+    if (path.includes('/rpc/')) {
+      rpcBodies[path.split('/').pop()] = JSON.parse(raw || '{}').p;
+      res.writeHead(200, { 'content-type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, reason: 'email_taken' }));
+    }
     if (req.method !== 'GET') return reply([]);
     if (path.endsWith('/restaurants')) return reply([RESTAURANT]);
     if (path.endsWith('/users')) return reply([{ id: 9, blocked: false }]);
@@ -159,10 +165,10 @@ test('uma página com sessão anónima não consulta session_context', async () 
   assert.deepEqual(seen.filter((r) => r.path.endsWith('/session_context')), []);
 });
 
-async function apply(cookie, csrf, fields) {
+async function apply(cookie, csrf, fields, slug = 'bar-teste') {
   const body = new FormData();
   for (const [k, v] of Object.entries({ _csrf: csrf, ...fields })) body.append(k, v);
-  return fetch(`${base}/r/bar-teste/apply`, { method: 'POST', redirect: 'manual', headers: { cookie }, body });
+  return fetch(`${base}/r/${slug}/apply`, { method: 'POST', redirect: 'manual', headers: { cookie }, body });
 }
 
 test('limite de candidaturas: só os envios aceites contam, os erros não', async () => {
@@ -185,4 +191,75 @@ test('limite de candidaturas: só os envios aceites contam, os erros não', asyn
   const blocked = await apply(cookie, csrf, { sitio_web: 'spam' });
   assert.equal(blocked.status, 303);
   assert.match(new URL(blocked.headers.get('location'), base).searchParams.get('err'), /demasiadas candidaturas/);
+});
+
+test('sessão caducada no envio: a página de erro volta ao formulário do negócio', async () => {
+  const res = await apply('', 'token-velho', { nombre: 'Ana' }, 'outro-negocio');
+  const html = await res.text();
+  assert.equal(res.status, 403);
+  assert.match(html, /class="btn" href="\/r\/bar-teste"/);
+  assert.doesNotMatch(html, />\s*Volver al inicio\s*</);
+});
+
+test('resposta a um POST com erros troca o URL da entrada do histórico (Voltar sem ERR_CACHE_MISS)', async () => {
+  const page = await get('/r/bar-teste');
+  const fresh = await page.text();
+  assert.doesNotMatch(fresh, /data-replace-url/);
+  const res = await apply(cookieOf(page), csrfOf(fresh), { nombre: 'X' }, 'outro-negocio');
+  assert.match(await res.text(), /data-replace-url="\/r\/bar-teste"/);
+});
+
+test('o formulário de candidatura leva a barra de progresso do envio', async () => {
+  const html = await (await get('/r/bar-teste')).text();
+  assert.match(html, /<form[^>]+data-upload/);
+  assert.match(html, /<progress[^>]+data-upload-progress/);
+});
+
+test('landing sem SMTP não promete avisos por email; com SMTP promete', async () => {
+  const config = require('../src/config');
+  const off = await (await get('/')).text();
+  assert.doesNotMatch(off, /en el panel y por email/);
+  assert.match(off, /Te avisamos en el panel cada vez/);
+  config.smtp.host = 'smtp.exemplo.es';
+  try {
+    assert.match(await (await get('/')).text(), /en el panel y por email/);
+  } finally {
+    config.smtp.host = '';
+  }
+});
+
+test('SEO: sitemap só com páginas indexáveis, robots aponta para ele e og:image é grande', async () => {
+  const map = await get('/sitemap.xml');
+  const xml = await map.text();
+  assert.equal(map.status, 200);
+  assert.match(map.headers.get('content-type') || '', /xml/);
+  for (const p of ['/conoce', '/privacidad', '/cookies', '/terminos', '/encargo']) assert.ok(xml.includes(`${p}</loc>`), p);
+  assert.doesNotMatch(xml, /\/(panel|login|demo)/);
+  assert.match(await (await get('/robots.txt')).text(), /^Sitemap: http.+\/sitemap\.xml$/m);
+
+  const landing = await (await get('/')).text();
+  assert.match(landing, /property="og:image" content="[^"]+\/img\/og\.png/);
+  assert.match(landing, /name="twitter:card" content="summary_large_image"/);
+  const img = await get('/img/og.png');
+  assert.equal(img.status, 200);
+  const png = Buffer.from(await img.arrayBuffer());
+  assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [1200, 630]);
+});
+
+test('registo: pede um email público próprio e não publica o de acesso por omissão', async () => {
+  const page = await get('/registro');
+  const html = await page.text();
+  assert.match(html, /name="privacy_email"/);
+  const fields = {
+    _csrf: csrfOf(html), restaurant_name: 'Bar Novo', legal_name: 'Bar Novo SL', owner_name: 'Ana Dueña', email: 'acesso@exemplo.es',
+    ciudad: 'Granada', establecimiento: 'restaurante', acepto: '1', password: 'ClaveLocal-2026-x', password2: 'ClaveLocal-2026-x'
+  };
+  const cookie = cookieOf(page);
+  const missing = await post('/registro', cookie, fields);
+  assert.equal(missing.status, 422);
+  assert.match(await missing.text(), /err-privacy_email/);
+
+  await (await post('/registro', cookie, { ...fields, privacy_email: 'rgpd@exemplo.es' })).text();
+  assert.equal(rpcBodies.register_restaurant.privacy_email, 'rgpd@exemplo.es');
+  assert.equal(rpcBodies.register_restaurant.email, 'acesso@exemplo.es');
 });

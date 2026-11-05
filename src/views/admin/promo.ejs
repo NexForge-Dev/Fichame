@@ -15,6 +15,14 @@
     </div>
   <% } %>
 
+  <% if (!localUrl && tempUrl) { %>
+    <div class="notice-box no-print">
+      <strong>No imprimas todavía.</strong>
+      El QR apunta a <code><%= url %></code>, un dominio provisional. Los QR impresos no se
+      pueden cambiar: define <code>APP_URL</code> con el dominio propio antes de imprimir.
+    </div>
+  <% } %>
+
   <div class="card no-print">
     <h2>Página pública de presentación de Fíchame</h2>
     <p class="help">

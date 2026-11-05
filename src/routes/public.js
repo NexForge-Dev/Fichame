@@ -194,7 +194,8 @@ router.post('/r/:slug/apply', ...applyLimiters, uploadCvFile, async (req, res) =
     return res.status(403).render('error', {
       status: 403,
       title: 'Sesión no válida',
-      message: 'La sesión ha caducado. Vuelve a abrir la página e inténtalo de nuevo.'
+      message: 'La sesión ha caducado. Vuelve a abrir la página e inténtalo de nuevo.',
+      backHref: `/r/${restaurant.slug}`
     });
   }
 
@@ -365,7 +366,7 @@ router.post('/r/:slug/interes', ...interestLimiters, async (req, res) => {
 
   if (!verifyCsrf(req)) {
     return res.status(403).render('error', {
-      status: 403, title: 'Sesión no válida', message: 'Vuelve a abrir la página e inténtalo de nuevo.'
+      status: 403, title: 'Sesión no válida', message: 'Vuelve a abrir la página e inténtalo de nuevo.', backHref: `/r/${restaurant.slug}`
     });
   }
 
@@ -486,7 +487,7 @@ router.post('/r/:slug/derechos',
     const restaurant = await getPublicRestaurant(req.params.slug, { includeInactive: true });
     if (!restaurant || restaurant.demo) return notFoundRestaurant(res);
     if (!verifyCsrf(req)) {
-      return res.status(403).render('error', { status: 403, title: 'Sesión no válida', message: 'Vuelve a abrir la página.' });
+      return res.status(403).render('error', { status: 403, title: 'Sesión no válida', message: 'Vuelve a abrir la página.', backHref: `/r/${restaurant.slug}/privacidad` });
     }
 
     const form = {

@@ -299,7 +299,7 @@
         <div class="lp-feature">
           <span class="lp-f-icon"><%- icon('mail') %></span>
           <h3><%= tr('Avisos al momento') %></h3>
-          <p><%= tr('Te avisamos en el panel y por email cada vez que llega una candidatura nueva.') %></p>
+          <p><%= emailEnabled ? tr('Te avisamos en el panel y por email cada vez que llega una candidatura nueva.') : tr('Te avisamos en el panel cada vez que llega una candidatura nueva.') %></p>
         </div>
         <div class="lp-feature">
           <span class="lp-f-icon"><%- icon('jobs') %></span>

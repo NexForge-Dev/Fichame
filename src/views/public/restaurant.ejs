@@ -49,7 +49,7 @@
   </div>
 </header>
 
-<main id="main" class="container-narrow public-main">
+<main id="main" class="container-narrow public-main"<% if (errors) { %> data-replace-url="/r/<%= restaurant.slug %>"<% } %>>
 
 <% if (restaurant.demo) { %>
   <div class="flash ok"><span><strong><%= tr('Página de demostración.') %></strong> <%= tr('Este negocio es ficticio y el formulario no envía nada.') %> <a href="/registro"><%= tr('Empieza tus {days} días gratis', { days: pricing.TRIAL_DAYS }) %></a>.</span></div>
@@ -96,7 +96,7 @@
     <% } %>
 
     <%# #enviar: depois de um erro a página volta já posicionada no formulário. %>
-    <form action="/r/<%= restaurant.slug %>/apply#enviar" method="post" enctype="multipart/form-data" class="steps-form" data-busy="<%= tr('Enviando tu CV…') %>">
+    <form action="/r/<%= restaurant.slug %>/apply#enviar" method="post" enctype="multipart/form-data" class="steps-form" data-busy="<%= tr('Enviando tu CV…') %>" data-upload>
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="hp" aria-hidden="true">
         <label>Sitio web</label>
@@ -209,6 +209,8 @@
       </label>
 
       <p class="help"><%= tr('Los campos con * son obligatorios.') %></p>
+      <progress class="upload-progress" max="100" value="0" hidden data-upload-progress aria-label="<%= tr('Progreso del envío') %>"></progress>
+      <p class="field-error is-hidden" role="alert" data-upload-failed><%= tr('No se pudo enviar. Comprueba tu conexión e inténtalo de nuevo: tus datos y tu CV siguen aquí.') %></p>
       <button class="btn block lg spaced" type="submit"<%= restaurant.demo ? ' disabled' : '' %>><%= tr('Enviar candidatura') %></button>
     </form>
   </div>

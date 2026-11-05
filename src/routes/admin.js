@@ -342,7 +342,8 @@ router.get('/admin/divulgacion', async (req, res) => {
   /* Em localhost os cartões levariam um URL que não abre no telemóvel de
    * ninguém: avisar antes de imprimir. */
   const localUrl = /^https?:\/\/(localhost|127\.|0\.0\.0\.0|\[::1\])/i.test(url) || !url.startsWith('https://');
-  res.render('admin/promo', { url, qrSvg, localUrl });
+  const tempUrl = /\.vercel\.app(\/|$)/i.test(url);
+  res.render('admin/promo', { url, qrSvg, localUrl, tempUrl });
 });
 
 router.get('/admin/divulgacion/qr.png', async (req, res) => {

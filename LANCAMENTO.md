@@ -107,7 +107,7 @@ Production: Vercel project `fichame`, team `nex-forge5`, https://fichame-ten.ver
 
 - `/privacidad`, `/terminos`, `/encargo`, `/cookies` existem (em espanhol — o
   mercado é Espanha, RGPD/LOPDGDD/LSSI). Mostram a faixa **«BORRADOR — REQUIERE
-  REVISIÓN JURÍDICA»** (some só com `LEGAL_REVIEWED=1`, depois da revisão) e marcadores `[RAZÓN SOCIAL]`, `[NIF]`… até preencher `OPERATOR_*`.
+  REVISIÓN JURÍDICA»** (some só com `LEGAL_REVIEWED=1`, depois da revisão) e dizem que a identificação do titular está pendente de publicação até preencher `OPERATOR_*`.
 - Revisão por advogado: ver `docs/legal/00-legal-review-required.md` e
   `docs/security/production-compliance-gate.md` (itens BLOCKER: identidade do
   operador, transferências internacionais, análise «agencia de colocación»).

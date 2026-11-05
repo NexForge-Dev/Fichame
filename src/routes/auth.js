@@ -111,6 +111,7 @@ async function handleRegister(req, res, googleAccount = null) {
     legal_name: clean(req.body.legal_name, 150),
     owner_name: clean(req.body.owner_name, 100),
     email: googleAccount ? googleAccount.email : clean(req.body.email, 120),
+    privacy_email: clean(req.body.privacy_email, 120),
     phone: clean(req.body.telefono, 30),
     address: clean(req.body.direccion, 200),
     postal_code: clean(req.body.cp, 10),
@@ -129,6 +130,9 @@ async function handleRegister(req, res, googleAccount = null) {
   if (form.legal_name.length < 2) errors.legal_name = 'Indica la razón social o el nombre del titular del negocio.';
   if (form.owner_name.length < 2) errors.owner_name = 'Indica el responsable.';
   if (!isValidEmail(form.email)) errors.email = 'Indica un email válido.';
+  /* Sai no formulário público: quem o escolhe é o dono, para que o email de
+   * acesso à conta não fique visível (facilitava phishing). */
+  if (!isValidEmail(form.privacy_email)) errors.privacy_email = 'Indica un email válido.';
   if (form.phone && !/^[\d\s().+-]{6,25}$/.test(form.phone)) errors.phone = 'Indica un teléfono válido.';
   if (form.city.length < 2) errors.city = 'Indica la ciudad.';
   if (form.postal_code && !/^\d{5}$/.test(form.postal_code)) errors.postal_code = 'El código postal debe tener 5 dígitos (ej.: 28013).';
@@ -171,7 +175,7 @@ async function handleRegister(req, res, googleAccount = null) {
     google_sub: googleAccount ? googleAccount.sub : '',
     test_prefix: config.testPrefix,
     legal_name: form.legal_name,
-    privacy_email: form.email,
+    privacy_email: form.privacy_email,
     terms_version: TERMS_VERSION,
     dpa_version: DPA_VERSION,
     ip: String(req.ip || '').slice(0, 64)

@@ -27,6 +27,8 @@
       <% if (typeof canReport !== 'undefined' && canReport && errorRef) { %>
         <a class="btn" href="/panel/reportar?ref=<%= errorRef %>&amp;desde=<%= encodeURIComponent(fromPath) %>"><%= tr('Reportar este problema') %></a>
         <a class="btn secondary" href="/panel"><%= tr('Volver al panel') %></a>
+      <% } else if (typeof backHref !== 'undefined' && backHref) { %>
+        <a class="btn" href="<%= backHref %>"><%= tr('Volver al formulario') %></a>
       <% } else { %>
         <a class="btn secondary" href="/"><%= tr('Volver al inicio') %></a>
       <% } %>

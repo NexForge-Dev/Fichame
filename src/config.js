@@ -187,6 +187,9 @@ function assertConfig() {
     if (missingProd.length > 0) {
       console.warn(`[config] Páginas legais sem a identificação do titular: falta definir ${missingProd.join(', ')}.`);
     }
+    if (/\.vercel\.app$/i.test(config.appUrl)) {
+      console.warn('[config] APP_URL é um domínio *.vercel.app: os QR impressos ficam presos a ele. Define o domínio próprio antes de abrir ao público.');
+    }
     if (String(process.env.CRON_SECRET || '').length < 32) {
       console.warn('[config] CRON_SECRET em falta ou com menos de 32 caracteres: a limpeza diária (/internal/cleanup) não corre.');
     }
