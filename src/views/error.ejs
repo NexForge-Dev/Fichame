@@ -4,10 +4,10 @@
 
 <%- include('partials/site_top') %>
 
-<main class="container-narrow error-main">
+<main id="main" class="container-narrow error-main">
   <div class="card center pad-lg">
     <div class="error-code"><%= status %></div>
-    <h2><%= pageTitle %></h2>
+    <h1 class="error-title"><%= pageTitle %></h1>
     <p class="muted"><%= tr(typeof message !== 'undefined' ? message : '') %></p>
     <% if (typeof errorRef !== 'undefined' && errorRef) { %>
       <%# Código do registo em error_events (src/lib/errors.js). %>

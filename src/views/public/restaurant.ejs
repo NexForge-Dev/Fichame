@@ -49,10 +49,10 @@
   </div>
 </header>
 
-<main class="container-narrow public-main">
+<main id="main" class="container-narrow public-main">
 
 <% if (restaurant.demo) { %>
-  <div class="flash ok"><strong><%= tr('Página de demostración.') %></strong> <%= tr('Este negocio es ficticio y el formulario no envía nada.') %> <a href="/registro"><%= tr('Empieza tus {days} días gratis', { days: pricing.TRIAL_DAYS }) %></a>.</div>
+  <div class="flash ok"><span><strong><%= tr('Página de demostración.') %></strong> <%= tr('Este negocio es ficticio y el formulario no envía nada.') %> <a href="/registro"><%= tr('Empieza tus {days} días gratis', { days: pricing.TRIAL_DAYS }) %></a>.</span></div>
 <% } %>
 
 <% if (typeof query !== 'undefined' && query && query.err) { %>

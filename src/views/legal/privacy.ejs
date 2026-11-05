@@ -7,7 +7,7 @@
    * technicalCleanup (limpeza de registos técnicos). */
   var planned = technicalCleanup ? '' : ' (plazo previsto)';
 %>
-<main class="container-narrow public-main legal">
+<main id="main" class="container-narrow public-main legal">
   <h1>Política de privacidad de Fíchame</h1>
   <p class="dim small">Versión <%= noticeVersion %> · Última actualización: <%= legalUpdated %></p>
 
@@ -64,7 +64,8 @@
 
   <div class="card">
     <h2>4. Datos de las cuentas de negocio (Fíchame como responsable)</h2>
-    <div class="table-wrap">
+    <p class="table-hint">Desliza la tabla para ver todas las columnas.</p>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Datos de las cuentas de negocio">
       <table class="table">
         <thead><tr><th>Finalidad</th><th>Datos</th><th>Base jurídica</th><th>Conservación</th></tr></thead>
         <tbody>
@@ -138,7 +139,8 @@
     <p>No usamos herramientas de analítica en tu navegador: no hay scripts, píxeles ni cookies de analítica. Sí enviamos desde nuestro servidor eventos de uso al panel interno de gestión NexForge, para saber cómo se usa el producto. Afectan al negocio, no a las personas candidatas.</p>
     <p><strong>Campos de cada evento:</strong> un identificador del evento, su nombre, la fecha y hora, un identificador pseudónimo y unas propiedades fijas (<code>platform: web</code> y las indicadas abajo).</p>
     <p>El identificador pseudónimo es un HMAC-SHA256 del identificador interno del negocio o, antes de terminar el registro, del email del formulario. La clave se queda en nuestro servidor y no se comparte con el panel. Esto es seudonimización, no anonimización: quien tiene la clave podría relacionar el identificador con el negocio.</p>
-    <div class="table-wrap">
+    <p class="table-hint">Desliza la tabla para ver todas las columnas.</p>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Métricas internas del producto">
       <table class="table">
         <thead><tr><th>Evento</th><th>Propiedades adicionales</th></tr></thead>
         <tbody>

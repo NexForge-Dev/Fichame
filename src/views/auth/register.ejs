@@ -9,7 +9,7 @@
 %>
 
 <div class="auth-shell">
-  <div class="auth-pane auth-pane-top">
+  <main id="main" class="auth-pane auth-pane-top">
   <div class="auth-card auth-card-wide">
     <div class="auth-head">
       <a class="brand" href="/">
@@ -22,7 +22,7 @@
       <h1><%= tr('Registra tu negocio') %></h1>
       <p class="auth-lead"><%= tr('Crea la página de candidaturas de tu negocio') %></p>
       <% if (locals.google) { %>
-        <div class="flash ok"><%= tr('Cuenta de Google verificada:') %> <strong><%= google.email %></strong>. <%= tr('Completa los datos de tu negocio para terminar.') %></div>
+        <div class="flash ok"><span><%= tr('Cuenta de Google verificada:') %> <strong><%= google.email %></strong>. <%= tr('Completa los datos de tu negocio para terminar.') %></span></div>
       <% } else { %>
         <p class="muted small"><%= tr('Después podrás compartir tu URL exclusiva o imprimir su código QR.') %></p>
         <% if (locals.googleEnabled) { %>
@@ -146,7 +146,7 @@
       </p>
     </div>
   </div>
-  </div>
+  </main>
   <%- include('../partials/auth_aside') %>
 </div>
 

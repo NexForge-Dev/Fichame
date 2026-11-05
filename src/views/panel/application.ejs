@@ -1,7 +1,7 @@
 <%- include('../partials/head', { title: a.first_name + ' ' + a.last_name }) %>
 <%- include('../partials/panel_nav') %>
 
-<main class="container">
+<main id="main" class="container">
   <p class="crumb"><a class="back-link" href="/panel/candidaturas"><%- icon('arrowLeft') %> <%= tr('Candidaturas') %></a></p>
 
   <!-- Cabeçalho: quem é, em que estado está, e como se fala com a pessoa.
@@ -170,7 +170,7 @@
       <div class="card o-cv">
         <h2><%= tr('Currículum') %></h2>
         <% if (cv) { %>
-          <p class="muted small"><%= cv.original_filename %> · <%= fmtSize(cv.size_bytes) %></p>
+          <p class="muted small wrap-any"><%= cv.original_filename %> · <%= fmtSize(cv.size_bytes) %></p>
           <div class="actions-row tight">
             <a class="btn small" href="/panel/cv/<%= cv.id %>" target="_blank" rel="noopener"><%- icon('file') %> <%= tr('Ver CV') %></a>
             <a class="btn secondary small" href="/panel/cv/<%= cv.id %>?descargar=1"><%- icon('download') %> <%= tr('Descargar CV') %></a>

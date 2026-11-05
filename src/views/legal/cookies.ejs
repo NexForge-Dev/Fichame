@@ -1,7 +1,7 @@
 <%- include('../partials/head', { title: 'Política de cookies' }) %>
 <%- include('../partials/site_top') %>
 
-<main class="container-narrow public-main legal">
+<main id="main" class="container-narrow public-main legal">
   <h1>Política de cookies</h1>
   <p class="dim small">Versión <%= version %> · Última actualización: <%= legalUpdated %></p>
 
@@ -10,7 +10,8 @@
   <div class="card">
     <h2>Qué usamos</h2>
     <p>Fíchame usa <strong>cookies técnicas</strong>, estrictamente necesarias (la de sesión y, solo si entras con Google, dos de corta duración), y otra de <strong>preferencia de idioma</strong> que solo se instala si eliges un idioma. No usamos cookies de analítica, publicidad, redes sociales ni de terceros, ni otras tecnologías de seguimiento (píxeles, huella digital del navegador, almacenamiento local con fines de seguimiento). Las métricas internas del producto se envían desde nuestro servidor, sin cookies ni scripts en tu navegador (ver la <a href="/privacidad#metricas">política de privacidad</a>).</p>
-    <div class="table-wrap">
+    <p class="table-hint">Desliza la tabla para ver todas las columnas.</p>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Cookies que usa Fíchame">
       <table class="table">
         <thead><tr><th>Nombre</th><th>Titular</th><th>Finalidad</th><th>Duración</th></tr></thead>
         <tbody>

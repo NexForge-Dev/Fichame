@@ -7,7 +7,7 @@
 
 <header class="lp-top">
   <div class="lp-wrap lp-top-row cn-top-row">
-    <a class="brand" href="/conoce<%= lang !== 'es' ? '?lang=' + lang : '' %>">
+    <a class="brand" href="/conoce<%= lang !== 'es' ? '?lang=' + lang : '' %>" aria-label="Fíchame">
       <img class="brand-mark" src="/img/logo.svg?v=<%= assetV %>" alt="" width="28" height="28">
       <span>Fíchame</span>
     </a>
@@ -23,7 +23,7 @@
   </div>
 </header>
 
-<main class="cn">
+<main id="main" class="cn">
 
   <!-- 1. O que é isto? -->
   <section class="lp-hero cn-hero">
