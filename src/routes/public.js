@@ -163,7 +163,7 @@ const applyLimiters = [
   })
 ];
 
-router.post('/r/:slug/apply', ...applyLimiters, uploadCvFile, async (req, res) => {
+router.post('/r/:slug/apply', ...applyLimiters, uploadCvFile, applyAccepted.finish(async (req, res) => {
   const restaurant = await getPublicRestaurant(req.params.slug);
   if (!restaurant || restaurant.demo) return notFoundRestaurant(res, 'Enlace no válido.');
 
@@ -340,7 +340,7 @@ router.post('/r/:slug/apply', ...applyLimiters, uploadCvFile, async (req, res) =
 
   /* POST-Redirect-GET: evita reenvio ao recarregar (§7). */
   res.redirect(`/r/${restaurant.slug}/enviado`);
-});
+}));
 
 /* ------------------------------------------------------------------ *
  * POST /r/:slug/interes — deixar dados quando pausado / sem vagas (§20)
@@ -360,7 +360,7 @@ const interestLimiters = [
   })
 ];
 
-router.post('/r/:slug/interes', ...interestLimiters, async (req, res) => {
+router.post('/r/:slug/interes', ...interestLimiters, interestAccepted.finish(async (req, res) => {
   const restaurant = await getPublicRestaurant(req.params.slug);
   if (!restaurant || restaurant.demo) return notFoundRestaurant(res, 'Enlace no válido.');
 
@@ -433,7 +433,7 @@ router.post('/r/:slug/interes', ...interestLimiters, async (req, res) => {
   logPublic('interes_registrado', `rid=${restaurant.id} app=${result.application_id}`, req, restaurant.id);
 
   res.redirect(`/r/${restaurant.slug}/enviado?tipo=futuro`);
-});
+}));
 
 /* ------------------------------------------------------------------ *
  * GET /r/:slug/enviado — confirmação (§7)
