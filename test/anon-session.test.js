@@ -246,6 +246,11 @@ test('SEO: sitemap só com páginas indexáveis, robots aponta para ele e og:ima
   assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [1200, 630]);
 });
 
+test('a página pública permite denunciar uma página que se faz passar por um negócio', async () => {
+  const html = await (await get('/r/bar-teste')).text();
+  assert.match(html, /href="mailto:[^"]+?subject=F%C3%ADchame%20%C2%B7%20%2Fr%2Fbar-teste"/);
+});
+
 test('registo: pede um email público próprio e não publica o de acesso por omissão', async () => {
   const page = await get('/registro');
   const html = await page.text();

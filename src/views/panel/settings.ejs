@@ -49,9 +49,9 @@
   <div class="settings-col">
   <div class="card">
     <h2><%= tr('Cuenta de acceso') %></h2>
-    <p class="muted small"><%= tr('Email actual:') %> <strong><%= userEmail %></strong></p>
+    <p class="muted small wrap-any"><%= tr('Email actual:') %> <strong><%= userEmail %></strong></p>
     <% if (typeof pendingEmail !== 'undefined' && pendingEmail) { %>
-    <p class="muted small"><%= tr('Cambio pendiente de confirmar:') %> <strong><%= pendingEmail %></strong>. <%= tr('Abre el enlace que te hemos enviado a ese email.') %></p>
+    <p class="muted small wrap-any"><%= tr('Cambio pendiente de confirmar:') %> <strong><%= pendingEmail %></strong>. <%= tr('Abre el enlace que te hemos enviado a ese email.') %></p>
     <% } %>
 
     <% if (!hasPassword) { %>

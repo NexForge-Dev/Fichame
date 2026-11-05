@@ -5,6 +5,8 @@ module.exports = {
   'Demostración de Fíchame': { en: 'Fíchame demo', pt: 'Demonstração do Fíchame' },
   'Entrar en la demo': { en: 'Enter the demo', pt: 'Entrar na demonstração' },
   'Volver': { en: 'Back', pt: 'Voltar' },
+  '¿Esta página no corresponde a este negocio?': { en: 'Is this page not really from this business?', pt: 'Esta página não corresponde a este negócio?' },
+  'Avísanos': { en: 'Let us know', pt: 'Avisa-nos' },
   '1 candidatura ha superado su plazo de conservación. Debes eliminarla desde su ficha.': {
     en: '1 application has passed its retention period. You must delete it from its profile.',
     pt: '1 candidatura ultrapassou o prazo de conservação. Deves eliminá-la a partir da ficha.'

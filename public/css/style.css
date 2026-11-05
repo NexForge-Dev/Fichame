@@ -571,6 +571,7 @@ hr {
 @media (max-width: 480px) {
   /* Largura conforme o rótulo, não seis partes iguais: «Candidatos» cabe
      numa linha também a 320 px, sem cortar a palavra. */
+  .tabbar { overflow-x: auto; } /* texto a 200 %: rola em vez de alargar a página */
   .tabbar a { flex: 1 1 auto; min-width: auto; padding-inline: 1px; font-size: .6875rem; letter-spacing: -.02em; }
   .tabbar a span:not(.nav-badge) { white-space: normal; text-align: center; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 }
@@ -1364,7 +1365,7 @@ a.kpi:hover { background: var(--surface-2); text-decoration: none; }
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, max(8rem, 40%)), 1fr));
   gap: 0 20px;
 }
 .stages li { margin: 0; border-bottom: 1px solid var(--line); }
@@ -1730,7 +1731,7 @@ a.kpi:hover { background: var(--surface-2); text-decoration: none; }
 }
 
 /* Configuração: uma linha por assunto, com a ação à direita. */
-.settings-layout { display: grid; gap: 16px; align-items: start; }
+.settings-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
 .settings-layout .card { margin-bottom: 0; }
 .settings-col { display: grid; gap: 16px; min-width: 0; }
 .setting-row {

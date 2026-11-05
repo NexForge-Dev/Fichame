@@ -273,6 +273,7 @@
   </div>
 
 <% } %>
+  <p class="help center spaced"><%= tr('¿Esta página no corresponde a este negocio?') %> <a href="mailto:<%= supportEmail %>?subject=<%= encodeURIComponent('Fíchame · /r/' + restaurant.slug) %>"><%= tr('Avísanos') %></a></p>
 </main>
 
 <%- include('../partials/foot') %>
